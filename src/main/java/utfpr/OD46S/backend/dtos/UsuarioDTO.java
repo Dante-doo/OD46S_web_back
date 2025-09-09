@@ -22,10 +22,14 @@ public class UsuarioDTO {
     @JsonProperty("senha")
     private String senha;
 
+    @JsonProperty("email")
+    private String email;
+
     public Usuario toEntity() {
         return Usuario.builder()
                 .nome(this.nome)
                 .senha(this.senha)
+                .email(this.email)
                 .build();
     }
 
@@ -34,6 +38,7 @@ public class UsuarioDTO {
                 .id(entity.getId())
                 .nome(entity.getNome())
                 .senha(entity.getSenha())
+                .email(entity.getEmail())
                 .build();
     }
 

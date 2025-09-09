@@ -36,6 +36,8 @@ public class UsuarioService {
      * @return O usuário salvo ou atualizado.
      */
     public UsuarioDTO saveOrUpdate(UsuarioDTO usuarioDTO) {
+
+
         Usuario usuario = usuarioDTO.toEntity();
 
         Usuario save = usuarioRepository.save(usuario);

@@ -22,6 +22,15 @@ public class AdministratorService {
         return administratorRepository.findAll();
     }
 
+    public Administrator findById(Long id) {
+        return administratorRepository.findById(id).orElse(null);
+    }
+
+    /**
+     * Salvar ou atualizar um administrador.
+     * @param administradorDTO O administrador a ser salvo ou atualizado.
+     * @return O administrador salvo ou atualizado.
+     */
     public AdministradorDTO saveOrUpdate(AdministradorDTO administradorDTO) {
         Administrator administrator = administradorDTO.toEntity();
         Administrator savedAdmin = administratorRepository.save(administrator);
