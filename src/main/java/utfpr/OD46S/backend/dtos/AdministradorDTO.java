@@ -22,6 +22,7 @@ public class AdministradorDTO extends UsuarioDTO {
                 .id(super.getId())
                 .nome(super.getNome())
                 .senha(super.getSenha())
+                .cpf(super.getCpf())
                 .nivelAcesso(this.nivelAcesso)
                 .build();
     }
@@ -31,6 +32,7 @@ public class AdministradorDTO extends UsuarioDTO {
                 .id(entity.getId())
                 .nome(entity.getNome())
                 .senha(entity.getSenha())
+                .cpf(entity.getCpf())
                 .nivelAcesso(entity.getNivelAcesso())
                 .build();
     }

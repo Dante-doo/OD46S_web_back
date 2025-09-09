@@ -7,14 +7,14 @@ import utfpr.OD46S.backend.entitys.Usuario;
 import utfpr.OD46S.backend.entitys.login.AuthResponse;
 import utfpr.OD46S.backend.entitys.login.LoginRequest;
 import utfpr.OD46S.backend.entitys.login.RegisterRequest;
-import utfpr.OD46S.backend.repositorys.UsuarioRepository;
+import utfpr.OD46S.backend.repositorys.AdministratorRepository;
 import utfpr.OD46S.backend.utils.JwtUtils;
 
 @Service
 public class AuthService {
 
     @Autowired
-    private UsuarioRepository repository;
+    private AdministratorRepository repository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -23,8 +23,17 @@ public class AuthService {
     private JwtUtils jwtUtil;
 
     public AuthResponse login(LoginRequest request) {
-        Usuario admin = repository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+        Usuario admin = null;
+
+        if (request.getEmail() != null && !request.getEmail().isEmpty()) {
+            admin = repository.findByEmail(request.getEmail())
+                    .orElseThrow(() -> new RuntimeException("Administrador não encontrado por email"));
+        } else if (request.getCpf() != null && !request.getCpf().isEmpty()) {
+            admin = repository.findByCpf(request.getCpf())
+                    .orElseThrow(() -> new RuntimeException("Administrador não encontrado por CPF"));
+        } else {
+            throw new RuntimeException("Necessário informar email ou CPF");
+        }
 
         if (!passwordEncoder.matches(request.getPassword(), admin.getSenha())) {
             throw new RuntimeException("Senha inválida");
@@ -44,7 +53,7 @@ public class AuthService {
         user.setSenha(passwordEncoder.encode(request.getPassword()));
         user.setNome(request.getName());
 
-        repository.save(user);
+//        repository.save(user);
 
         String token = jwtUtil.generateToken(user.getEmail());
         return new AuthResponse(token, user.getEmail(), user.getNome());

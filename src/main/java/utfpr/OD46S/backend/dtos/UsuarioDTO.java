@@ -25,11 +25,15 @@ public class UsuarioDTO {
     @JsonProperty("email")
     private String email;
 
+    @JsonProperty("cpf")
+    private String cpf;
+
     public Usuario toEntity() {
         return Usuario.builder()
                 .nome(this.nome)
                 .senha(this.senha)
                 .email(this.email)
+                .cpf(this.cpf)
                 .build();
     }
 
@@ -39,6 +43,7 @@ public class UsuarioDTO {
                 .nome(entity.getNome())
                 .senha(entity.getSenha())
                 .email(entity.getEmail())
+                .cpf(entity.getCpf())
                 .build();
     }
 

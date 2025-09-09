@@ -10,6 +10,7 @@ import java.util.Optional;
 public interface AdministratorRepository extends JpaRepository<Administrator, Long> {
 
     Optional<Administrator> findByEmail(String email);
+    Optional<Administrator> findByCpf(String cpf);
 
     boolean existsByEmail(String email);
 

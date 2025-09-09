@@ -26,4 +26,7 @@ public class Usuario {
 
     @Column(name = "email", nullable = false)
     private String email;
+
+    @Column(name = "cpf", nullable = false, unique = true)
+    private String cpf;
 }
