@@ -1,18 +1,95 @@
 # 🗄️ Design de Banco de Dados - Sistema OD46S
 
-## 📊 Entidades Principais
+## 🔄 Gerenciamento de Migrations
 
-### 👥 Usuários (Herança)
-- **usuarios** - tabela base
-- **administradores** - herda de usuarios  
-- **motoristas** - herda de usuarios
+O sistema utiliza **Liquibase** para gerenciamento de versões do banco de dados, oferecendo:
 
-### 🚛 Operacionais
-- **veiculos** - frota de caminhões
-- **rotas** - planejamento de coletas
-- **pontos_coleta** - locais de coleta
-- **registros_coleta** - histórico das coletas
-- **enderecos** - localização dos pontos
+### ✅ **Benefícios do Liquibase**
+- **Rollback gratuito** para todas as operações
+- Controle de versão automático
+- Suporte a múltiplos formatos (XML, YAML, SQL)
+- Validação de integridade
+- Execução condicional de mudanças
+
+### 📁 **Estrutura de Changelogs v1.0 Consolidada**
+```
+src/main/resources/db/changelog/
+├── db.changelog-master.xml          # 🎯 Orquestrador principal
+└── v1.0/                           # 🚀 Release consolidada única
+    ├── 001-setup-database.xml      # 🔧 Configurações PostgreSQL
+    ├── 002-create-schema.xml       # 📊 Todas as 9 tabelas
+    ├── 003-create-indexes.xml      # ⚡ Otimizações de performance
+    ├── 004-create-functions.xml    # 🛠️ Funções utilitárias
+    └── 005-insert-initial-data.xml # 📝 Dados iniciais
+```
+
+### 🎯 **Organização Simplificada**
+- **001-setup-database**: Extensões PostgreSQL (uuid-ossp), timezone, comentários
+- **002-create-schema**: Todas as 9 tabelas com relacionamentos em um único arquivo
+- **003-create-indexes**: Índices otimizados para todas as consultas
+- **004-create-functions**: Triggers e funções de apoio  
+- **005-insert-initial-data**: Usuários, veículos e rotas exemplo
+
+### 🎯 **Comandos Úteis**
+- **Aplicar mudanças**: Automático na inicialização
+- **Rollback**: `mvn liquibase:rollback -Dliquibase.rollbackCount=1`
+- **Status**: `mvn liquibase:status`
+- **Diff**: `mvn liquibase:diff`
+
+## 📊 Entidades Principais (9 Tabelas - Liquibase v1.0)
+
+### 👥 **Usuários (Herança)**
+- **usuarios** - tabela base com dados comuns
+- **administradores** - herda de usuarios (nivel_acesso, setor)
+- **motoristas** - herda de usuarios (cnh, categoria_cnh, habilitado)
+
+### 🚛 **Operações e Planejamento**
+- **veiculos** - frota (placa, modelo, capacidade_kg, status)
+- **rotas** - planejamento (nome, tipo_coleta, periodicidade_cron)
+- **rota_pontos_coleta** - sequência de pontos por rota
+
+### 📊 **Execuções e Registros**
+- **execucoes_rota** - cada execução real da rota
+- **registros_gps** - tracking em tempo real 
+- **registros_coleta_pontos** - detalhes de cada coleta
+
+## 🔄 **Liquibase v1.0 - Detalhamento dos Changesets**
+
+### 📋 **001-setup-database.xml**
+```xml
+<changeSet id="001-setup-database" author="od46s-dev">
+    <sql>CREATE EXTENSION IF NOT EXISTS "uuid-ossp";</sql>
+    <sql>ALTER DATABASE od46s_db_dev SET timezone TO 'America/Sao_Paulo';</sql>
+    <sql>COMMENT ON DATABASE od46s_db_dev IS 'Sistema OD46S - Coleta de Lixo v1.0';</sql>
+</changeSet>
+```
+
+### 📊 **002-create-schema.xml**
+Arquivo consolidado com todas as 9 tabelas:
+- Estrutura completa de herança (usuarios → administradores/motoristas)
+- Todas as tabelas operacionais (veiculos, rotas, execucoes)
+- Relacionamentos e foreign keys
+- Constraints básicas
+
+### ⚡ **003-create-indexes.xml**
+Índices otimizados para performance:
+- Consultas de usuários e tipos
+- Execuções por data/motorista/status
+- GPS por execução/timestamp
+- Coletas por status e ordem
+
+### 🛠️ **004-create-functions.xml**
+Funções de apoio:
+- `update_data_atualizacao()` - trigger para timestamps
+- Funções para validação de cron expressions (planejadas)
+- Utilitários para relatórios
+
+### 📝 **005-insert-initial-data.xml**
+Dados exemplo para desenvolvimento:
+- Usuário admin padrão
+- 2 motoristas exemplo
+- 2 veículos da frota
+- 2 rotas com pontos de coleta
 
 ## 🏗️ Scripts das Tabelas
 

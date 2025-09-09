@@ -1,0 +1,409 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <!-- TABELA BASE: USUÁRIOS -->
+    <changeSet id="002a-create-usuarios" author="od46s-dev">
+        <comment>Criação da tabela base usuarios</comment>
+        
+        <createTable tableName="usuarios">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="nome" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="email" type="VARCHAR(150)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="senha" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ativo" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="data_criacao" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="data_atualizacao" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addUniqueConstraint
+            tableName="usuarios"
+            columnNames="email"
+            constraintName="uk_usuarios_email"/>
+
+        <rollback>
+            <dropTable tableName="usuarios"/>
+        </rollback>
+    </changeSet>
+
+    <!-- HERANÇA: MOTORISTAS -->
+    <changeSet id="002b-create-motoristas" author="od46s-dev">
+        <comment>Criação da tabela motoristas (herança de usuarios)</comment>
+        
+        <createTable tableName="motoristas">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="cnh" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="categoria_cnh" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="validade_cnh" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="habilitado" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="telefone" type="VARCHAR(15)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="motoristas"
+            baseColumnNames="id"
+            constraintName="fk_motoristas_usuarios"
+            referencedTableName="usuarios"
+            referencedColumnNames="id"
+            onDelete="CASCADE"/>
+
+        <addUniqueConstraint
+            tableName="motoristas"
+            columnNames="cnh"
+            constraintName="uk_motoristas_cnh"/>
+
+        <rollback>
+            <dropTable tableName="motoristas"/>
+        </rollback>
+    </changeSet>
+
+    <!-- HERANÇA: ADMINISTRADORES -->
+    <changeSet id="002c-create-administradores" author="od46s-dev">
+        <comment>Criação da tabela administradores (herança de usuarios)</comment>
+        
+        <createTable tableName="administradores">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="nivel_acesso" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="setor" type="VARCHAR(50)"/>
+            <column name="telefone_corporativo" type="VARCHAR(15)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="administradores"
+            baseColumnNames="id"
+            constraintName="fk_administradores_usuarios"
+            referencedTableName="usuarios"
+            referencedColumnNames="id"
+            onDelete="CASCADE"/>
+
+        <rollback>
+            <dropTable tableName="administradores"/>
+        </rollback>
+    </changeSet>
+
+    <!-- VEÍCULOS -->
+    <changeSet id="002d-create-veiculos" author="od46s-dev">
+        <comment>Criação da tabela veiculos</comment>
+        
+        <createTable tableName="veiculos">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="placa" type="VARCHAR(8)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="modelo" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="marca" type="VARCHAR(30)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ano" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="capacidade_kg" type="DECIMAL(8,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="tipo_combustivel" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="consumo_medio" type="DECIMAL(5,2)"/>
+            <column name="status" type="VARCHAR(20)" defaultValue="DISPONIVEL">
+                <constraints nullable="false"/>
+            </column>
+            <column name="km_atual" type="INTEGER" defaultValueNumeric="0"/>
+            <column name="data_aquisicao" type="DATE"/>
+            <column name="observacoes" type="TEXT"/>
+            <column name="ativo" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addUniqueConstraint
+            tableName="veiculos"
+            columnNames="placa"
+            constraintName="uk_veiculos_placa"/>
+
+        <rollback>
+            <dropTable tableName="veiculos"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ROTAS -->
+    <changeSet id="002e-create-rotas" author="od46s-dev">
+        <comment>Criação da tabela rotas</comment>
+        
+        <createTable tableName="rotas">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="nome" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="descricao" type="TEXT"/>
+            <column name="tipo_coleta" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="periodicidade" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="prioridade" type="VARCHAR(10)" defaultValue="MEDIA">
+                <constraints nullable="false"/>
+            </column>
+            <column name="tempo_estimado_minutos" type="INTEGER"/>
+            <column name="distancia_km" type="DECIMAL(8,2)"/>
+            <column name="observacoes" type="TEXT"/>
+            <column name="ativa" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="criado_por" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="data_criacao" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="rotas"
+            baseColumnNames="criado_por"
+            constraintName="fk_rotas_administrador"
+            referencedTableName="administradores"
+            referencedColumnNames="id"/>
+
+        <rollback>
+            <dropTable tableName="rotas"/>
+        </rollback>
+    </changeSet>
+
+    <!-- PONTOS DE COLETA DAS ROTAS -->
+    <changeSet id="002f-create-rota-pontos" author="od46s-dev">
+        <comment>Criação da tabela rota_pontos_coleta</comment>
+        
+        <createTable tableName="rota_pontos_coleta">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="rota_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ordem_sequencia" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="endereco" type="VARCHAR(200)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="latitude" type="DECIMAL(10,8)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="longitude" type="DECIMAL(11,8)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="tipo_residuo" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="capacidade_estimada_kg" type="DECIMAL(8,2)"/>
+            <column name="frequencia_coleta" type="VARCHAR(20)"/>
+            <column name="observacoes" type="TEXT"/>
+            <column name="ativo" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="rota_pontos_coleta"
+            baseColumnNames="rota_id"
+            constraintName="fk_rota_pontos_rota"
+            referencedTableName="rotas"
+            referencedColumnNames="id"
+            onDelete="CASCADE"/>
+
+        <addUniqueConstraint
+            tableName="rota_pontos_coleta"
+            columnNames="rota_id,ordem_sequencia"
+            constraintName="uk_rota_pontos_ordem"/>
+
+        <rollback>
+            <dropTable tableName="rota_pontos_coleta"/>
+        </rollback>
+    </changeSet>
+
+    <!-- EXECUÇÕES DE ROTA -->
+    <changeSet id="002g-create-execucoes-rota" author="od46s-dev">
+        <comment>Criação da tabela execucoes_rota</comment>
+        
+        <createTable tableName="execucoes_rota">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="rota_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="motorista_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="veiculo_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="data_inicio" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="data_fim" type="TIMESTAMP"/>
+            <column name="status" type="VARCHAR(20)" defaultValue="AGENDADA">
+                <constraints nullable="false"/>
+            </column>
+            <column name="km_inicial" type="INTEGER"/>
+            <column name="km_final" type="INTEGER"/>
+            <column name="combustivel_gasto" type="DECIMAL(8,2)"/>
+            <column name="peso_coletado_kg" type="DECIMAL(8,2)"/>
+            <column name="observacoes" type="TEXT"/>
+            <column name="avaliacao_motorista" type="INTEGER"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="execucoes_rota"
+            baseColumnNames="rota_id"
+            constraintName="fk_execucoes_rota"
+            referencedTableName="rotas"
+            referencedColumnNames="id"/>
+
+        <addForeignKeyConstraint
+            baseTableName="execucoes_rota"
+            baseColumnNames="motorista_id"
+            constraintName="fk_execucoes_motorista"
+            referencedTableName="motoristas"
+            referencedColumnNames="id"/>
+
+        <addForeignKeyConstraint
+            baseTableName="execucoes_rota"
+            baseColumnNames="veiculo_id"
+            constraintName="fk_execucoes_veiculo"
+            referencedTableName="veiculos"
+            referencedColumnNames="id"/>
+
+        <rollback>
+            <dropTable tableName="execucoes_rota"/>
+        </rollback>
+    </changeSet>
+
+    <!-- REGISTROS GPS -->
+    <changeSet id="002h-create-registros-gps" author="od46s-dev">
+        <comment>Criação da tabela registros_gps</comment>
+        
+        <createTable tableName="registros_gps">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="execucao_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="timestamp_gps" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="latitude" type="DECIMAL(10,8)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="longitude" type="DECIMAL(11,8)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="velocidade_kmh" type="DECIMAL(5,2)"/>
+            <column name="direcao_graus" type="INTEGER"/>
+            <column name="precisao_metros" type="DECIMAL(6,2)"/>
+            <column name="status_veiculo" type="VARCHAR(20)"/>
+            <column name="bateria_dispositivo" type="INTEGER"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="registros_gps"
+            baseColumnNames="execucao_id"
+            constraintName="fk_registros_gps_execucao"
+            referencedTableName="execucoes_rota"
+            referencedColumnNames="id"
+            onDelete="CASCADE"/>
+
+        <rollback>
+            <dropTable tableName="registros_gps"/>
+        </rollback>
+    </changeSet>
+
+    <!-- REGISTROS DE COLETA NOS PONTOS -->
+    <changeSet id="002i-create-registros-coleta" author="od46s-dev">
+        <comment>Criação da tabela registros_coleta_pontos</comment>
+        
+        <createTable tableName="registros_coleta_pontos">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="execucao_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ponto_coleta_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="timestamp_coleta" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status_coleta" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="peso_coletado_kg" type="DECIMAL(8,2)"/>
+            <column name="condicao_ponto" type="VARCHAR(20)"/>
+            <column name="observacoes" type="TEXT"/>
+            <column name="foto_antes" type="VARCHAR(255)"/>
+            <column name="foto_depois" type="VARCHAR(255)"/>
+            <column name="latitude" type="DECIMAL(10,8)"/>
+            <column name="longitude" type="DECIMAL(11,8)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="registros_coleta_pontos"
+            baseColumnNames="execucao_id"
+            constraintName="fk_registros_coleta_execucao"
+            referencedTableName="execucoes_rota"
+            referencedColumnNames="id"
+            onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint
+            baseTableName="registros_coleta_pontos"
+            baseColumnNames="ponto_coleta_id"
+            constraintName="fk_registros_coleta_ponto"
+            referencedTableName="rota_pontos_coleta"
+            referencedColumnNames="id"/>
+
+        <rollback>
+            <dropTable tableName="registros_coleta_pontos"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

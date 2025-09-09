@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <changeSet id="004-create-functions" author="od46s-dev">
+        <comment>Criação de funções utilitárias básicas</comment>
+        
+        <!-- Função para atualizar timestamp de atualização -->
+        <sql>
+            CREATE OR REPLACE FUNCTION update_data_atualizacao()
+            RETURNS TRIGGER AS $$
+            BEGIN
+                NEW.data_atualizacao = CURRENT_TIMESTAMP;
+                RETURN NEW;
+            END;
+            $$ LANGUAGE plpgsql;
+        </sql>
+        
+        <!-- Trigger para atualizar automaticamente data_atualizacao em usuarios -->
+        <sql>
+            CREATE TRIGGER tr_usuarios_update_timestamp
+                BEFORE UPDATE ON usuarios
+                FOR EACH ROW
+                EXECUTE FUNCTION update_data_atualizacao();
+        </sql>
+
+        <rollback>
+            <sql>DROP TRIGGER IF EXISTS tr_usuarios_update_timestamp ON usuarios;</sql>
+            <sql>DROP FUNCTION IF EXISTS update_data_atualizacao();</sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

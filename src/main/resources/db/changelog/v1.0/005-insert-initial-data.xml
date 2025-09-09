@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.24.xsd">
+
+    <changeSet id="005-insert-initial-data" author="od46s-dev">
+        <comment>Inserção de dados iniciais do sistema</comment>
+        
+        <!-- USUÁRIOS INICIAIS -->
+        <insert tableName="usuarios">
+            <column name="id" valueNumeric="1"/>
+            <column name="nome" value="Administrador Sistema"/>
+            <column name="email" value="admin@od46s.com"/>
+            <column name="senha" value="$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewfBfImcSMzK55W6"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+        
+        <insert tableName="usuarios">
+            <column name="id" valueNumeric="2"/>
+            <column name="nome" value="João Silva"/>
+            <column name="email" value="joao.silva@od46s.com"/>
+            <column name="senha" value="$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewfBfImcSMzK55W6"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+        
+        <insert tableName="usuarios">
+            <column name="id" valueNumeric="3"/>
+            <column name="nome" value="Maria Santos"/>
+            <column name="email" value="maria.santos@od46s.com"/>
+            <column name="senha" value="$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewfBfImcSMzK55W6"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+        
+        <!-- ADMINISTRADOR -->
+        <insert tableName="administradores">
+            <column name="id" valueNumeric="1"/>
+            <column name="nivel_acesso" value="SUPER_ADMIN"/>
+            <column name="setor" value="TI"/>
+            <column name="telefone_corporativo" value="(41)3333-0001"/>
+        </insert>
+        
+        <!-- MOTORISTAS -->
+        <insert tableName="motoristas">
+            <column name="id" valueNumeric="2"/>
+            <column name="cnh" value="12345678901"/>
+            <column name="categoria_cnh" valueNumeric="3"/>
+            <column name="validade_cnh" value="2026-12-31"/>
+            <column name="habilitado" valueBoolean="true"/>
+            <column name="telefone" value="(41)9999-0001"/>
+        </insert>
+        
+        <insert tableName="motoristas">
+            <column name="id" valueNumeric="3"/>
+            <column name="cnh" value="98765432109"/>
+            <column name="categoria_cnh" valueNumeric="3"/>
+            <column name="validade_cnh" value="2025-08-15"/>
+            <column name="habilitado" valueBoolean="true"/>
+            <column name="telefone" value="(41)9999-0002"/>
+        </insert>
+        
+        <!-- VEÍCULOS -->
+        <insert tableName="veiculos">
+            <column name="placa" value="ABC1234"/>
+            <column name="modelo" value="Compactor 15m³"/>
+            <column name="marca" value="Mercedes"/>
+            <column name="ano" valueNumeric="2020"/>
+            <column name="capacidade_kg" valueNumeric="15000.00"/>
+            <column name="tipo_combustivel" value="DIESEL"/>
+            <column name="consumo_medio" valueNumeric="3.5"/>
+            <column name="status" value="DISPONIVEL"/>
+            <column name="km_atual" valueNumeric="45000"/>
+            <column name="data_aquisicao" value="2020-03-15"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+        
+        <insert tableName="veiculos">
+            <column name="placa" value="XYZ5678"/>
+            <column name="modelo" value="Compactor 12m³"/>
+            <column name="marca" value="Volvo"/>
+            <column name="ano" valueNumeric="2019"/>
+            <column name="capacidade_kg" valueNumeric="12000.00"/>
+            <column name="tipo_combustivel" value="DIESEL"/>
+            <column name="consumo_medio" valueNumeric="4.0"/>
+            <column name="status" value="DISPONIVEL"/>
+            <column name="km_atual" valueNumeric="67000"/>
+            <column name="data_aquisicao" value="2019-07-10"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+        
+        <!-- ROTAS EXEMPLO -->
+        <insert tableName="rotas">
+            <column name="nome" value="Centro - Coleta Domiciliar"/>
+            <column name="descricao" value="Rota de coleta domiciliar no centro da cidade"/>
+            <column name="tipo_coleta" value="DOMICILIAR"/>
+            <column name="periodicidade" value="0 6 * * 1,3,5"/>
+            <column name="prioridade" value="ALTA"/>
+            <column name="tempo_estimado_minutos" valueNumeric="240"/>
+            <column name="distancia_km" valueNumeric="35.5"/>
+            <column name="ativa" valueBoolean="true"/>
+            <column name="criado_por" valueNumeric="1"/>
+        </insert>
+        
+        <insert tableName="rotas">
+            <column name="nome" value="Bairro Norte - Coleta Seletiva"/>
+            <column name="descricao" value="Rota de coleta seletiva nos bairros da região norte"/>
+            <column name="tipo_coleta" value="SELETIVA"/>
+            <column name="periodicidade" value="0 8 * * 2,4,6"/>
+            <column name="prioridade" value="MEDIA"/>
+            <column name="tempo_estimado_minutos" valueNumeric="180"/>
+            <column name="distancia_km" valueNumeric="28.0"/>
+            <column name="ativa" valueBoolean="true"/>
+            <column name="criado_por" valueNumeric="1"/>
+        </insert>
+        
+        <!-- PONTOS DE COLETA EXEMPLO -->
+        <insert tableName="rota_pontos_coleta">
+            <column name="rota_id" valueNumeric="1"/>
+            <column name="ordem_sequencia" valueNumeric="1"/>
+            <column name="endereco" value="Rua XV de Novembro, 1000 - Centro"/>
+            <column name="latitude" valueNumeric="-25.4284000"/>
+            <column name="longitude" valueNumeric="-49.2733000"/>
+            <column name="tipo_residuo" value="DOMICILIAR"/>
+            <column name="capacidade_estimada_kg" valueNumeric="500.00"/>
+            <column name="frequencia_coleta" value="DIARIA"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+        
+        <insert tableName="rota_pontos_coleta">
+            <column name="rota_id" valueNumeric="1"/>
+            <column name="ordem_sequencia" valueNumeric="2"/>
+            <column name="endereco" value="Av. Marechal Deodoro, 500 - Centro"/>
+            <column name="latitude" valueNumeric="-25.4294000"/>
+            <column name="longitude" valueNumeric="-49.2743000"/>
+            <column name="tipo_residuo" value="DOMICILIAR"/>
+            <column name="capacidade_estimada_kg" valueNumeric="300.00"/>
+            <column name="frequencia_coleta" value="DIARIA"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+        
+        <insert tableName="rota_pontos_coleta">
+            <column name="rota_id" valueNumeric="2"/>
+            <column name="ordem_sequencia" valueNumeric="1"/>
+            <column name="endereco" value="Rua Comendador Macedo, 200 - Batel"/>
+            <column name="latitude" valueNumeric="-25.4244000"/>
+            <column name="longitude" valueNumeric="-49.2703000"/>
+            <column name="tipo_residuo" value="RECICLAVEL"/>
+            <column name="capacidade_estimada_kg" valueNumeric="200.00"/>
+            <column name="frequencia_coleta" value="SEMANAL"/>
+            <column name="ativo" valueBoolean="true"/>
+        </insert>
+
+        <!-- Atualizar sequências para IDs -->
+        <sql>SELECT setval('usuarios_id_seq', 10, true);</sql>
+        <sql>SELECT setval('veiculos_id_seq', 10, true);</sql>
+        <sql>SELECT setval('rotas_id_seq', 10, true);</sql>
+        <sql>SELECT setval('rota_pontos_coleta_id_seq', 10, true);</sql>
+
+        <rollback>
+            <delete tableName="rota_pontos_coleta"/>
+            <delete tableName="rotas"/>
+            <delete tableName="veiculos"/>
+            <delete tableName="motoristas"/>
+            <delete tableName="administradores"/>
+            <delete tableName="usuarios"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

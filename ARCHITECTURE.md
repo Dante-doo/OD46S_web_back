@@ -25,7 +25,8 @@ Sistema simples com três componentes: **Mobile App (Kotlin)**, **Backend (Sprin
 │                                  ▼                                  │
 │                         ┌─────────────────┐                        │
 │                         │   POSTGRESQL    │                        │
-│                         │   (Database)    │                        │
+│                         │ + Liquibase v1.0│                        │
+│                         │ (Rollback Free) │                        │
 │                         └─────────────────┘                        │
 └─────────────────────────────────────────────────────────────────────┘
 
@@ -35,16 +36,22 @@ COMUNICAÇÃO:
 └── Mobile: SQLite Local + Sincronização
 ```
 
-## 📊 Entidades Principais
+## 📊 Entidades Principais (9 Tabelas - Liquibase v1.0)
 
-- **Usuario** (base): id, nome, email, cpf, senha
-- **Administrator** (herda Usuario): nivelAcesso
-- **Motorista** (herda Usuario): cnh, categoriaCnh  
-- **Veiculo**: placa, modelo, marca, ano, capacidadeKg, tipo, status
-- **Rota**: nome, tipoColeta, diasSemana, horarioInicio
-- **PontoColeta**: nome, endereco, tiposLixo, pesoEstimado
-- **RegistroColeta**: dataInicio, dataFim, pesoColetado, status, observacoes, fotos
-- **Endereco**: logradouro, numero, bairro, cidade, cep, latitude, longitude
+### 👥 **Usuários (Herança)**
+- **usuarios** (base): id, nome, email, senha, ativo, data_criacao
+- **administradores** (herda): nivel_acesso, setor, telefone_corporativo
+- **motoristas** (herda): cnh, categoria_cnh, validade_cnh, habilitado
+
+### 🚛 **Operações**
+- **veiculos**: placa, modelo, marca, capacidade_kg, status, tipo_combustivel
+- **rotas**: nome, tipo_coleta, periodicidade (cron), prioridade, distancia_km
+- **rota_pontos_coleta**: endereco, latitude, longitude, tipo_residuo, ordem_sequencia
+
+### 📊 **Execuções e Registros**
+- **execucoes_rota**: data_inicio, data_fim, status, km_inicial, peso_coletado_kg
+- **registros_gps**: timestamp_gps, latitude, longitude, velocidade_kmh, status_veiculo
+- **registros_coleta_pontos**: timestamp_coleta, peso_coletado_kg, status_coleta, fotos
 
 ## 🔗 Componentes do Sistema
 
@@ -65,11 +72,12 @@ COMUNICAÇÃO:
 - **Pontos de Coleta** - Gerenciar locais de coleta
 - **Relatórios** - Visualizar dados e estatísticas
 
-### 🖥️ **Backend (Spring Boot)**
+### 🖥️ **Backend (Spring Boot + Liquibase)**
 **Responsabilidade:** Lógica de negócio e persistência
 - **APIs REST** - Endpoints para mobile e web
 - **Autenticação JWT** - Controle de acesso
 - **Validações de Negócio** - Regras da aplicação
+- **Liquibase v1.0** - Migrations com rollback gratuito
 - **Persistência** - Gerenciar dados no PostgreSQL
 - **Sincronização** - Processar dados do mobile
 
@@ -100,6 +108,26 @@ COMUNICAÇÃO:
 - **Roles**: ADMIN, MOTORISTA
 - **BCrypt** para senhas
 - **HTTPS** obrigatório em produção
+
+## 🔄 **Liquibase v1.0 - Database Migration**
+
+### 📋 **Estrutura Consolidada**
+```
+src/main/resources/db/changelog/
+├── db.changelog-master.xml          # 🎯 Orquestrador principal
+└── v1.0/                           # 🚀 Release consolidada
+    ├── 001-setup-database.xml      # 🔧 Extensões PostgreSQL
+    ├── 002-create-schema.xml       # 📊 Todas as 9 tabelas
+    ├── 003-create-indexes.xml      # ⚡ Otimizações de performance
+    ├── 004-create-functions.xml    # 🛠️ Funções utilitárias
+    └── 005-insert-initial-data.xml # 📝 Dados iniciais
+```
+
+### ✅ **Benefícios**
+- **Rollback Gratuito** - Desfazer migrações automaticamente
+- **Versionamento** - Controle completo de mudanças no banco
+- **Execução Automática** - Migrations na inicialização da aplicação
+- **Validação** - Verificação de integridade dos changesets
 
 ## 📱 Modo Offline (Mobile)
 
@@ -135,7 +163,7 @@ COMUNICAÇÃO:
 
 ## 🚀 Stack Tecnológico Simplificado
 
-- **Backend**: Java 21 + Spring Boot 3.5.5
+- **Backend**: Java 21 + Spring Boot 3.5.5 + **Liquibase**
 - **Frontend**: React + TypeScript  
 - **Mobile**: Kotlin Android
 - **Banco**: PostgreSQL + SQLite (mobile)
@@ -143,10 +171,11 @@ COMUNICAÇÃO:
 
 ## 📋 Próximos Passos
 
-1. Implementar entidades: Veiculo, Rota, PontoColeta, RegistroColeta
-2. Desenvolver APIs de coleta e sincronização  
-3. Criar interfaces React e mobile Kotlin
-4. Implementar modo offline no mobile
+1. ✅ ~~Implementar entidades~~ - **Concluído com Liquibase v1.0**
+2. Desenvolver APIs REST para coleta e sincronização  
+3. Criar interfaces React para administração
+4. Desenvolver app mobile Kotlin com modo offline
+5. Implementar upload de fotos e relatórios
 
 ---
 
