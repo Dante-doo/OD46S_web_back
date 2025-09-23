@@ -1,182 +1,146 @@
-# 🏗️ Arquitetura do Sistema OD46S
+# 🏗️ Arquitetura - Sistema OD46S
 
 ## 📋 Visão Geral
 
-Sistema simples com três componentes: **Mobile App (Kotlin)**, **Backend (Spring Boot)** e **Frontend Web (React)** para gestão de coleta de lixo urbano.
+O Sistema OD46S é uma plataforma completa para gestão de coleta de lixo urbano, projetada com arquitetura moderna e escalável, integrando aplicações web, mobile e APIs robustas.
 
-## 🏛️ Arquitetura de Comunicação
+## 🎯 Arquitetura do Sistema
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                          SISTEMA OD46S                             │
+│                            🌐 CAMADA DE APRESENTAÇÃO                 │
+├─────────────────────────────┬───────────────────────────────────────┤
+│     📱 Mobile App           │        🖥️ Web Dashboard               │
+│     (Kotlin Android)        │        (React + TypeScript)          │
+│                            │                                       │
+│  • Rotas do Motorista      │  • Gestão de Usuários                │
+│  • Coleta em Campo         │  • Controle de Veículos               │
+│  • GPS Tracking           │  • Planejamento de Rotas              │
+│  • Modo Offline           │  • Relatórios e KPIs                  │
+│  • Sync de Dados          │  • Dashboard Executivo                │
+└─────────────────────────────┴───────────────────────────────────────┘
+                              │
+                              │ HTTPS/REST + JWT
+                              │
+┌─────────────────────────────────────────────────────────────────────┐
+│                        🔗 CAMADA DE INTEGRAÇÃO                      │
 ├─────────────────────────────────────────────────────────────────────┤
+│                        🌐 API Gateway / Load Balancer               │
+│                               (Nginx)                               │
 │                                                                     │
-│  ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐  │
-│  │   FRONTEND WEB  │    │     BACKEND     │    │   MOBILE APP    │  │
-│  │    (React)      │◄──►│  (Spring Boot)  │◄──►│    (Kotlin)     │  │
-│  │                 │    │                 │    │                 │  │
-│  │ • Dashboard     │    │ • REST APIs     │    │ • Coleta Dados  │  │
-│  │ • Relatórios    │    │ • Autenticação  │    │ • GPS Tracking  │  │
-│  │ • Gestão Users  │    │ • Validações    │    │ • Modo Offline  │  │
-│  │ • Config Rotas  │    │ • Banco Dados   │    │ • Sincronização │  │
-│  └─────────────────┘    │ • Lógica Negóc. │    └─────────────────┘  │
-│                         └─────────────────┘                        │
-│                                  │                                  │
-│                                  ▼                                  │
-│                         ┌─────────────────┐                        │
-│                         │   POSTGRESQL    │                        │
-│                         │ + Liquibase v1.0│                        │
-│                         │ (Rollback Free) │                        │
-│                         └─────────────────┘                        │
+│  • Roteamento de Requisições  • Rate Limiting                      │
+│  • SSL Termination           • Compressão GZIP                     │
+│  • Cache de Respostas        • Health Checks                       │
 └─────────────────────────────────────────────────────────────────────┘
-
-COMUNICAÇÃO:
-├── Frontend ↔ Backend: HTTP/REST + JWT Auth
-├── Mobile ↔ Backend: HTTP/REST + JWT Auth  
-└── Mobile: SQLite Local + Sincronização
+                              │
+                              │ HTTP Interno
+                              │
+┌─────────────────────────────────────────────────────────────────────┐
+│                       ⚙️ CAMADA DE APLICAÇÃO                        │
+├─────────────────────────────────────────────────────────────────────┤
+│                    🚀 Backend API (Spring Boot)                     │
+│                                                                     │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐    │
+│  │  🔐 Auth Module │  │ 👥 Users Module │  │ 🚛 Fleet Module │    │
+│  │                 │  │                 │  │                 │    │
+│  │ • JWT Security  │  │ • User CRUD     │  │ • Vehicle CRUD  │    │
+│  │ • Role Control  │  │ • Profiles      │  │ • Status Track  │    │
+│  │ • Password Hash │  │ • Permissions   │  │ • Maintenance   │    │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘    │
+│                                                                     │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐    │
+│  │ 🗺️ Routes Module│  │ 📋 Exec Module  │  │ 📊 Report Module│    │
+│  │                 │  │                 │  │                 │    │
+│  │ • Route CRUD    │  │ • Execution     │  │ • Dashboard     │    │
+│  │ • Point Mgmt    │  │ • GPS Tracking  │  │ • Analytics     │    │
+│  │ • Scheduling    │  │ • Collection    │  │ • KPIs          │    │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘    │
+│                                                                     │
+│  ┌─────────────────┐  ┌─────────────────┐                         │
+│  │ 🔄 Sync Module  │  │ 📁 File Module  │                         │
+│  │                 │  │                 │                         │
+│  │ • Offline Data  │  │ • Photo Upload  │                         │
+│  │ • Batch Proc    │  │ • File Storage  │                         │
+│  │ • Conflict Res  │  │ • CDN Integ     │                         │
+│  └─────────────────┘  └─────────────────┘                         │
+└─────────────────────────────────────────────────────────────────────┘
+                              │
+                              │ JPA/Hibernate
+                              │
+┌─────────────────────────────────────────────────────────────────────┐
+│                        💾 CAMADA DE DADOS                           │
+├─────────────────────────────────────────────────────────────────────┤
+│  ┌─────────────────┐  ┌─────────────────┐                         │
+│  │ 🗄️ PostgreSQL   │  │ 📁 File Storage │                         │
+│  │   (Primary)     │  │   (MinIO Open)  │                         │
+│  │                 │  │                 │                         │
+│  │ • Users Data    │  │ • Photos        │                         │
+│  │ • Routes        │  │ • Documents     │                         │
+│  │ • Executions    │  │ • Reports       │                         │
+│  │ • Collections   │  │ • Exports       │                         │
+│  │ • GPS Logs      │  │ • Backups       │                         │
+│  │ • Analytics     │  │ • Media Files   │                         │
+│  └─────────────────┘  └─────────────────┘                         │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
-## 📊 Entidades Principais (9 Tabelas - Liquibase v1.0)
+## 🛠️ Stack Tecnológico
 
-### 👥 **Usuários (Herança)**
-- **usuarios** (base): id, nome, email, senha, ativo, data_criacao
-- **administradores** (herda): nivel_acesso, setor, telefone_corporativo
-- **motoristas** (herda): cnh, categoria_cnh, validade_cnh, habilitado
+### 🖥️ Backend
+| Componente | Tecnologia | Versão | Propósito |
+|------------|------------|--------|-----------|
+| **Framework** | Spring Boot | 3.5.5 | Framework principal |
+| **Linguagem** | Java | 21 LTS | Linguagem de programação |
+| **ORM** | Hibernate/JPA | 6.x | Mapeamento objeto-relacional |
+| **Segurança** | Spring Security | 6.x | Autenticação e autorização |
+| **JWT** | JJWT | 0.12.x | Tokens de autenticação |
+| **Validação** | Bean Validation | 3.x | Validação de dados |
+| **Banco Principal** | PostgreSQL | 15 | Banco de dados principal |
+| **Migrations** | Liquibase | 4.x | Versionamento do banco |
+| **Documentação** | OpenAPI 3 | 3.x | Documentação da API |
+| **Monitoramento** | Spring Actuator | 3.x | Health checks e métricas |
+| **Build** | Maven | 3.9.x | Gerenciador de dependências |
 
-### 🚛 **Operações**
-- **veiculos**: placa, modelo, marca, capacidade_kg, status, tipo_combustivel
-- **rotas**: nome, tipo_coleta, periodicidade (cron), prioridade, distancia_km
-- **rota_pontos_coleta**: endereco, latitude, longitude, tipo_residuo, ordem_sequencia
+### 🌐 Frontend Web
+| Componente | Tecnologia | Versão | Propósito |
+|------------|------------|--------|-----------|
+| **Framework** | React | 18.x | Interface de usuário |
+| **Linguagem** | TypeScript | 5.x | Tipagem estática |
+| **UI Library** | Material-UI | 5.x | Componentes visuais |
+| **Estado Global** | Redux Toolkit | 2.x | Gerenciamento de estado |
+| **Roteamento** | React Router | 6.x | Navegação SPA |
+| **HTTP Client** | Axios | 1.x | Cliente HTTP |
+| **Formulários** | React Hook Form | 7.x | Gerenciamento de forms |
+| **Charts** | Chart.js | 4.x | Gráficos e visualizações |
+| **Maps** | Leaflet | 1.9.x | Mapas interativos |
+| **Build** | Vite | 5.x | Build tool moderna |
 
-### 📊 **Execuções e Registros**
-- **execucoes_rota**: data_inicio, data_fim, status, km_inicial, peso_coletado_kg
-- **registros_gps**: timestamp_gps, latitude, longitude, velocidade_kmh, status_veiculo
-- **registros_coleta_pontos**: timestamp_coleta, peso_coletado_kg, status_coleta, fotos
+### 📱 Mobile Android
+| Componente | Tecnologia | Versão | Propósito |
+|------------|------------|--------|-----------|
+| **Linguagem** | Kotlin | 1.9.x | Linguagem nativa Android |
+| **UI Framework** | Jetpack Compose | 1.5.x | Interface declarativa |
+| **Arquitetura** | MVVM + Clean | - | Padrão arquitetural |
+| **DI** | Hilt | 2.x | Injeção de dependência |
+| **Networking** | Retrofit + OkHttp | 2.9.x | Cliente HTTP |
+| **Banco Local** | Room | 2.5.x | Banco SQLite local |
+| **GPS/Maps** | Google Maps API | Latest | Mapas e localização |
+| **Camera** | CameraX | 1.3.x | Captura de fotos |
+| **Sincronização** | WorkManager | 2.8.x | Tarefas em background |
+| **Serialização** | Kotlinx.serialization | 1.6.x | JSON parsing |
 
-## 🔗 Componentes do Sistema
-
-### 📱 **Mobile App (Kotlin)**
-**Responsabilidade:** Interface para motoristas em campo
-- **Autenticação** - Login do motorista
-- **Rotas do Dia** - Visualizar rotas atribuídas  
-- **Coleta de Dados** - Registrar peso, fotos, observações
-- **GPS Tracking** - Rastrear localização durante coleta
-- **Modo Offline** - Trabalhar sem internet (SQLite local)
-- **Sincronização** - Enviar dados quando online
-
-### 🖥️ **Frontend Web (React)**
-**Responsabilidade:** Interface administrativa
-- **Gestão de Usuários** - CRUD motoristas e administradores
-- **Gestão de Veículos** - Controle da frota
-- **Planejamento de Rotas** - Criar e configurar rotas
-- **Pontos de Coleta** - Gerenciar locais de coleta
-- **Relatórios** - Visualizar dados e estatísticas
-
-### 🖥️ **Backend (Spring Boot + Liquibase)**
-**Responsabilidade:** Lógica de negócio e persistência
-- **APIs REST** - Endpoints para mobile e web
-- **Autenticação JWT** - Controle de acesso
-- **Validações de Negócio** - Regras da aplicação
-- **Liquibase v1.0** - Migrations com rollback gratuito
-- **Persistência** - Gerenciar dados no PostgreSQL
-- **Sincronização** - Processar dados do mobile
-
-## 🔄 Fluxo de Comunicação
-
-### 📱 **Mobile → Backend**
-```
-1. Login: POST /api/auth/login
-2. Buscar Rotas: GET /api/rotas/motorista/{id}
-3. Iniciar Coleta: POST /api/coletas/iniciar
-4. Registrar Ponto: POST /api/coletas/{id}/pontos
-5. Finalizar Coleta: POST /api/coletas/{id}/finalizar
-6. Sincronizar Offline: POST /api/sync/dados
-```
-
-### 🖥️ **Frontend → Backend**
-```
-1. Login Admin: POST /api/auth/login
-2. Dashboard: GET /api/dashboard/resumo
-3. Gestão Users: GET/POST/PUT/DELETE /api/usuarios
-4. Gestão Veículos: GET/POST/PUT /api/veiculos
-5. Gestão Rotas: GET/POST/PUT /api/rotas
-6. Relatórios: GET /api/relatorios/{tipo}
-```
-
-### 🛡️ **Segurança**
-- **JWT Token** para autenticação
-- **Roles**: ADMIN, MOTORISTA
-- **BCrypt** para senhas
-- **HTTPS** obrigatório em produção
-
-## 🔄 **Liquibase v1.0 - Database Migration**
-
-### 📋 **Estrutura Consolidada**
-```
-src/main/resources/db/changelog/
-├── db.changelog-master.xml          # 🎯 Orquestrador principal
-└── v1.0/                           # 🚀 Release consolidada
-    ├── 001-setup-database.xml      # 🔧 Extensões PostgreSQL
-    ├── 002-create-schema.xml       # 📊 Todas as 9 tabelas
-    ├── 003-create-indexes.xml      # ⚡ Otimizações de performance
-    ├── 004-create-functions.xml    # 🛠️ Funções utilitárias
-    └── 005-insert-initial-data.xml # 📝 Dados iniciais
-```
-
-### ✅ **Benefícios**
-- **Rollback Gratuito** - Desfazer migrações automaticamente
-- **Versionamento** - Controle completo de mudanças no banco
-- **Execução Automática** - Migrations na inicialização da aplicação
-- **Validação** - Verificação de integridade dos changesets
-
-## 📱 Modo Offline (Mobile)
-
-- **SQLite Local** no mobile para trabalhar sem internet
-- **Fila de Sincronização** para operações pendentes
-- **Auto-Sync** quando reconecta à internet
-- **Dados Offline**: rotas do dia, registros de coleta, fotos
-
-## 📋 Requisitos Funcionais Essenciais
-
-### 👨‍💼 **Administradores**
-- **Login/Logout** no sistema web
-- **Gestão de Motoristas** (criar, editar, ativar/desativar)
-- **Gestão de Veículos** (cadastrar, editar, status)
-- **Criação de Rotas** com pontos de coleta
-- **Visualização de Coletas** realizadas
-- **Relatórios Simples** (coletas por período, motorista)
-
-### 🚚 **Motoristas**  
-- **Login no App Mobile** (Kotlin)
-- **Visualizar Rotas** do dia
-- **Iniciar/Finalizar Coleta** de rota
-- **Registrar Coleta** em cada ponto (peso, fotos, observações)
-- **Trabalhar Offline** quando sem internet
-- **Sincronizar Dados** quando voltar online
-
-### 🗄️ **Sistema**
-- **Autenticação JWT** para ambos os clientes
-- **Banco PostgreSQL** para persistência
-- **APIs REST** para comunicação
-- **Upload de Fotos** das coletas
-- **Logs de Auditoria** básicos
-
-## 🚀 Stack Tecnológico Simplificado
-
-- **Backend**: Java 21 + Spring Boot 3.5.5 + **Liquibase**
-- **Frontend**: React + TypeScript  
-- **Mobile**: Kotlin Android
-- **Banco**: PostgreSQL + SQLite (mobile)
-- **Autenticação**: JWT + BCrypt
-
-## 📋 Próximos Passos
-
-1. ✅ ~~Implementar entidades~~ - **Concluído com Liquibase v1.0**
-2. Desenvolver APIs REST para coleta e sincronização  
-3. Criar interfaces React para administração
-4. Desenvolver app mobile Kotlin com modo offline
-5. Implementar upload de fotos e relatórios
+### 🚀 DevOps e Infraestrutura
+| Componente | Tecnologia | Versão | Propósito |
+|------------|------------|--------|-----------|
+| **Containerização** | Docker | 24.x | Containers |
+| **Orquestração** | Docker Compose | 2.x | Multi-container |
+| **Proxy Reverso** | Nginx | 1.25.x | Load balancer |
+| **CI/CD** | GitHub Actions | - | Integração contínua |
+| **Monitoramento** | Prometheus | 2.x | Métricas |
+| **Logs** | ELK Stack | 8.x | Centralização de logs |
+| **Storage** | MinIO (Open Source) | Latest | Armazenamento de arquivos S3-compatible |
+| **Deployment** | Self-Hosted VPS | - | Servidor próprio ou VPS barato |
 
 ---
 
-**Arquitetura simples e focada nos requisitos de coleta de lixo urbano.**
+**Arquitetura moderna, escalável e segura para gestão municipal de coleta de lixo** 🏗️
