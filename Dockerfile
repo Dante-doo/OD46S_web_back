@@ -1,14 +1,13 @@
-# Stage 1: Build da aplicação
+# DOCKERFILE
 FROM openjdk:21-jdk-slim AS build
 
-# Instalar Maven e dependências de build
-RUN apt-get update && apt-get install -y maven git \
-    && rm -rf /var/lib/apt/lists/*
+# Metadados
+LABEL stage=builder
+LABEL description="Build stage for OD46S Backend"
 
-# Criar diretório de trabalho
+# Configurar diretório de trabalho
 WORKDIR /app
 
-# Copiar arquivos de configuração do Maven
 COPY pom.xml .
 COPY mvnw .
 COPY .mvn .mvn
@@ -16,45 +15,78 @@ COPY .mvn .mvn
 # Dar permissão de execução ao Maven wrapper
 RUN chmod +x mvnw
 
-# Baixar dependências (cache layer otimizado)
-RUN ./mvnw dependency:resolve dependency:resolve-sources -B
+RUN ./mvnw dependency:go-offline -B --no-transfer-progress \
+    && ./mvnw dependency:resolve-sources -B --no-transfer-progress
 
-# Copiar código fonte
 COPY src ./src
 
-# Construir a aplicação
-RUN ./mvnw package -DskipTests
+RUN ./mvnw clean package -DskipTests -B --no-transfer-progress -q
 
-# Stage 2: Imagem final
+# ==========================================
+# STAGE 2: Imagem final (PRODUÇÃO)
+# ==========================================
 FROM openjdk:21-jdk-slim
 
-# Informações do container
+# Metadados da aplicação
 LABEL maintainer="OD46S Team"
-LABEL description="Backend do Sistema de Coleta de Lixo Urbano com Liquibase"
-LABEL version="2.0.0"
+LABEL description="Sistema de Coleta de Lixo Urbano - Backend Otimizado"
+LABEL version="2.1.0"
+LABEL app="od46s-backend"
 
-# Instalar dependências runtime
-RUN apt-get update && apt-get install -y curl \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean \
+    && rm -rf /var/cache/apt/*
 
-# Criar usuário não-root para segurança
-RUN groupadd --system springboot && useradd --system --gid springboot springboot
-USER springboot
+RUN groupadd --system --gid 1000 springboot \
+    && useradd --system --uid 1000 --gid springboot --shell /bin/false springboot
 
-# Definir diretório de trabalho
 WORKDIR /app
 
-# Copiar JAR construído do stage anterior
-COPY --from=build /app/target/backend-*.jar app.jar
+COPY --from=build /app/target/*.jar app.jar
 
-# Copiar propriedades específicas do Docker
-COPY src/main/resources/application-docker.properties ./config/application.properties
+RUN mkdir -p /app/logs /app/uploads /app/config \
+    && chown -R springboot:springboot /app
+
+COPY src/main/resources/application.properties ./config/application-default.properties
+COPY src/main/resources/application-docker.properties ./config/application-docker.properties
+
+# Script para escolher configuração baseada no ambiente
+RUN echo '#!/bin/bash\n\
+if [ "$SPRING_PROFILES_ACTIVE" = "docker" ]; then\n\
+  cp /app/config/application-docker.properties /app/application.properties\n\
+else\n\
+  cp /app/config/application-default.properties /app/application.properties\n\
+fi\n\
+exec "$@"' > /app/entrypoint.sh \
+    && chmod +x /app/entrypoint.sh \
+    && chown springboot:springboot /app/entrypoint.sh
+
+# Trocar para usuário não-root
+USER springboot
 
 # Expor porta da aplicação
 EXPOSE 8080
 
-# Health check otimizado
-HEALTHCHECK --interval=30s --timeout=10s --retries=5 CMD curl --fail http://localhost:8080/actuator/health || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:8080/actuator/health || exit 1
 
-# Executar a aplicação
-ENTRYPOINT ["java", "-jar", "app.jar", "--spring.profiles.active=docker"]
+ENTRYPOINT ["/app/entrypoint.sh", "java", \
+    "-server", \
+    "-XX:+UseContainerSupport", \
+    "-XX:+UseG1GC", \
+    "-XX:MaxRAMPercentage=75.0", \
+    "-XX:+UseStringDeduplication", \
+    "-XX:+OptimizeStringConcat", \
+    "-Djava.security.egd=file:/dev/./urandom", \
+    "-Dspring.profiles.active=${SPRING_PROFILES_ACTIVE:-default}", \
+    "-jar", "app.jar"]
+
+# ==========================================
+# VARIÁVEIS DE AMBIENTE OPCIONAIS
+# ==========================================
+ENV JAVA_OPTS="" \
+    SPRING_PROFILES_ACTIVE="default" \
+    SERVER_PORT=8080

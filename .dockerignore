@@ -1,0 +1,113 @@
+# .dockerignore - Otimiza build excluindo arquivos desnecessários
+
+# ==========================================
+# ARQUIVOS DE BUILD E CACHE
+# ==========================================
+target/
+build/
+dist/
+out/
+*.jar
+*.war
+*.class
+
+# ==========================================
+# IDEs E EDITORES
+# ==========================================
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+*.swp
+*.swo
+*~
+
+# ==========================================
+# SISTEMA OPERACIONAL
+# ==========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ==========================================
+# CONTROLE DE VERSÃO
+# ==========================================
+.git/
+.gitignore
+.gitattributes
+.gitmodules
+
+# ==========================================
+# DOCKER E CONTAINERS
+# ==========================================
+Dockerfile.old
+Dockerfile.test*
+Dockerfile.optimized
+Dockerfile.new
+docker-compose.override.yml
+.dockerignore
+
+# ==========================================
+# LOGS E TEMPORÁRIOS
+# ==========================================
+*.log
+logs/
+tmp/
+temp/
+*.tmp
+*.temp
+.cache/
+
+# ==========================================
+# NODE/NPM (se houver frontend)
+# ==========================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# ==========================================
+# DOCUMENTAÇÃO E MARKDOWN
+# ==========================================
+*.md
+docs/
+documentation/
+README*
+
+# ==========================================
+# TESTES E COVERAGE
+# ==========================================
+coverage/
+test-results/
+*.coverage
+.nyc_output/
+
+# ==========================================
+# CONFIGURAÇÕES LOCAIS
+# ==========================================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+application-local.properties
+local.properties
+
+# ==========================================
+# ARQUIVOS ESPECÍFICOS DO PROJETO
+# ==========================================
+# Manter arquivos essenciais, remover apenas desnecessários
+ARCHITECTURE.md
+DATABASE_DESIGN.md
+API_CONTRACT.md
