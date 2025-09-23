@@ -1,0 +1,103 @@
+services:
+  # Banco de Dados PostgreSQL com Liquibase
+  postgres:
+    image: postgres:15-alpine
+    container_name: od46s-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: od46s_db_dev
+      POSTGRES_USER: od46s_user
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - od46s-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U od46s_user -d od46s_db_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend Spring Boot
+  backend:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: od46s-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Configurações do banco
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/od46s_db_dev
+      SPRING_DATASOURCE_USERNAME: od46s_user
+      SPRING_DATASOURCE_PASSWORD: 1234
+      
+      # Configurações JPA
+      SPRING_JPA_HIBERNATE_DDL_AUTO: none
+      SPRING_JPA_SHOW_SQL: "true"
+      SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: "true"
+      
+      # Liquibase
+      SPRING_LIQUIBASE_ENABLED: "true"
+      SPRING_LIQUIBASE_CHANGE_LOG: classpath:db/changelog/db.changelog-master.yml
+      
+      # Profile ativo
+      SPRING_PROFILES_ACTIVE: docker
+      
+      # Configurações de log
+      LOGGING_LEVEL_ORG_SPRINGFRAMEWORK: INFO
+      LOGGING_LEVEL_UTFPR_OD46S: DEBUG
+    ports:
+      - "8080:8080"
+    volumes:
+      - backend_logs:/app/logs
+      - backend_uploads:/app/uploads
+    networks:
+      - od46s-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # pgAdmin (opcional - para gerenciar banco via web)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: od46s-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@od46s.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - od46s-network
+    depends_on:
+      - postgres
+    profiles:
+      - admin  # Só sobe se especificado: docker-compose --profile admin up
+
+# Volumes para persistência de dados
+volumes:
+  postgres_data:
+    driver: local
+  backend_logs:
+    driver: local
+  backend_uploads:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+# Rede interna
+networks:
+  od46s-network:
+    driver: bridge
