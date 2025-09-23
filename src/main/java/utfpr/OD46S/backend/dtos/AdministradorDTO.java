@@ -23,6 +23,7 @@ public class AdministradorDTO extends UsuarioDTO {
                 .nome(super.getNome())
                 .senha(super.getSenha())
                 .cpf(super.getCpf())
+                .email(super.getEmail())
                 .nivelAcesso(this.nivelAcesso)
                 .build();
     }
