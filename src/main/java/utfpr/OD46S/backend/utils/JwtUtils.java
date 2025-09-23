@@ -10,8 +10,10 @@ import java.util.Date;
 @Component
 public class JwtUtils {
 
-    private String secret = "mySecretKey";
-    private int jwtExpiration = 86400000; // 24 horas
+    // CRITICAL SECURITY: Use environment variables in production!
+    // Example: @Value("${jwt.secret}") private String secret;
+    private String secret = "mySecretKey_CHANGE_IN_PRODUCTION_USE_ENV_VAR";
+    private int jwtExpiration = 86400000; // 24 horas (86400 seconds)
 
     public String generateToken(String email) {
         return Jwts.builder()

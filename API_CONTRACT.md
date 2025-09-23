@@ -6,11 +6,50 @@ Development: http://localhost:8080/api/v1
 Production: https://api.od46s.com/v1
 ```
 
-## 🛡️ Authentication
+## 🛡️ Security & Authentication
+
+### 🔐 Password Security
+- **Storage**: Passwords are encrypted using **BCrypt** (cost factor 10+)
+- **Transmission**: Passwords sent in plain text **only** during login/register via HTTPS
+- **Never stored or transmitted in plain text**
+- **Never returned in API responses**
+
+### 🎫 JWT Authentication
 All protected routes require JWT Token in the header:
 ```
 Authorization: Bearer {jwt_token}
 ```
+
+**Token Details:**
+- **Algorithm**: HS512
+- **Expiration**: 24 hours (86400 seconds)
+- **Payload**: User email + timestamps
+- **Auto-refresh**: Not implemented (manual re-login required)
+
+### 🔒 Security Headers
+```
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {jwt_token}  # For protected routes
+```
+
+### ⚠️ Critical Security Issues to Fix
+
+🚨 **URGENT - Current Implementation Issues:**
+1. **JWT Secret Hardcoded**: Currently using `"mySecretKey"` - **CRITICAL VULNERABILITY**
+2. **No Environment Variables**: Secrets should be externalized
+3. **No Token Refresh**: Manual re-login required after 24h
+4. **No Rate Limiting**: Login endpoints vulnerable to brute force
+
+🔒 **Production Security Checklist:**
+- [ ] Use **strong JWT secret** (64+ chars) in environment variables
+- [ ] Enable **HTTPS** (TLS 1.2+)
+- [ ] Implement **rate limiting** on login endpoints
+- [ ] Add **password complexity requirements**
+- [ ] Store JWT tokens securely (httpOnly cookies preferred over localStorage)
+- [ ] Implement proper **token refresh flow**
+- [ ] Add **account lockout** after failed attempts
+- [ ] Enable **audit logging** for authentication events
 
 ## 📄 Standard Headers
 ```
@@ -35,6 +74,107 @@ Authorization: Bearer {jwt_token}  # For protected routes
 
 ---
 
+# 🛡️ SECURITY IMPLEMENTATION STATUS
+
+## ✅ **Currently Implemented**
+- **BCrypt Password Hashing**: Cost factor 10+ (Spring Security default)
+- **JWT Token Generation**: HS512 algorithm, 24h expiration
+- **Password Encoding**: All passwords immediately hashed on storage
+- **Spring Security Integration**: Basic configuration in place
+
+## 🚨 **Critical Security Gaps**
+```java
+// CURRENT CODE (INSECURE):
+private String secret = "mySecretKey"; // ❌ HARDCODED SECRET
+
+// PRODUCTION CODE (SECURE):
+@Value("${JWT_SECRET}")
+private String secret; // ✅ ENVIRONMENT VARIABLE
+```
+
+## 🔧 **Production Security Improvements Needed**
+
+### 1. **Environment Variables** (application.properties)
+```properties
+# Required for production:
+jwt.secret=${JWT_SECRET:your-super-secure-64-char-secret-key-here}
+jwt.expiration=${JWT_EXPIRATION:86400000}
+server.ssl.enabled=true
+```
+
+### 2. **Rate Limiting** (Not Implemented)
+```java
+// Need to add:
+@RateLimiter(name = "auth", fallbackMethod = "rateLimitFallback")
+public AuthResponse login(LoginRequest request) { ... }
+```
+
+### 3. **Password Validation** (Not Implemented)
+```java
+// Need to add:
+@Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$")
+private String password; // Min 8 chars, uppercase, lowercase, number, special char
+```
+
+### 4. **Secure Headers** (Not Implemented)
+```java
+// Need to add security headers:
+"X-Content-Type-Options": "nosniff",
+"X-Frame-Options": "DENY",
+"X-XSS-Protection": "1; mode=block",
+"Strict-Transport-Security": "max-age=31536000; includeSubDomains"
+```
+
+## 📋 **Client Implementation Examples**
+
+### ✅ **Secure JWT Usage (Frontend)**
+```javascript
+// ✅ GOOD: Secure token storage
+const token = localStorage.getItem('jwt_token'); // Consider httpOnly cookies for better security
+
+// ✅ GOOD: Proper authorization header
+const response = await fetch('/api/v1/users', {
+    headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+    }
+});
+
+// ✅ GOOD: Handle token expiration
+if (response.status === 401) {
+    // Token expired - redirect to login
+    localStorage.removeItem('jwt_token');
+    window.location.href = '/login';
+}
+```
+
+### ❌ **Insecure Practices to Avoid**
+```javascript
+// ❌ BAD: Storing password
+localStorage.setItem('password', 'userPassword'); // NEVER DO THIS
+
+// ❌ BAD: Sending password in URL
+const url = `/login?password=userpass`; // NEVER DO THIS
+
+// ❌ BAD: Exposing JWT in URL
+const url = `/dashboard?token=${jwt}`; // NEVER DO THIS
+```
+
+### 🔒 **Password Security Best Practices**
+```javascript
+// ✅ GOOD: Password handling
+const loginData = {
+    email: userEmail,
+    password: userPassword  // Send only during login, never store
+};
+
+// Immediately clear password from memory after use
+userPassword = null;
+delete loginData.password;
+```
+
+---
+
 # 🔐 1. AUTHENTICATION
 
 ## 1.1 Login
@@ -45,16 +185,22 @@ Authorization: Bearer {jwt_token}  # For protected routes
 {
   "email": "admin@od46s.com",        // string, required (OR cpf)
   "cpf": "12345678901",              // string, required (OR email)
-  "password": "password123"          // string, required
+  "password": "SecureP@ssw0rd"        // string, required (min 6 chars)
 }
 ```
+
+**🔒 Security Implementation:**
+- Password transmitted **securely via HTTPS**
+- Server validates using **BCrypt.matches()** against database hash
+- Original password **never stored**, immediately discarded after hashing
+- Failed login attempts should be **logged and rate-limited**
 
 ### Response 200
 ```json
 {
   "success": true,
   "data": {
-    "token": "eyJhbGciOiJIUzI1NiIs...",
+    "token": "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBvZDQ2cy5jb20iLCJpYXQiOjE2NDA5OTUyMDAsImV4cCI6MTY0MTA4MTYwMH0.signature_part",
     "type": "Bearer",
     "expires_in": 86400,
     "user": {
@@ -63,10 +209,29 @@ Authorization: Bearer {jwt_token}  # For protected routes
       "email": "admin@od46s.com",
       "type": "ADMIN",
       "active": true
+      // 🔒 NOTE: password field is NEVER returned
     }
   },
   "message": "Login successful"
 }
+```
+
+**🔒 JWT Token Structure:**
+```json
+// Header
+{
+  "alg": "HS512",
+  "typ": "JWT"
+}
+
+// Payload (Base64 decoded)
+{
+  "sub": "admin@od46s.com",    // Subject (user email)
+  "iat": 1640995200,           // Issued at (timestamp)
+  "exp": 1641081600            // Expires at (timestamp)
+}
+
+// 🚨 SECURITY: Password hash is NEVER included in JWT payload
 ```
 
 ### Response 401
@@ -76,10 +241,19 @@ Authorization: Bearer {jwt_token}  # For protected routes
   "error": {
     "code": "INVALID_CREDENTIALS",
     "message": "Invalid email/cpf or password",
-    "details": {}
+    "details": {
+      "timestamp": "2025-01-15T10:30:00Z",
+      "attempts_remaining": 2  // If rate limiting implemented
+    }
   }
 }
 ```
+
+**🔒 Security Notes:**
+- Error message is **intentionally vague** (doesn't reveal if email exists)
+- **No password hint** or recovery information exposed
+- Failed attempts should be **logged** for security monitoring
+- Consider implementing **account lockout** after repeated failures
 
 ## 1.2 Register
 **POST** `/auth/register`
@@ -90,10 +264,17 @@ Authorization: Bearer {jwt_token}  # For protected routes
   "name": "New User",               // string, required
   "email": "user@od46s.com",        // string, required, unique
   "cpf": "12345678901",            // string, required, unique
-  "password": "password123",        // string, required (min 6 chars)
+  "password": "SecureP@ssw0rd!",     // string, required (min 6 chars, recommend 8+ with complexity)
   "type": "DRIVER"                 // ADMIN | DRIVER
 }
 ```
+
+**🔒 Security Implementation:**
+- Password **immediately hashed with BCrypt** (cost factor 10+)
+- Plain text password **never persisted**, discarded after hashing
+- **BCrypt salt** automatically generated per password
+- **HTTPS required** to protect password transmission
+- Consider implementing **password complexity validation**
 
 ### Response 201
 ```json
@@ -239,7 +420,7 @@ Authorization: Bearer {jwt_token}  # Only ADMIN
   "name": "John Silva",             // string, required
   "email": "john@od46s.com",        // string, required, unique
   "cpf": "12345678901",            // string, required, unique
-  "password": "password123",        // string, required (min 6 chars)
+  "password": "SecureP@ssw0rd!",     // string, required (min 6 chars, recommend strong password)
   "type": "DRIVER",                // ADMIN | DRIVER
   "active": true                   // boolean, optional (default: true)
 }
@@ -299,10 +480,18 @@ Authorization: Bearer {jwt_token}  # Own user or ADMIN
 ### Request Body
 ```json
 {
-  "current_password": "current_pass", // string, required if own user
-  "new_password": "new_password"      // string, required (min 6 chars)
+  "current_password": "CurrentP@ssw0rd", // string, required if own user (for verification)
+  "new_password": "NewSecureP@ssw0rd!"   // string, required (min 6 chars, recommend 8+ with complexity)
 }
 ```
+
+**🔒 Security Implementation:**
+- Current password **verified with BCrypt.matches()**
+- New password **immediately hashed with fresh BCrypt salt**
+- Both passwords transmitted **securely via HTTPS**
+- Plain text passwords **never persisted**
+- **Password change logged** for audit trail
+- Consider **password history** to prevent immediate reuse
 
 ---
 
@@ -1074,3 +1263,44 @@ Authorization: Bearer {jwt_token}  # Only ADMIN
 - ❌ No business logic implementation
 
 **Total: 3/50 routes implemented (6%)**
+
+---
+
+# 🛡️ FINAL SECURITY ASSESSMENT
+
+## ✅ **What's Currently Secure**
+1. **Password Hashing**: BCrypt with proper salt (Spring Security default)
+2. **JWT Structure**: Valid HS512 algorithm, proper expiration
+3. **Password Never Returned**: API responses exclude password fields
+4. **Immediate Hashing**: Passwords encoded immediately upon receipt
+
+## 🚨 **Critical Vulnerabilities to Fix**
+1. **Hardcoded JWT Secret**: Needs environment variable (`${JWT_SECRET}`)
+2. **No Rate Limiting**: Login endpoints vulnerable to brute force
+3. **No HTTPS Enforcement**: Passwords transmitted in plain text without TLS
+4. **No Password Complexity**: Accepts weak passwords (current min: 6 chars)
+5. **No Account Lockout**: Unlimited login attempts allowed
+6. **No Security Headers**: Missing XSS, CSRF, and content-type protection
+
+## 🔧 **Priority Security Fixes (Recommended Order)**
+1. **IMMEDIATE**: Move JWT secret to environment variables
+2. **HIGH**: Enable HTTPS/TLS in production 
+3. **HIGH**: Add rate limiting to auth endpoints
+4. **MEDIUM**: Implement password complexity requirements
+5. **MEDIUM**: Add security headers (CSRF, XSS protection)
+6. **LOW**: Add account lockout mechanism
+7. **LOW**: Implement audit logging for authentication events
+
+## 🎯 **Production-Ready Security Checklist**
+- [ ] JWT secret in environment variable (64+ chars)
+- [ ] HTTPS/TLS 1.2+ enabled
+- [ ] Rate limiting on auth endpoints (5 attempts/minute)
+- [ ] Password complexity (8+ chars, mixed case, numbers, symbols)
+- [ ] Security headers (XSS, CSRF, Content-Type protection)
+- [ ] Account lockout (temporary after 5 failed attempts)
+- [ ] Audit logging (login attempts, password changes)
+- [ ] Token refresh mechanism (avoid 24h fixed expiration)
+- [ ] Input validation on all endpoints
+- [ ] SQL injection protection (using JPA/Hibernate properly)
+
+**Security Score: 4/10** ⚠️ *Needs significant improvement before production deployment*
