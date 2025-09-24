@@ -1,657 +1,577 @@
-# 🗄️ Design de Banco de Dados - Sistema OD46S
+# 🗄️ Database Design - OD46S System
 
-## 📊 Entidades Principais
+## 📋 Overview
 
-### 👥 Usuários (Herança)
-- **usuarios** - tabela base
-- **administradores** - herda de usuarios  
-- **motoristas** - herda de usuarios
+The OD46S System database was designed to support complete urban waste collection management operations, based on the [API Contract](API_CONTRACT.md) defined for the system.
 
-### 🚛 Operacionais
-- **veiculos** - frota de caminhões
-- **rotas** - planejamento de coletas
-- **pontos_coleta** - locais de coleta
-- **registros_coleta** - histórico das coletas
-- **enderecos** - localização dos pontos
+## 🏗️ Database Architecture
 
-## 🏗️ Scripts das Tabelas
+### Technologies
+- **PostgreSQL 15** - Primary database
+- **JPA/Hibernate** - ORM and mapping
+- **Docker** - Containerization
+- **JOINED Inheritance** - JPA strategy for user types
 
-### 📋 Estrutura de Usuários (Herança)
+### Configuration
+```yaml
+# docker-compose.yml
+postgres:
+  image: postgres:15-alpine
+  environment:
+    POSTGRES_DB: od46s_db
+    POSTGRES_USER: od46s_user
+    POSTGRES_PASSWORD: password123
+  ports:
+    - "5432:5432"
+```
 
-#### **Abordagem: Table Inheritance (Ideal)**
-Tabela base + tabelas específicas para cada tipo de usuário.
+## 📊 Data Model
 
+### 1. 👥 Users Module (JOINED Inheritance)
+
+#### users (Base Table)
 ```sql
--- 1. TABELA BASE - Dados comuns a todos os usuários
-CREATE TABLE usuarios (
+CREATE TABLE users (
     id BIGSERIAL PRIMARY KEY,
-    nome VARCHAR(100) NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,        -- BCrypt hash
     cpf VARCHAR(11) UNIQUE NOT NULL,
-    senha VARCHAR(255) NOT NULL,
-    tipo_usuario VARCHAR(15) NOT NULL CHECK (tipo_usuario IN ('ADMIN', 'MOTORISTA')),
-    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    ativo BOOLEAN DEFAULT TRUE
-);
-
--- 2. TABELA ESPECÍFICA - Administradores
-CREATE TABLE administradores (
-    id BIGINT PRIMARY KEY REFERENCES usuarios(id) ON DELETE CASCADE,
-    nivel_acesso VARCHAR(20) DEFAULT 'ADMIN',
-    ultimo_login TIMESTAMP,
-    
-    -- Constraint para garantir que só admins sejam inseridos
-    CONSTRAINT chk_admin_tipo CHECK (
-        (SELECT tipo_usuario FROM usuarios WHERE id = administradores.id) = 'ADMIN'
-    )
-);
-
--- 3. TABELA ESPECÍFICA - Motoristas  
-CREATE TABLE motoristas (
-    id BIGINT PRIMARY KEY REFERENCES usuarios(id) ON DELETE CASCADE,
-    cnh VARCHAR(11) UNIQUE NOT NULL,
-    categoria_cnh VARCHAR(2) NOT NULL,
-    validade_cnh DATE NOT NULL,
-    habilitado BOOLEAN DEFAULT TRUE,
-    
-    -- Constraints
-    CONSTRAINT chk_motorista_tipo CHECK (
-        (SELECT tipo_usuario FROM usuarios WHERE id = motoristas.id) = 'MOTORISTA'
-    ),
-    CONSTRAINT chk_categoria_cnh CHECK (categoria_cnh IN ('A', 'B', 'C', 'D', 'E')),
-    CONSTRAINT chk_validade_cnh CHECK (validade_cnh > CURRENT_DATE)
+    active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
-#### **🔧 Triggers para Consistência**
+#### administrators (Inheritance)
 ```sql
--- Trigger para atualizar timestamp
-CREATE OR REPLACE FUNCTION update_timestamp()
+CREATE TABLE administrators (
+    id BIGINT PRIMARY KEY,
+    access_level VARCHAR(50) NOT NULL,  -- SUPER_ADMIN, ADMIN, OPERATOR
+    department VARCHAR(100),
+    corporate_phone VARCHAR(20),
+    
+    FOREIGN KEY (id) REFERENCES users(id) ON DELETE CASCADE
+);
+```
+
+#### drivers (Inheritance)
+```sql
+CREATE TABLE drivers (
+    id BIGINT PRIMARY KEY,
+    license_number VARCHAR(11) UNIQUE NOT NULL,
+    license_category VARCHAR(2) NOT NULL,  -- A, B, C, D, E
+    license_expiry DATE NOT NULL,
+    enabled BOOLEAN DEFAULT true,
+    phone VARCHAR(20),
+    
+    FOREIGN KEY (id) REFERENCES users(id) ON DELETE CASCADE
+);
+```
+
+### 2. 🚛 Vehicles Module
+
+#### vehicles
+```sql
+CREATE TABLE vehicles (
+    id BIGSERIAL PRIMARY KEY,
+    license_plate VARCHAR(7) UNIQUE NOT NULL,
+    model VARCHAR(100) NOT NULL,
+    brand VARCHAR(50) NOT NULL,
+    year INTEGER NOT NULL,
+    capacity_kg DECIMAL(10,2) NOT NULL,
+    fuel_type VARCHAR(20) NOT NULL, -- DIESEL, GASOLINE, ETHANOL, ELECTRIC
+    average_consumption DECIMAL(5,2),
+    status VARCHAR(20) DEFAULT 'AVAILABLE', -- AVAILABLE, IN_USE, MAINTENANCE, INACTIVE
+    current_km INTEGER DEFAULT 0,
+    acquisition_date DATE,
+    notes TEXT,
+    active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### 3. 🗺️ Routes Module
+
+#### routes
+```sql
+CREATE TABLE routes (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    collection_type VARCHAR(20) NOT NULL,     -- RESIDENTIAL, COMMERCIAL, HOSPITAL, SELECTIVE, RECYCLABLE
+    periodicity VARCHAR(50) NOT NULL,         -- Cron expression
+    priority VARCHAR(10) DEFAULT 'MEDIUM',    -- LOW, MEDIUM, HIGH, URGENT
+    estimated_time_minutes INTEGER,
+    distance_km DECIMAL(8,2),
+    active BOOLEAN DEFAULT true,
+    notes TEXT,
+    created_by BIGINT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (created_by) REFERENCES administrators(id)
+);
+```
+
+#### route_collection_points
+```sql
+CREATE TABLE route_collection_points (
+    id BIGSERIAL PRIMARY KEY,
+    route_id BIGINT NOT NULL,
+    sequence_order INTEGER NOT NULL,
+    address VARCHAR(500) NOT NULL,
+    latitude DECIMAL(10,8) NOT NULL,
+    longitude DECIMAL(11,8) NOT NULL,
+    waste_type VARCHAR(50) NOT NULL,
+    estimated_capacity_kg DECIMAL(8,2),
+    collection_frequency VARCHAR(20),     -- DAILY, ALTERNATE, WEEKLY
+    notes TEXT,
+    active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (route_id) REFERENCES routes(id) ON DELETE CASCADE,
+    UNIQUE(route_id, sequence_order)
+);
+```
+
+### 4. 📋 Executions Module
+
+#### route_executions
+```sql
+CREATE TABLE route_executions (
+    id BIGSERIAL PRIMARY KEY,
+    route_id BIGINT NOT NULL,
+    driver_id BIGINT NOT NULL,
+    vehicle_id BIGINT NOT NULL,
+    start_time TIMESTAMP NOT NULL,
+    end_time TIMESTAMP,
+    status VARCHAR(20) DEFAULT 'SCHEDULED', -- SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED
+    initial_km INTEGER NOT NULL,
+    final_km INTEGER,
+    total_collected_weight_kg DECIMAL(10,2),
+    points_visited INTEGER DEFAULT 0,
+    points_collected INTEGER DEFAULT 0,
+    initial_notes TEXT,
+    final_notes TEXT,
+    problems_found TEXT,
+    driver_rating INTEGER CHECK (driver_rating BETWEEN 1 AND 5),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (route_id) REFERENCES routes(id),
+    FOREIGN KEY (driver_id) REFERENCES drivers(id),
+    FOREIGN KEY (vehicle_id) REFERENCES vehicles(id)
+);
+```
+
+### 5. 📍 GPS Tracking Module
+
+#### gps_records
+```sql
+CREATE TABLE gps_records (
+    id BIGSERIAL PRIMARY KEY,
+    execution_id BIGINT NOT NULL,
+    gps_timestamp TIMESTAMP NOT NULL,
+    latitude DECIMAL(10,8) NOT NULL,
+    longitude DECIMAL(11,8) NOT NULL,
+    speed_kmh DECIMAL(5,2),
+    heading_degrees INTEGER CHECK (heading_degrees BETWEEN 0 AND 359),
+    accuracy_meters DECIMAL(5,2),
+    event_type VARCHAR(20) DEFAULT 'NORMAL', -- NORMAL, STOP, START, END
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (execution_id) REFERENCES route_executions(id) ON DELETE CASCADE
+);
+```
+
+### 6. 🗑️ Collections Module
+
+#### collection_point_records
+```sql
+CREATE TABLE collection_point_records (
+    id BIGSERIAL PRIMARY KEY,
+    execution_id BIGINT NOT NULL,
+    point_id BIGINT NOT NULL,
+    arrival_timestamp TIMESTAMP NOT NULL,
+    departure_timestamp TIMESTAMP,
+    collection_timestamp TIMESTAMP NOT NULL,
+    collection_status VARCHAR(20) NOT NULL, -- COLLECTED, SKIPPED, PROBLEM
+    collected_weight_kg DECIMAL(8,2),
+    collected_waste_types TEXT[],            -- PostgreSQL Array
+    point_condition VARCHAR(20),             -- NORMAL, SATURATED, DAMAGED, INACCESSIBLE
+    notes TEXT,
+    non_collection_reason TEXT,
+    latitude DECIMAL(10,8),
+    longitude DECIMAL(11,8),
+    accuracy_meters DECIMAL(5,2),
+    photo_urls TEXT[],                       -- Array of photo URLs
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (execution_id) REFERENCES route_executions(id) ON DELETE CASCADE,
+    FOREIGN KEY (point_id) REFERENCES route_collection_points(id)
+);
+```
+
+## 🔍 Performance Indexes
+
+```sql
+-- Users
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_cpf ON users(cpf);
+CREATE INDEX idx_users_active ON users(active);
+
+-- Drivers
+CREATE INDEX idx_drivers_license ON drivers(license_number);
+CREATE INDEX idx_drivers_enabled ON drivers(enabled);
+
+-- Vehicles
+CREATE INDEX idx_vehicles_plate ON vehicles(license_plate);
+CREATE INDEX idx_vehicles_status ON vehicles(status);
+CREATE INDEX idx_vehicles_active ON vehicles(active);
+
+-- Routes
+CREATE INDEX idx_routes_name ON routes(name);
+CREATE INDEX idx_routes_type ON routes(collection_type);
+CREATE INDEX idx_routes_active ON routes(active);
+CREATE INDEX idx_routes_priority ON routes(priority);
+
+-- Collection Points
+CREATE INDEX idx_points_route_id ON route_collection_points(route_id);
+CREATE INDEX idx_points_coordinates ON route_collection_points(latitude, longitude);
+
+-- Executions
+CREATE INDEX idx_executions_date ON route_executions(start_time);
+CREATE INDEX idx_executions_status ON route_executions(status);
+CREATE INDEX idx_executions_driver ON route_executions(driver_id);
+CREATE INDEX idx_executions_vehicle ON route_executions(vehicle_id);
+
+-- GPS
+CREATE INDEX idx_gps_execution ON gps_records(execution_id);
+CREATE INDEX idx_gps_timestamp ON gps_records(gps_timestamp);
+CREATE INDEX idx_gps_location ON gps_records(latitude, longitude);
+
+-- Collections
+CREATE INDEX idx_collections_execution ON collection_point_records(execution_id);
+CREATE INDEX idx_collections_point ON collection_point_records(point_id);
+CREATE INDEX idx_collections_timestamp ON collection_point_records(collection_timestamp);
+CREATE INDEX idx_collections_status ON collection_point_records(collection_status);
+```
+
+## 🔧 Functions and Triggers
+
+### Auto Timestamp Trigger
+```sql
+CREATE OR REPLACE FUNCTION update_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
-    NEW.atualizado_em = CURRENT_TIMESTAMP;
+    NEW.updated_at = CURRENT_TIMESTAMP;
     RETURN NEW;
 END;
-$$ language 'plpgsql';
-
-CREATE TRIGGER update_usuarios_timestamp 
-    BEFORE UPDATE ON usuarios 
-    FOR EACH ROW EXECUTE FUNCTION update_timestamp();
-```
-
-#### **🎯 Vantagens desta Estrutura:**
-
-1. **✅ Normalização**: Sem campos nulos desnecessários
-2. **✅ Integridade**: Constraints garantem consistência
-3. **✅ Extensibilidade**: Fácil adicionar novos tipos de usuário
-4. **✅ Performance**: Consultas específicas são mais eficientes
-5. **✅ Manutenção**: Alterações isoladas por tipo
-
-#### **📊 Consultas Úteis:**
-
-```sql
--- Buscar todos os usuários com seus tipos
-SELECT u.id, u.nome, u.email, u.tipo_usuario, u.ativo
-FROM usuarios u;
-
--- Buscar motoristas com dados específicos
-SELECT u.nome, u.email, m.cnh, m.categoria_cnh, m.habilitado
-FROM usuarios u
-JOIN motoristas m ON u.id = m.id
-WHERE u.ativo = true;
-
--- Buscar administradores ativos
-SELECT u.nome, u.email, a.nivel_acesso, a.ultimo_login
-FROM usuarios u
-JOIN administradores a ON u.id = a.id
-WHERE u.ativo = true;
-
--- Contar usuários por tipo
-SELECT tipo_usuario, COUNT(*) as total
-FROM usuarios
-WHERE ativo = true
-GROUP BY tipo_usuario;
-```
-
-### 🚛 Veículos
-```sql
-CREATE TABLE veiculos (
-    id BIGSERIAL PRIMARY KEY,
-    placa VARCHAR(8) UNIQUE NOT NULL,
-    modelo VARCHAR(50) NOT NULL,
-    marca VARCHAR(30) NOT NULL,
-    ano INTEGER NOT NULL,
-    capacidade_kg DECIMAL(8,2) NOT NULL,
-    tipo_veiculo VARCHAR(30) NOT NULL,
-    status_veiculo VARCHAR(20) DEFAULT 'DISPONIVEL',
-    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-### 🗺️ Endereços e Pontos
-```sql
-CREATE TABLE enderecos (
-    id BIGSERIAL PRIMARY KEY,
-    logradouro VARCHAR(200) NOT NULL,
-    numero VARCHAR(20),
-    bairro VARCHAR(100) NOT NULL,
-    cidade VARCHAR(100) NOT NULL,
-    estado VARCHAR(2) NOT NULL,
-    cep VARCHAR(8) NOT NULL,
-    latitude DECIMAL(10, 8),
-    longitude DECIMAL(11, 8)
-);
-
-CREATE TABLE pontos_coleta (
-    id BIGSERIAL PRIMARY KEY,
-    endereco_id BIGINT NOT NULL REFERENCES enderecos(id),
-    nome VARCHAR(100) NOT NULL,
-    descricao TEXT,
-    tipos_lixo VARCHAR(20)[] NOT NULL,
-    peso_estimado_kg DECIMAL(8,2) DEFAULT 0,
-    ativo BOOLEAN DEFAULT TRUE,
-    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-### 🛣️ Sistema de Rotas Completo
-
-#### **1. Rotas Cadastradas (Planejamento)**
-```sql
--- Rotas planejadas pelos administradores
-CREATE TABLE rotas (
-    id BIGSERIAL PRIMARY KEY,
-    nome VARCHAR(100) NOT NULL,
-    descricao TEXT,
-    tipo_coleta VARCHAR(20) NOT NULL, -- RESIDENCIAL, COMERCIAL, etc
-    
-    -- Periodicidade usando cron expression (muito flexível!)
-    periodicidade_cron VARCHAR(50) NOT NULL, -- Ex: "0 6 * * 1,3,5" = seg,qua,sex às 6h
-    
-    -- Campo auxiliar para facilitar consultas
-    descricao_periodicidade VARCHAR(100), -- Ex: "Segunda, Quarta e Sexta às 6:00"
-    
-    duracao_estimada_min INTEGER,
-    distancia_estimada_km DECIMAL(8,2),
-    status_rota VARCHAR(20) DEFAULT 'ATIVA',
-    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
-    -- Validação básica do formato cron (5 campos)
-    CONSTRAINT chk_cron_format CHECK (
-        periodicidade_cron ~ '^[0-9\*,\-/]+ [0-9\*,\-/]+ [0-9\*,\-/]+ [0-9\*,\-/]+ [0-9\*,\-/]+$'
-    )
-);
-
--- Exemplos de periodicidades comuns para coleta de lixo:
-/*
-CRON FORMAT: minuto hora dia mês dia_da_semana
-
-EXEMPLOS PRÁTICOS:
-"0 6 * * 1,3,5"    = Segunda, Quarta e Sexta às 6:00
-"0 6 * * 1-5"      = Segunda a Sexta às 6:00  
-"0 6 * * 1"        = Toda Segunda às 6:00
-"0 6 */2 * *"      = A cada 2 dias às 6:00
-"0 6 1,15 * *"     = Dia 1 e 15 de cada mês às 6:00
-"0 6 1 * *"        = Todo dia 1º do mês às 6:00
-"0 6 * * 6"        = Todo Sábado às 6:00
-"30 14 * * 2,4"    = Terça e Quinta às 14:30
-"0 8 */3 * *"      = A cada 3 dias às 8:00
-"0 7 1-7 * 1"      = Primeira Segunda do mês às 7:00
-*/
-
--- Pontos que fazem parte de cada rota (sequência planejada)
-CREATE TABLE rota_pontos_coleta (
-    id BIGSERIAL PRIMARY KEY,
-    rota_id BIGINT NOT NULL REFERENCES rotas(id) ON DELETE CASCADE,
-    ponto_coleta_id BIGINT NOT NULL REFERENCES pontos_coleta(id) ON DELETE CASCADE,
-    ordem_visita INTEGER NOT NULL,
-    horario_estimado TIME,
-    tempo_estimado_min INTEGER,
-    obrigatorio BOOLEAN DEFAULT TRUE,
-    
-    UNIQUE(rota_id, ordem_visita),
-    UNIQUE(rota_id, ponto_coleta_id)
-);
-```
-
-#### **2. Execuções de Rotas (Realizadas)**
-```sql
--- Quando um motorista executa uma rota (cada saída = 1 execução)
-CREATE TABLE execucoes_rota (
-    id BIGSERIAL PRIMARY KEY,
-    rota_id BIGINT NOT NULL REFERENCES rotas(id),
-    motorista_id BIGINT NOT NULL REFERENCES motoristas(id),
-    veiculo_id BIGINT NOT NULL REFERENCES veiculos(id),
-    
-    -- Controle de tempo
-    data_execucao DATE NOT NULL DEFAULT CURRENT_DATE,
-    hora_inicio TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    hora_fim TIMESTAMP,
-    
-    -- Status da execução
-    status_execucao VARCHAR(20) DEFAULT 'EM_ANDAMENTO', -- EM_ANDAMENTO, CONCLUIDA, CANCELADA
-    
-    -- Dados coletados durante execução
-    total_peso_coletado_kg DECIMAL(10,2),
-    total_pontos_visitados INTEGER DEFAULT 0,
-    total_pontos_planejados INTEGER,
-    distancia_percorrida_km DECIMAL(8,2),
-    
-    -- Observações gerais da execução
-    observacoes_gerais TEXT,
-    problemas_encontrados TEXT,
-    
-    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-#### **3. Registros GPS (Tracking)**
-```sql
--- Tracking GPS durante a execução da rota
-CREATE TABLE registros_gps (
-    id BIGSERIAL PRIMARY KEY,
-    execucao_rota_id BIGINT NOT NULL REFERENCES execucoes_rota(id) ON DELETE CASCADE,
-    
-    -- Coordenadas
-    latitude DECIMAL(10, 8) NOT NULL,
-    longitude DECIMAL(11, 8) NOT NULL,
-    altitude DECIMAL(8, 2), -- opcional
-    
-    -- Dados do movimento
-    velocidade_kmh DECIMAL(5, 2),
-    direcao_graus INTEGER, -- 0-360 graus
-    precisao_metros DECIMAL(6, 2),
-    
-    -- Timestamp do GPS
-    timestamp_gps TIMESTAMP NOT NULL,
-    timestamp_servidor TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
-    -- Contexto (opcional)
-    tipo_evento VARCHAR(20), -- INICIO, PARADA, PONTO_COLETA, FIM, NORMAL
-    observacao VARCHAR(255)
-);
-```
-
-#### **4. Coletas nos Pontos (Detalhamento)**
-```sql
--- Registro específico de cada ponto coletado durante a execução
-CREATE TABLE registros_coleta_pontos (
-    id BIGSERIAL PRIMARY KEY,
-    execucao_rota_id BIGINT NOT NULL REFERENCES execucoes_rota(id) ON DELETE CASCADE,
-    ponto_coleta_id BIGINT NOT NULL REFERENCES pontos_coleta(id),
-    
-    -- Sequência real (pode diferir do planejado)
-    ordem_real_visita INTEGER,
-    
-    -- Controle de tempo no ponto
-    hora_chegada TIMESTAMP,
-    hora_saida TIMESTAMP,
-    tempo_coleta_min INTEGER GENERATED ALWAYS AS (
-        EXTRACT(EPOCH FROM (hora_saida - hora_chegada)) / 60
-    ) STORED,
-    
-    -- Dados coletados
-    peso_coletado_kg DECIMAL(8,2),
-    tipos_lixo_coletados VARCHAR(20)[],
-    volume_estimado_m3 DECIMAL(6,2),
-    
-    -- Status da coleta neste ponto
-    status_coleta VARCHAR(20) DEFAULT 'PENDENTE', -- PENDENTE, COLETADO, PULADO, PROBLEMA
-    motivo_nao_coleta VARCHAR(100), -- se status != COLETADO
-    
-    -- Localização real da coleta
-    latitude_real DECIMAL(10, 8),
-    longitude_real DECIMAL(11, 8),
-    
-    -- Evidências
-    fotos_antes JSONB DEFAULT '[]',
-    fotos_depois JSONB DEFAULT '[]',
-    observacoes TEXT,
-    
-    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
-    UNIQUE(execucao_rota_id, ponto_coleta_id)
-);
-```
-
-#### **📊 Índices para Performance**
-```sql
--- Rotas
-CREATE INDEX idx_rotas_status ON rotas(status_rota);
-CREATE INDEX idx_rotas_tipo ON rotas(tipo_coleta);
-CREATE INDEX idx_rotas_cron ON rotas(periodicidade_cron);
-CREATE INDEX idx_rotas_tipo_status ON rotas(tipo_coleta, status_rota);
-
--- Execuções de Rota  
-CREATE INDEX idx_execucoes_data ON execucoes_rota(data_execucao);
-CREATE INDEX idx_execucoes_motorista ON execucoes_rota(motorista_id, data_execucao);
-CREATE INDEX idx_execucoes_status ON execucoes_rota(status_execucao);
-CREATE INDEX idx_execucoes_rota_data ON execucoes_rota(rota_id, data_execucao);
-
--- GPS (crítico para performance)
-CREATE INDEX idx_gps_execucao_timestamp ON registros_gps(execucao_rota_id, timestamp_gps);
-CREATE INDEX idx_gps_timestamp ON registros_gps(timestamp_gps);
-CREATE INDEX idx_gps_coordenadas ON registros_gps(latitude, longitude);
-
--- Coletas nos Pontos
-CREATE INDEX idx_coleta_pontos_execucao ON registros_coleta_pontos(execucao_rota_id);
-CREATE INDEX idx_coleta_pontos_status ON registros_coleta_pontos(status_coleta);
-CREATE INDEX idx_coleta_pontos_ordem ON registros_coleta_pontos(execucao_rota_id, ordem_real_visita);
-```
-
-#### **🕐 Funções para Trabalhar com Cron**
-
-```sql
--- Função para extrair horário do cron
-CREATE OR REPLACE FUNCTION extrair_horario_cron(cron_expr VARCHAR)
-RETURNS TIME AS $$
-BEGIN
-    RETURN (split_part(cron_expr, ' ', 2) || ':' || split_part(cron_expr, ' ', 1))::TIME;
-END;
 $$ LANGUAGE plpgsql;
 
--- Função para verificar se rota deve executar hoje
-CREATE OR REPLACE FUNCTION rota_executa_hoje(cron_expr VARCHAR, data_ref DATE DEFAULT CURRENT_DATE)
-RETURNS BOOLEAN AS $$
+-- Apply to relevant tables
+CREATE TRIGGER tr_users_update_timestamp
+    BEFORE UPDATE ON users
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER tr_vehicles_update_timestamp
+    BEFORE UPDATE ON vehicles
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER tr_routes_update_timestamp
+    BEFORE UPDATE ON routes
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at();
+```
+
+### Distance Calculation Function
+```sql
+CREATE OR REPLACE FUNCTION calculate_distance_km(
+    lat1 DECIMAL, lon1 DECIMAL,
+    lat2 DECIMAL, lon2 DECIMAL
+) RETURNS DECIMAL AS $$
 DECLARE
-    dia_semana INT := EXTRACT(DOW FROM data_ref); -- 0=domingo, 1=segunda, etc
-    dia_mes INT := EXTRACT(DAY FROM data_ref);
-    mes INT := EXTRACT(MONTH FROM data_ref);
-    cron_parts TEXT[];
+    earth_radius CONSTANT DECIMAL := 6371; -- Earth radius in km
+    dlat DECIMAL;
+    dlon DECIMAL;
+    a DECIMAL;
+    c DECIMAL;
 BEGIN
-    cron_parts := string_to_array(cron_expr, ' ');
+    dlat := RADIANS(lat2 - lat1);
+    dlon := RADIANS(lon2 - lon1);
     
-    -- Verificar dia da semana (campo 5)
-    IF cron_parts[5] != '*' THEN
-        IF NOT (dia_semana = ANY(string_to_array(replace(cron_parts[5], '-', ','), ','::TEXT)::INT[])) THEN
-            RETURN FALSE;
-        END IF;
-    END IF;
+    a := SIN(dlat/2) * SIN(dlat/2) + 
+         COS(RADIANS(lat1)) * COS(RADIANS(lat2)) * 
+         SIN(dlon/2) * SIN(dlon/2);
     
-    -- Verificar dia do mês (campo 3) 
-    IF cron_parts[3] != '*' THEN
-        IF NOT (dia_mes = ANY(string_to_array(replace(cron_parts[3], '-', ','), ','::TEXT)::INT[])) THEN
-            RETURN FALSE;
-        END IF;
-    END IF;
+    c := 2 * ATAN2(SQRT(a), SQRT(1-a));
     
-    RETURN TRUE;
+    RETURN earth_radius * c;
 END;
 $$ LANGUAGE plpgsql;
 ```
 
-#### **📋 Consultas Úteis do Sistema**
-
+### Route Efficiency Function
 ```sql
--- 1. Buscar execuções de hoje por motorista
-SELECT e.*, r.nome as rota_nome, r.descricao_periodicidade
-FROM execucoes_rota e
-JOIN rotas r ON e.rota_id = r.id
-WHERE e.motorista_id = 123 
-  AND e.data_execucao = CURRENT_DATE;
-
--- 2. Rotas que devem executar hoje
-SELECT r.id, r.nome, r.periodicidade_cron, r.descricao_periodicidade,
-       extrair_horario_cron(r.periodicidade_cron) as horario
-FROM rotas r
-WHERE r.status_rota = 'ATIVA'
-  AND rota_executa_hoje(r.periodicidade_cron)
-ORDER BY extrair_horario_cron(r.periodicidade_cron);
-
--- 2. Tracking GPS de uma execução
-SELECT latitude, longitude, velocidade_kmh, timestamp_gps
-FROM registros_gps
-WHERE execucao_rota_id = 456
-ORDER BY timestamp_gps;
-
--- 3. Relatório de coleta por execução
-SELECT 
-    rcp.ponto_coleta_id,
-    pc.nome as ponto_nome,
-    rcp.peso_coletado_kg,
-    rcp.status_coleta,
-    rcp.hora_chegada,
-    rcp.hora_saida
-FROM registros_coleta_pontos rcp
-JOIN pontos_coleta pc ON rcp.ponto_coleta_id = pc.id
-WHERE rcp.execucao_rota_id = 456
-ORDER BY rcp.ordem_real_visita;
-
--- 4. Performance de motorista (últimos 30 dias)
-SELECT 
-    m.id,
-    u.nome,
-    COUNT(e.id) as total_execucoes,
-    AVG(e.total_peso_coletado_kg) as peso_medio,
-    AVG(EXTRACT(EPOCH FROM (e.hora_fim - e.hora_inicio))/60) as tempo_medio_min
-FROM motoristas m
-JOIN usuarios u ON m.id = u.id
-JOIN execucoes_rota e ON m.id = e.motorista_id
-WHERE e.data_execucao >= CURRENT_DATE - INTERVAL '30 days'
-  AND e.status_execucao = 'CONCLUIDA'
-GROUP BY m.id, u.nome;
-
--- 5. Rotas mais executadas
-SELECT 
-    r.nome,
-    COUNT(e.id) as total_execucoes,
-    AVG(e.total_peso_coletado_kg) as peso_medio
-FROM rotas r
-LEFT JOIN execucoes_rota e ON r.id = e.rota_id
-WHERE e.data_execucao >= CURRENT_DATE - INTERVAL '7 days'
-GROUP BY r.id, r.nome
-ORDER BY total_execucoes DESC;
-```
-
-## 📊 Enumerações e Formatos
-
-### **Cron Expression Format**
-```
-minuto hora dia mês dia_da_semana
-
-Campos:
-- minuto: 0-59
-- hora: 0-23  
-- dia: 1-31
-- mês: 1-12
-- dia_da_semana: 0-6 (0=domingo, 1=segunda, ..., 6=sábado)
-
-Operadores:
-- * = qualquer valor
-- , = lista de valores (1,3,5)
-- - = intervalo (1-5)
-- / = incremento (*/2 = a cada 2)
-```
-
-### **Status do Sistema**
-```sql
--- Status de Rota
-status_rota: ATIVA, INATIVA, TEMPORARIA
-
--- Status de Execução
-status_execucao: EM_ANDAMENTO, CONCLUIDA, CANCELADA
-
--- Status de Coleta em Ponto
-status_coleta: PENDENTE, COLETADO, PULADO, PROBLEMA
-
--- Tipos de Coleta
-tipo_coleta: RESIDENCIAL, COMERCIAL, HOSPITALAR, RECICLAVEL, ORGANICO
-
--- Tipos de Veículo
-tipo_veiculo: CAMINHAO_COMPACTADOR, CAMINHAO_BASCULANTE, CAMINHAO_CARROCERIA, VEICULO_APOIO
-
--- Status de Veículo
-status_veiculo: DISPONIVEL, EM_USO, MANUTENCAO, INATIVO
-
--- Eventos GPS
-tipo_evento: INICIO, PARADA, PONTO_COLETA, FIM, NORMAL
-```
-
-## 🚀 Exemplos de Inserção
-
-#### **Criar Administrador:**
-```sql
--- 1. Inserir na tabela base
-INSERT INTO usuarios (nome, email, cpf, senha, tipo_usuario) VALUES 
-('João Admin', 'admin@od46s.com', '12345678901', '$2a$12$hash_da_senha', 'ADMIN');
-
--- 2. Inserir dados específicos do admin
-INSERT INTO administradores (id, nivel_acesso) VALUES 
-((SELECT id FROM usuarios WHERE email = 'admin@od46s.com'), 'ADMIN');
-```
-
-#### **Criar Motorista:**
-```sql
--- 1. Inserir na tabela base  
-INSERT INTO usuarios (nome, email, cpf, senha, tipo_usuario) VALUES 
-('Carlos Motorista', 'carlos@od46s.com', '98765432100', '$2a$12$hash_da_senha', 'MOTORISTA');
-
--- 2. Inserir dados específicos do motorista
-INSERT INTO motoristas (id, cnh, categoria_cnh, validade_cnh, habilitado) VALUES 
-((SELECT id FROM usuarios WHERE email = 'carlos@od46s.com'), '12345678901', 'D', '2026-12-31', true);
-```
-
-#### **Criar Rota Completa:**
-```sql
--- 1. Criar rota com periodicidade cron
-INSERT INTO rotas (nome, tipo_coleta, periodicidade_cron, descricao_periodicidade, duracao_estimada_min) 
-VALUES ('Rota Centro Manhã', 'RESIDENCIAL', '0 6 * * 1,3,5', 'Segunda, Quarta e Sexta às 6:00', 180);
-
--- Outros exemplos de rotas:
-INSERT INTO rotas (nome, tipo_coleta, periodicidade_cron, descricao_periodicidade, duracao_estimada_min) VALUES
-('Coleta Comercial Semanal', 'COMERCIAL', '0 14 * * 6', 'Todo Sábado às 14:00', 240),
-('Coleta Hospitalar Diária', 'HOSPITALAR', '0 8 * * 1-5', 'Segunda a Sexta às 8:00', 120),
-('Coleta Quinzenal Residencial', 'RESIDENCIAL', '0 6 1,15 * *', 'Dia 1 e 15 de cada mês às 6:00', 300),
-('Coleta a cada 3 dias', 'RECICLAVEL', '0 7 */3 * *', 'A cada 3 dias às 7:00', 180);
-
--- 2. Adicionar pontos à rota (em ordem)
-INSERT INTO rota_pontos_coleta (rota_id, ponto_coleta_id, ordem_visita, horario_estimado, tempo_estimado_min) 
-VALUES 
-    (1, 1, 1, '06:15:00', 15),
-    (1, 2, 2, '06:35:00', 20),
-    (1, 3, 3, '07:00:00', 15);
-```
-
-#### **Executar uma Rota:**
-```sql
--- 1. Iniciar execução
-INSERT INTO execucoes_rota (rota_id, motorista_id, veiculo_id, total_pontos_planejados)
-VALUES (1, 5, 3, 3);
-
--- 2. Registrar ponto GPS (automático pelo mobile)
-INSERT INTO registros_gps (execucao_rota_id, latitude, longitude, velocidade_kmh, timestamp_gps, tipo_evento)
-VALUES (1, -25.4284, -49.2733, 35.5, NOW(), 'INICIO');
-
--- 3. Coletar em um ponto
-INSERT INTO registros_coleta_pontos (execucao_rota_id, ponto_coleta_id, ordem_real_visita, 
-    hora_chegada, hora_saida, peso_coletado_kg, status_coleta, latitude_real, longitude_real)
-VALUES (1, 1, 1, NOW(), NOW() + INTERVAL '15 minutes', 150.5, 'COLETADO', -25.4284, -49.2733);
-
--- 4. Finalizar execução
-UPDATE execucoes_rota 
-SET hora_fim = NOW(), 
-    status_execucao = 'CONCLUIDA',
-    total_peso_coletado_kg = 450.0,
-    total_pontos_visitados = 3,
-    distancia_percorrida_km = 25.3
-WHERE id = 1;
-```
-
-## 🔄 Fluxo Completo do Sistema
-
-### **📋 1. Planejamento (Admin via Web)**
-1. Admin cria **rota** com dados básicos
-2. Admin adiciona **pontos de coleta** à rota em ordem
-3. Sistema calcula estimativas de tempo e distância
-
-### **🚛 2. Execução (Motorista via Mobile)**
-1. Motorista inicia **execução da rota** (escolhe rota + veículo)
-2. App mobile envia **GPS tracking** automaticamente
-3. Em cada ponto: motorista registra **coleta** (peso, fotos, observações)
-4. Motorista finaliza execução com dados totais
-
-### **📊 3. Monitoramento (Admin via Web)**
-1. Admin vê execuções em **tempo real** via GPS
-2. Admin consulta **relatórios** de performance
-3. Sistema gera **estatísticas** de eficiência
-
-### **🔍 4. Estrutura das Tabelas**
-
-```
-PLANEJAMENTO:
-├── rotas (o que fazer)
-└── rota_pontos_coleta (sequência planejada)
-
-EXECUÇÃO:
-├── execucoes_rota (cada saída do caminhão)
-├── registros_gps (tracking durante execução)
-└── registros_coleta_pontos (o que foi coletado)
-
-SUPORTE:
-├── usuarios/motoristas/administradores (quem)
-├── veiculos (com o que)
-├── pontos_coleta (onde)
-└── enderecos (localização)
-```
-
-## 🎯 **Vantagens das Cron Expressions**
-
-### **✅ Flexibilidade Total:**
-- **Intervalos customizados**: A cada 2 dias, 3 dias, semana, quinzena
-- **Datas específicas**: Dia 1 e 15 do mês, primeira segunda
-- **Múltiplos horários**: Combinações complexas de dias e horários
-- **Padrões sazonais**: Diferentes no verão/inverno
-
-### **✅ Exemplos Práticos para Coleta:**
-
-| Tipo | Cron Expression | Descrição |
-|------|----------------|-----------|
-| **Residencial Padrão** | `0 6 * * 1,3,5` | Seg, Qua, Sex às 6h |
-| **Comercial Semanal** | `0 14 * * 6` | Todo Sábado às 14h |
-| **Hospitalar Diário** | `0 8 * * 1-5` | Segunda a Sexta às 8h |
-| **Quinzenal** | `0 6 1,15 * *` | Dia 1 e 15 do mês às 6h |
-| **A cada 3 dias** | `0 7 */3 * *` | A cada 3 dias às 7h |
-| **Mensal** | `0 6 1 * *` | Todo dia 1º do mês às 6h |
-| **Urgente** | `0 */4 * * *` | A cada 4 horas |
-
-### **✅ Comparação:**
-
-**❌ Antes (limitado):**
-```sql
-dias_semana INTEGER[] -- Só dias da semana: [1,2,3,4,5]
-```
-
-**✅ Agora (flexível):**
-```sql
-periodicidade_cron VARCHAR(50) -- Qualquer padrão: "0 6 */2 * *"
-```
-
-### **🔧 Como Usar no Spring Boot:**
-```java
-// Service para verificar rotas do dia
-@Service
-public class RotaScheduleService {
+CREATE OR REPLACE FUNCTION calculate_route_efficiency(
+    route_execution_id BIGINT
+) RETURNS DECIMAL AS $$
+DECLARE
+    execution_record RECORD;
+    efficiency_score DECIMAL;
+BEGIN
+    SELECT 
+        points_visited,
+        points_collected,
+        total_collected_weight_kg,
+        EXTRACT(EPOCH FROM (end_time - start_time))/3600 as duration_hours
+    INTO execution_record
+    FROM route_executions 
+    WHERE id = route_execution_id;
     
-    public List<Rota> getRotasParaHoje() {
-        return rotaRepository.findRotasQueExecutamHoje();
-    }
+    IF execution_record.points_visited = 0 OR execution_record.duration_hours = 0 THEN
+        RETURN 0;
+    END IF;
     
-    // Usar biblioteca cron4j ou quartz para parsing
-    public boolean rotaDeveExecutarHoje(String cronExpression) {
-        CronExpression cron = new CronExpression(cronExpression);
-        return cron.isSatisfiedBy(new Date());
-    }
-}
+    -- Efficiency = (Collection Rate * Weight per Hour) / 10
+    efficiency_score := (
+        (execution_record.points_collected::DECIMAL / execution_record.points_visited) * 
+        (execution_record.total_collected_weight_kg / execution_record.duration_hours)
+    ) / 10;
+    
+    RETURN ROUND(efficiency_score, 2);
+END;
+$$ LANGUAGE plpgsql;
 ```
 
-### **🚀 Benefícios:**
-- **Mais realista**: Coleta não é sempre "seg-sex"
-- **Configurável**: Admin pode criar qualquer padrão
-- **Escalável**: Suporta crescimento complexo da cidade
-- **Padrão universal**: Formato conhecido pelos devs
-- **Flexível**: Mudanças sazonais fáceis de implementar
+## 📈 Analytics Views
 
----
+### Driver Performance View
+```sql
+CREATE OR REPLACE VIEW vw_driver_performance AS
+SELECT 
+    d.id,
+    u.name,
+    COUNT(re.id) as total_executions,
+    AVG(re.driver_rating) as average_rating,
+    SUM(re.total_collected_weight_kg) as total_collected_weight,
+    AVG(EXTRACT(EPOCH FROM (re.end_time - re.start_time))/3600) as average_time_hours,
+    (COUNT(CASE WHEN re.status = 'COMPLETED' THEN 1 END) * 100.0 / COUNT(re.id)) as completion_rate
+FROM drivers d
+JOIN users u ON d.id = u.id
+LEFT JOIN route_executions re ON d.id = re.driver_id
+WHERE u.active = true
+GROUP BY d.id, u.name;
+```
 
-**Sistema completo com periodicidade flexível usando cron expressions universais.**
+### Route Efficiency View
+```sql
+CREATE OR REPLACE VIEW vw_route_efficiency AS
+SELECT 
+    r.id,
+    r.name,
+    r.collection_type,
+    COUNT(re.id) as total_executions,
+    AVG(re.total_collected_weight_kg) as average_collected_weight,
+    AVG(EXTRACT(EPOCH FROM (re.end_time - re.start_time))/60) as average_time_minutes,
+    AVG(re.points_collected * 100.0 / re.points_visited) as average_collection_rate,
+    COUNT(CASE WHEN re.status = 'COMPLETED' THEN 1 END) as completed_executions
+FROM routes r
+LEFT JOIN route_executions re ON r.id = re.route_id 
+WHERE r.active = true
+GROUP BY r.id, r.name, r.collection_type;
+```
+
+### Daily Statistics View
+```sql
+CREATE OR REPLACE VIEW vw_daily_statistics AS
+SELECT 
+    DATE(re.start_time) as collection_date,
+    COUNT(DISTINCT re.id) as total_executions,
+    COUNT(DISTINCT re.driver_id) as active_drivers,
+    COUNT(DISTINCT re.vehicle_id) as vehicles_used,
+    SUM(re.total_collected_weight_kg) as total_daily_weight,
+    COUNT(CASE WHEN re.status = 'COMPLETED' THEN 1 END) as completed_executions,
+    AVG(re.points_collected) as average_points_collected
+FROM route_executions re
+WHERE re.start_time >= CURRENT_DATE - INTERVAL '30 days'
+GROUP BY DATE(re.start_time)
+ORDER BY collection_date DESC;
+```
+
+### Fleet Utilization View
+```sql
+CREATE OR REPLACE VIEW vw_fleet_utilization AS
+SELECT 
+    v.id,
+    v.license_plate,
+    v.model,
+    v.status,
+    COUNT(re.id) as total_uses,
+    AVG(re.total_collected_weight_kg) as average_load,
+    SUM(re.final_km - re.initial_km) as total_km_driven,
+    AVG(EXTRACT(EPOCH FROM (re.end_time - re.start_time))/3600) as average_hours_per_use,
+    MAX(re.start_time) as last_used
+FROM vehicles v
+LEFT JOIN route_executions re ON v.id = re.vehicle_id
+WHERE v.active = true
+GROUP BY v.id, v.license_plate, v.model, v.status;
+```
+
+## 🎯 Database Constraints
+
+### Business Rules
+```sql
+-- License expiry must be in the future
+ALTER TABLE drivers ADD CONSTRAINT chk_license_expiry 
+    CHECK (license_expiry > CURRENT_DATE);
+
+-- Vehicle year must be reasonable
+ALTER TABLE vehicles ADD CONSTRAINT chk_vehicle_year 
+    CHECK (year BETWEEN 1980 AND EXTRACT(YEAR FROM CURRENT_DATE) + 1);
+
+-- Execution end time must be after start time
+ALTER TABLE route_executions ADD CONSTRAINT chk_execution_time 
+    CHECK (end_time IS NULL OR end_time > start_time);
+
+-- GPS timestamp must be reasonable (not too far in future)
+ALTER TABLE gps_records ADD CONSTRAINT chk_gps_timestamp 
+    CHECK (gps_timestamp <= CURRENT_TIMESTAMP + INTERVAL '1 hour');
+
+-- Collection timestamp must be within execution period
+ALTER TABLE collection_point_records ADD CONSTRAINT chk_collection_timestamp 
+    CHECK (collection_timestamp >= arrival_timestamp);
+
+-- Coordinates must be valid (rough boundaries for Brazil)
+ALTER TABLE route_collection_points ADD CONSTRAINT chk_coordinates 
+    CHECK (latitude BETWEEN -35 AND 5 AND longitude BETWEEN -75 AND -30);
+
+ALTER TABLE gps_records ADD CONSTRAINT chk_gps_coordinates 
+    CHECK (latitude BETWEEN -35 AND 5 AND longitude BETWEEN -75 AND -30);
+
+ALTER TABLE collection_point_records ADD CONSTRAINT chk_collection_coordinates 
+    CHECK (latitude BETWEEN -35 AND 5 AND longitude BETWEEN -75 AND -30);
+```
+
+### Unique Constraints
+```sql
+-- Prevent duplicate active routes with same name
+CREATE UNIQUE INDEX idx_routes_unique_active_name 
+    ON routes(name) WHERE active = true;
+
+-- Prevent overlapping executions for same driver
+CREATE UNIQUE INDEX idx_executions_no_overlap_driver 
+    ON route_executions(driver_id, start_time) 
+    WHERE status IN ('SCHEDULED', 'IN_PROGRESS');
+
+-- Prevent overlapping executions for same vehicle
+CREATE UNIQUE INDEX idx_executions_no_overlap_vehicle 
+    ON route_executions(vehicle_id, start_time) 
+    WHERE status IN ('SCHEDULED', 'IN_PROGRESS');
+```
+
+## 🔐 Security & Permissions
+
+### Row Level Security (RLS)
+```sql
+-- Enable RLS on sensitive tables
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE route_executions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE gps_records ENABLE ROW LEVEL SECURITY;
+
+-- Drivers can only see their own executions
+CREATE POLICY driver_own_executions ON route_executions
+    FOR ALL TO application_role
+    USING (driver_id = current_setting('app.current_user_id')::BIGINT);
+
+-- Drivers can only insert their own GPS records
+CREATE POLICY driver_own_gps ON gps_records
+    FOR INSERT TO application_role
+    WITH CHECK (
+        execution_id IN (
+            SELECT id FROM route_executions 
+            WHERE driver_id = current_setting('app.current_user_id')::BIGINT
+        )
+    );
+```
+
+### Database Roles
+```sql
+-- Application role with limited permissions
+CREATE ROLE application_role;
+GRANT CONNECT ON DATABASE od46s_db TO application_role;
+GRANT USAGE ON SCHEMA public TO application_role;
+GRANT SELECT, INSERT, UPDATE ON ALL TABLES IN SCHEMA public TO application_role;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO application_role;
+
+-- Read-only role for analytics
+CREATE ROLE analytics_role;
+GRANT CONNECT ON DATABASE od46s_db TO analytics_role;
+GRANT USAGE ON SCHEMA public TO analytics_role;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO analytics_role;
+```
+
+## 📊 Implementation Status
+
+### ✅ Implemented (3 Tables)
+- **users** - Base user table with JPA inheritance
+- **administrators** - Admin-specific fields  
+- **drivers** - Driver-specific fields (license info)
+
+### ❌ Not Implemented (9 Tables)
+- **vehicles** - Fleet management
+- **routes** - Route definitions
+- **route_collection_points** - Specific collection points
+- **route_executions** - Execution tracking
+- **gps_records** - Real-time GPS tracking
+- **collection_point_records** - Collection confirmations
+
+### 📈 Statistics
+- **Total Tables Planned:** 12
+- **Implemented:** 3 (25%)
+- **Missing:** 9 (75%)
+- **Total Fields:** 100+ across all tables
+- **Indexes:** 20+ for performance
+- **Views:** 4 for analytics
+- **Functions:** 3 for calculations
+- **Constraints:** 10+ business rules
+
+## 🗄️ Data Volume Estimates
+
+### Production Estimates (Medium City - 100k inhabitants)
+```
+👥 Users: ~50 (20 drivers, 30 admins)
+🚛 Vehicles: ~15 trucks
+🗺️ Routes: ~30 routes
+📍 Collection Points: ~3,000 points
+📋 Daily Executions: ~25/day → 9,000/year
+📊 GPS Records: ~500,000 points/year
+🗑️ Collections: ~75,000 records/year
+```
+
+### Storage Requirements
+```
+📊 Database Size: ~2GB/year
+📸 Photos: ~50GB/year (if 20% upload photos)
+📈 Total: ~52GB/year
+💾 5-year projection: ~260GB
+```
+
+## 🔄 Database Relationships
+
+```
+users (1) ←→ (1) drivers/administrators
+administrators (1) ←→ (many) routes [created_by]
+routes (1) ←→ (many) route_collection_points
+routes (1) ←→ (many) route_executions
+drivers (1) ←→ (many) route_executions
+vehicles (1) ←→ (many) route_executions
+route_executions (1) ←→ (many) gps_records
+route_executions (1) ←→ (many) collection_point_records
+route_collection_points (1) ←→ (many) collection_point_records
+```
+
+**The database design meets all requirements defined in the [API Contract](API_CONTRACT.md), supporting complete waste collection management operations with real-time tracking, analytics, and mobile offline capabilities.**
