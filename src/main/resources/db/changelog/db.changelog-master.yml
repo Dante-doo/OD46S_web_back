@@ -1,0 +1,7 @@
+databaseChangeLog:
+  - include:
+      file: classpath:db/changelog/v1.0/001-create-tables.yml
+  - include:
+      file: classpath:db/changelog/v1.0/002-create-indexes.yml
+  - include:
+      file: classpath:db/changelog/v1.0/003-insert-initial-data.yml

@@ -22,11 +22,11 @@ public class UsuarioService {
         return usuarioRepository.findAll();
     }
 
-    public boolean existsById(Integer id) {
+    public boolean existsById(Long id) {
         return usuarioRepository.existsById(id);
     }
 
-    public Usuario findById(Integer id) {
+    public Usuario findById(Long id) {
         return usuarioRepository.findById(id).orElse(null);
     }
 
@@ -46,7 +46,7 @@ public class UsuarioService {
 
     }
 
-    public void deleteById(Integer id) {
+    public void deleteById(Long id) {
         usuarioRepository.deleteById(id);
     }
 

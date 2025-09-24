@@ -1,0 +1,85 @@
+databaseChangeLog:
+
+  # ==========================================
+  # CHANGESET 1: Create indexes for users table
+  # ==========================================
+  - changeSet:
+      id: 001-create-users-indexes
+      author: od46s-team
+      changes:
+        - createIndex:
+            tableName: users
+            indexName: idx_users_email
+            columns:
+              - column:
+                  name: email
+        - createIndex:
+            tableName: users
+            indexName: idx_users_cpf
+            columns:
+              - column:
+                  name: cpf
+        - createIndex:
+            tableName: users
+            indexName: idx_users_active
+            columns:
+              - column:
+                  name: active
+        - createIndex:
+            tableName: users
+            indexName: idx_users_created_at
+            columns:
+              - column:
+                  name: created_at
+
+  # ==========================================
+  # CHANGESET 2: Create indexes for administrators table
+  # ==========================================
+  - changeSet:
+      id: 002-create-administrators-indexes
+      author: od46s-team
+      changes:
+        - createIndex:
+            tableName: administrators
+            indexName: idx_administrators_access_level
+            columns:
+              - column:
+                  name: access_level
+        - createIndex:
+            tableName: administrators
+            indexName: idx_administrators_department
+            columns:
+              - column:
+                  name: department
+
+  # ==========================================
+  # CHANGESET 3: Create indexes for drivers table
+  # ==========================================
+  - changeSet:
+      id: 003-create-drivers-indexes
+      author: od46s-team
+      changes:
+        - createIndex:
+            tableName: drivers
+            indexName: idx_drivers_license_number
+            columns:
+              - column:
+                  name: license_number
+        - createIndex:
+            tableName: drivers
+            indexName: idx_drivers_license_category
+            columns:
+              - column:
+                  name: license_category
+        - createIndex:
+            tableName: drivers
+            indexName: idx_drivers_license_expiry
+            columns:
+              - column:
+                  name: license_expiry
+        - createIndex:
+            tableName: drivers
+            indexName: idx_drivers_enabled
+            columns:
+              - column:
+                  name: enabled

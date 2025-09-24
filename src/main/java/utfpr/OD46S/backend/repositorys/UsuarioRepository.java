@@ -8,11 +8,11 @@ import utfpr.OD46S.backend.entitys.Usuario;
 import java.util.Optional;
 
 @Repository
-public interface UsuarioRepository extends JpaRepository<Usuario, Integer> {
-
+public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     Optional<Usuario> findByEmail(String email);
+    Optional<Usuario> findByCpf(String cpf);
 
     boolean existsByEmail(String email);
-
+    boolean existsByCpf(String cpf);
 }

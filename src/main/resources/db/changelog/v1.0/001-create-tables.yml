@@ -1,0 +1,134 @@
+databaseChangeLog:
+  
+  # ==========================================
+  # CHANGESET 1: Create users table (base table)
+  # ==========================================
+  - changeSet:
+      id: 001-create-users-table
+      author: od46s-team
+      changes:
+        - createTable:
+            tableName: users
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: email
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: cpf
+                  type: VARCHAR(11)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: password
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: active
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+  # ==========================================
+  # CHANGESET 2: Create administrators table
+  # ==========================================
+  - changeSet:
+      id: 002-create-administrators-table
+      author: od46s-team
+      changes:
+        - createTable:
+            tableName: administrators
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+                    foreignKeyName: fk_administrators_users
+                    references: users(id)
+              - column:
+                  name: access_level
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: department
+                  type: VARCHAR(100)
+              - column:
+                  name: corporate_phone
+                  type: VARCHAR(15)
+
+  # ==========================================
+  # CHANGESET 3: Create drivers table  
+  # ==========================================
+  - changeSet:
+      id: 003-create-drivers-table
+      author: od46s-team
+      changes:
+        - createTable:
+            tableName: drivers
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+                    foreignKeyName: fk_drivers_users
+                    references: users(id)
+              - column:
+                  name: license_number
+                  type: VARCHAR(11)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: license_category
+                  type: VARCHAR(2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: license_expiry
+                  type: DATE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: enabled
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: phone
+                  type: VARCHAR(15)
+
