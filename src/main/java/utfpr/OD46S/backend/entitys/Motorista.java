@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import utfpr.OD46S.backend.enums.CategoriaCNH;
+import utfpr.OD46S.backend.enums.StatusMotorista;
 
 @Entity
 @Table(name = "motoristas")
@@ -24,4 +25,7 @@ public class Motorista extends Usuario {
 
     @Column(name = "categoria_cnh", nullable = false)
     private CategoriaCNH categoriaCnh;
+
+    @Column(name = "status")
+    private StatusMotorista status;
 }

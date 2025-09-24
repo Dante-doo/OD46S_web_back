@@ -5,6 +5,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 import utfpr.OD46S.backend.entitys.Motorista;
 import utfpr.OD46S.backend.enums.CategoriaCNH;
+import utfpr.OD46S.backend.enums.StatusMotorista;
 
 @Setter
 @Getter
@@ -19,6 +20,9 @@ public class MotoristaDTO extends UsuarioDTO {
     @JsonProperty("categoria_cnh")
     private CategoriaCNH categoriaCnh;
 
+    @JsonProperty("status")
+    private StatusMotorista status;
+
     public Motorista toEntity() {
         return Motorista.builder()
                 .id(super.getId())
@@ -26,6 +30,7 @@ public class MotoristaDTO extends UsuarioDTO {
                 .senha(super.getSenha())
                 .cnh(this.cnh)
                 .categoriaCnh(this.categoriaCnh)
+                .status(this.status)
                 .build();
     }
 
@@ -36,6 +41,7 @@ public class MotoristaDTO extends UsuarioDTO {
                 .senha(entity.getSenha())
                 .cnh(entity.getCnh())
                 .categoriaCnh(entity.getCategoriaCnh())
+                .status(entity.getStatus())
                 .build();
     }
 }

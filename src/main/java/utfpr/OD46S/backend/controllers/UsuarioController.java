@@ -9,7 +9,7 @@ import utfpr.OD46S.backend.services.UsuarioService;
 import java.util.List;
 
 @RestController
-@RequestMapping("usuarios")
+@RequestMapping("api/usuarios")
 public class UsuarioController {
 
     private final UsuarioService usuarioService;
