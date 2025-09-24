@@ -24,6 +24,7 @@ public class Motorista {
     @Column(name = "license_number", nullable = false, unique = true)
     private String licenseNumber;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "license_category", nullable = false)
     private CategoriaCNH licenseCategory;
     

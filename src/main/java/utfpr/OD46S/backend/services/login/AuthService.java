@@ -125,4 +125,39 @@ public class AuthService {
         String token = jwtUtil.generateToken(user.getEmail());
         return new AuthResponse(token, user.getEmail(), user.getName(), request.getType());
     }
+
+    public AuthResponse refreshToken(String token) {
+        try {
+            // Validar o token atual
+            if (!jwtUtil.validateToken(token)) {
+                throw new RuntimeException("Token inválido ou expirado");
+            }
+
+            // Extrair email do token
+            String email = jwtUtil.getEmailFromToken(token);
+            
+            // Buscar usuário pelo email
+            Usuario user = usuarioRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+            if (!user.getActive()) {
+                throw new RuntimeException("Usuário inativo");
+            }
+
+            // Determinar tipo de usuário
+            String userType = "USER";
+            if (administratorRepository.findById(user.getId()).isPresent()) {
+                userType = "ADMIN";
+            } else if (motoristaRepository.findById(user.getId()).isPresent()) {
+                userType = "DRIVER";
+            }
+
+            // Gerar novo token
+            String newToken = jwtUtil.generateToken(user.getEmail());
+            return new AuthResponse(newToken, user.getEmail(), user.getName(), userType);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Erro ao renovar token: " + e.getMessage());
+        }
+    }
 }
