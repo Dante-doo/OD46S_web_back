@@ -12,6 +12,13 @@ public class AuthResponse {
     private String token;
     private String email;
     private String name;
+    private String type;
 
-
+    // Constructor legacy (3 parâmetros)
+    public AuthResponse(String token, String email, String name) {
+        this.token = token;
+        this.email = email;
+        this.name = name;
+        this.type = "USER";
+    }
 }

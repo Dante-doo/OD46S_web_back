@@ -79,9 +79,9 @@ docker-compose down
 ### Autenticação (Planejadas)
 | Método | Endpoint | Descrição | Status |
 |--------|----------|-----------|--------|
-| POST | `/api/v1/auth/login` | Login com email/cpf + senha | ❌ Não implementado |
-| POST | `/api/v1/auth/register` | Registro de novo usuário | ❌ Não implementado |
-| POST | `/api/v1/auth/refresh` | Renovar token JWT | ❌ Não implementado |
+| POST | `/api/v1/auth/login` | Login com email/cpf + senha | ✅ Implementado |
+| POST | `/api/v1/auth/register` | Registro de novo usuário | ✅ Implementado |
+| POST | `/api/v1/auth/refresh` | Renovar token JWT | ✅ Implementado |
 
 ### Gestão de Usuários (Planejadas)
 | Método | Endpoint | Descrição | Status |

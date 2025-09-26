@@ -11,30 +11,28 @@ import utfpr.OD46S.backend.entitys.Administrator;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-@SuperBuilder
-public class AdministradorDTO extends UsuarioDTO {
+public class AdministradorDTO {
+
+    private Long id;
+    private String nome;
+    private String email;
+    private String cpf;
+    private String senha;
 
     @JsonProperty("nivel_acesso")
     private String nivelAcesso;
 
     public Administrator toEntity() {
-        return Administrator.builder()
-                .id(super.getId())
-                .nome(super.getNome())
-                .senha(super.getSenha())
-                .cpf(super.getCpf())
-                .email(super.getEmail())
-                .nivelAcesso(this.nivelAcesso)
-                .build();
+        Administrator admin = new Administrator();
+        admin.setId(this.id);
+        admin.setAccessLevel(this.nivelAcesso);
+        return admin;
     }
 
     public static AdministradorDTO fromEntity(Administrator entity) {
-        return AdministradorDTO.builder()
-                .id(entity.getId())
-                .nome(entity.getNome())
-                .senha(entity.getSenha())
-                .cpf(entity.getCpf())
-                .nivelAcesso(entity.getNivelAcesso())
-                .build();
+        AdministradorDTO dto = new AdministradorDTO();
+        dto.setId(entity.getId());
+        dto.setNivelAcesso(entity.getNivelAcesso());
+        return dto;
     }
 }

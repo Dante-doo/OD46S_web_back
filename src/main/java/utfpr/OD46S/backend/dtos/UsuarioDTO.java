@@ -30,8 +30,8 @@ public class UsuarioDTO {
 
     public Usuario toEntity() {
         return Usuario.builder()
-                .nome(this.nome)
-                .senha(this.senha)
+                .name(this.nome)
+                .password(this.senha)
                 .email(this.email)
                 .cpf(this.cpf)
                 .build();

@@ -11,8 +11,13 @@ import utfpr.OD46S.backend.enums.StatusMotorista;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-@SuperBuilder
-public class MotoristaDTO extends UsuarioDTO {
+public class MotoristaDTO {
+
+    private Long id;
+    private String nome;
+    private String email;
+    private String cpf;
+    private String senha;
 
     @JsonProperty("cnh")
     private String cnh;
@@ -24,24 +29,18 @@ public class MotoristaDTO extends UsuarioDTO {
     private StatusMotorista status;
 
     public Motorista toEntity() {
-        return Motorista.builder()
-                .id(super.getId())
-                .nome(super.getNome())
-                .senha(super.getSenha())
-                .cnh(this.cnh)
-                .categoriaCnh(this.categoriaCnh)
-                .status(this.status)
-                .build();
+        Motorista motorista = new Motorista();
+        motorista.setId(this.id);
+        motorista.setLicenseNumber(this.cnh);
+        motorista.setLicenseCategory(this.categoriaCnh);
+        return motorista;
     }
 
     public static MotoristaDTO fromEntity(Motorista entity) {
-        return MotoristaDTO.builder()
-                .id(entity.getId())
-                .nome(entity.getNome())
-                .senha(entity.getSenha())
-                .cnh(entity.getCnh())
-                .categoriaCnh(entity.getCategoriaCnh())
-                .status(entity.getStatus())
-                .build();
+        MotoristaDTO dto = new MotoristaDTO();
+        dto.setId(entity.getId());
+        dto.setCnh(entity.getCnh());
+        dto.setCategoriaCnh(entity.getCategoriaCnh());
+        return dto;
     }
 }

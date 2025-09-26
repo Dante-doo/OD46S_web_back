@@ -6,4 +6,6 @@ import utfpr.OD46S.backend.entitys.Motorista;
 
 @Repository
 public interface MotoristaRepository extends JpaRepository<Motorista, Long> {
+    
+    boolean existsByLicenseNumber(String licenseNumber);
 }

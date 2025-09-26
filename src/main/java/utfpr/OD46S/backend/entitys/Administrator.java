@@ -1,23 +1,35 @@
 package utfpr.OD46S.backend.entitys;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import lombok.experimental.SuperBuilder;
 
 @Entity
-@Table(name = "administradores")
+@Table(name = "administrators")
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
-@SuperBuilder
-public class Administrator extends Usuario {
+public class Administrator {
 
-    @Column(name = "nivel_acesso", nullable = false)
-    private String nivelAcesso = "ADMIN";
+    @Id
+    @Column(name = "id")
+    private Long id;
+
+    // Relacionamento removido temporariamente para resolver erro de transação
+
+    @Column(name = "access_level", nullable = false)
+    private String accessLevel = "ADMIN";
+    
+    @Column(name = "department")
+    private String department;
+    
+    @Column(name = "corporate_phone")
+    private String corporatePhone;
+    
+    // Getter e setter para compatibilidade
+    public String getNivelAcesso() { return accessLevel; }
+    public void setNivelAcesso(String nivelAcesso) { this.accessLevel = nivelAcesso; }
 }

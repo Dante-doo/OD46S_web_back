@@ -258,262 +258,6 @@ CREATE INDEX idx_collections_timestamp ON collection_point_records(collection_ti
 CREATE INDEX idx_collections_status ON collection_point_records(collection_status);
 ```
 
-## 🔧 Functions and Triggers
-
-### Auto Timestamp Trigger
-```sql
-CREATE OR REPLACE FUNCTION update_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = CURRENT_TIMESTAMP;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Apply to relevant tables
-CREATE TRIGGER tr_users_update_timestamp
-    BEFORE UPDATE ON users
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at();
-
-CREATE TRIGGER tr_vehicles_update_timestamp
-    BEFORE UPDATE ON vehicles
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at();
-
-CREATE TRIGGER tr_routes_update_timestamp
-    BEFORE UPDATE ON routes
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at();
-```
-
-### Distance Calculation Function
-```sql
-CREATE OR REPLACE FUNCTION calculate_distance_km(
-    lat1 DECIMAL, lon1 DECIMAL,
-    lat2 DECIMAL, lon2 DECIMAL
-) RETURNS DECIMAL AS $$
-DECLARE
-    earth_radius CONSTANT DECIMAL := 6371; -- Earth radius in km
-    dlat DECIMAL;
-    dlon DECIMAL;
-    a DECIMAL;
-    c DECIMAL;
-BEGIN
-    dlat := RADIANS(lat2 - lat1);
-    dlon := RADIANS(lon2 - lon1);
-    
-    a := SIN(dlat/2) * SIN(dlat/2) + 
-         COS(RADIANS(lat1)) * COS(RADIANS(lat2)) * 
-         SIN(dlon/2) * SIN(dlon/2);
-    
-    c := 2 * ATAN2(SQRT(a), SQRT(1-a));
-    
-    RETURN earth_radius * c;
-END;
-$$ LANGUAGE plpgsql;
-```
-
-### Route Efficiency Function
-```sql
-CREATE OR REPLACE FUNCTION calculate_route_efficiency(
-    route_execution_id BIGINT
-) RETURNS DECIMAL AS $$
-DECLARE
-    execution_record RECORD;
-    efficiency_score DECIMAL;
-BEGIN
-    SELECT 
-        points_visited,
-        points_collected,
-        total_collected_weight_kg,
-        EXTRACT(EPOCH FROM (end_time - start_time))/3600 as duration_hours
-    INTO execution_record
-    FROM route_executions 
-    WHERE id = route_execution_id;
-    
-    IF execution_record.points_visited = 0 OR execution_record.duration_hours = 0 THEN
-        RETURN 0;
-    END IF;
-    
-    -- Efficiency = (Collection Rate * Weight per Hour) / 10
-    efficiency_score := (
-        (execution_record.points_collected::DECIMAL / execution_record.points_visited) * 
-        (execution_record.total_collected_weight_kg / execution_record.duration_hours)
-    ) / 10;
-    
-    RETURN ROUND(efficiency_score, 2);
-END;
-$$ LANGUAGE plpgsql;
-```
-
-## 📈 Analytics Views
-
-### Driver Performance View
-```sql
-CREATE OR REPLACE VIEW vw_driver_performance AS
-SELECT 
-    d.id,
-    u.name,
-    COUNT(re.id) as total_executions,
-    AVG(re.driver_rating) as average_rating,
-    SUM(re.total_collected_weight_kg) as total_collected_weight,
-    AVG(EXTRACT(EPOCH FROM (re.end_time - re.start_time))/3600) as average_time_hours,
-    (COUNT(CASE WHEN re.status = 'COMPLETED' THEN 1 END) * 100.0 / COUNT(re.id)) as completion_rate
-FROM drivers d
-JOIN users u ON d.id = u.id
-LEFT JOIN route_executions re ON d.id = re.driver_id
-WHERE u.active = true
-GROUP BY d.id, u.name;
-```
-
-### Route Efficiency View
-```sql
-CREATE OR REPLACE VIEW vw_route_efficiency AS
-SELECT 
-    r.id,
-    r.name,
-    r.collection_type,
-    COUNT(re.id) as total_executions,
-    AVG(re.total_collected_weight_kg) as average_collected_weight,
-    AVG(EXTRACT(EPOCH FROM (re.end_time - re.start_time))/60) as average_time_minutes,
-    AVG(re.points_collected * 100.0 / re.points_visited) as average_collection_rate,
-    COUNT(CASE WHEN re.status = 'COMPLETED' THEN 1 END) as completed_executions
-FROM routes r
-LEFT JOIN route_executions re ON r.id = re.route_id 
-WHERE r.active = true
-GROUP BY r.id, r.name, r.collection_type;
-```
-
-### Daily Statistics View
-```sql
-CREATE OR REPLACE VIEW vw_daily_statistics AS
-SELECT 
-    DATE(re.start_time) as collection_date,
-    COUNT(DISTINCT re.id) as total_executions,
-    COUNT(DISTINCT re.driver_id) as active_drivers,
-    COUNT(DISTINCT re.vehicle_id) as vehicles_used,
-    SUM(re.total_collected_weight_kg) as total_daily_weight,
-    COUNT(CASE WHEN re.status = 'COMPLETED' THEN 1 END) as completed_executions,
-    AVG(re.points_collected) as average_points_collected
-FROM route_executions re
-WHERE re.start_time >= CURRENT_DATE - INTERVAL '30 days'
-GROUP BY DATE(re.start_time)
-ORDER BY collection_date DESC;
-```
-
-### Fleet Utilization View
-```sql
-CREATE OR REPLACE VIEW vw_fleet_utilization AS
-SELECT 
-    v.id,
-    v.license_plate,
-    v.model,
-    v.status,
-    COUNT(re.id) as total_uses,
-    AVG(re.total_collected_weight_kg) as average_load,
-    SUM(re.final_km - re.initial_km) as total_km_driven,
-    AVG(EXTRACT(EPOCH FROM (re.end_time - re.start_time))/3600) as average_hours_per_use,
-    MAX(re.start_time) as last_used
-FROM vehicles v
-LEFT JOIN route_executions re ON v.id = re.vehicle_id
-WHERE v.active = true
-GROUP BY v.id, v.license_plate, v.model, v.status;
-```
-
-## 🎯 Database Constraints
-
-### Business Rules
-```sql
--- License expiry must be in the future
-ALTER TABLE drivers ADD CONSTRAINT chk_license_expiry 
-    CHECK (license_expiry > CURRENT_DATE);
-
--- Vehicle year must be reasonable
-ALTER TABLE vehicles ADD CONSTRAINT chk_vehicle_year 
-    CHECK (year BETWEEN 1980 AND EXTRACT(YEAR FROM CURRENT_DATE) + 1);
-
--- Execution end time must be after start time
-ALTER TABLE route_executions ADD CONSTRAINT chk_execution_time 
-    CHECK (end_time IS NULL OR end_time > start_time);
-
--- GPS timestamp must be reasonable (not too far in future)
-ALTER TABLE gps_records ADD CONSTRAINT chk_gps_timestamp 
-    CHECK (gps_timestamp <= CURRENT_TIMESTAMP + INTERVAL '1 hour');
-
--- Collection timestamp must be within execution period
-ALTER TABLE collection_point_records ADD CONSTRAINT chk_collection_timestamp 
-    CHECK (collection_timestamp >= arrival_timestamp);
-
--- Coordinates must be valid (rough boundaries for Brazil)
-ALTER TABLE route_collection_points ADD CONSTRAINT chk_coordinates 
-    CHECK (latitude BETWEEN -35 AND 5 AND longitude BETWEEN -75 AND -30);
-
-ALTER TABLE gps_records ADD CONSTRAINT chk_gps_coordinates 
-    CHECK (latitude BETWEEN -35 AND 5 AND longitude BETWEEN -75 AND -30);
-
-ALTER TABLE collection_point_records ADD CONSTRAINT chk_collection_coordinates 
-    CHECK (latitude BETWEEN -35 AND 5 AND longitude BETWEEN -75 AND -30);
-```
-
-### Unique Constraints
-```sql
--- Prevent duplicate active routes with same name
-CREATE UNIQUE INDEX idx_routes_unique_active_name 
-    ON routes(name) WHERE active = true;
-
--- Prevent overlapping executions for same driver
-CREATE UNIQUE INDEX idx_executions_no_overlap_driver 
-    ON route_executions(driver_id, start_time) 
-    WHERE status IN ('SCHEDULED', 'IN_PROGRESS');
-
--- Prevent overlapping executions for same vehicle
-CREATE UNIQUE INDEX idx_executions_no_overlap_vehicle 
-    ON route_executions(vehicle_id, start_time) 
-    WHERE status IN ('SCHEDULED', 'IN_PROGRESS');
-```
-
-## 🔐 Security & Permissions
-
-### Row Level Security (RLS)
-```sql
--- Enable RLS on sensitive tables
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE route_executions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE gps_records ENABLE ROW LEVEL SECURITY;
-
--- Drivers can only see their own executions
-CREATE POLICY driver_own_executions ON route_executions
-    FOR ALL TO application_role
-    USING (driver_id = current_setting('app.current_user_id')::BIGINT);
-
--- Drivers can only insert their own GPS records
-CREATE POLICY driver_own_gps ON gps_records
-    FOR INSERT TO application_role
-    WITH CHECK (
-        execution_id IN (
-            SELECT id FROM route_executions 
-            WHERE driver_id = current_setting('app.current_user_id')::BIGINT
-        )
-    );
-```
-
-### Database Roles
-```sql
--- Application role with limited permissions
-CREATE ROLE application_role;
-GRANT CONNECT ON DATABASE od46s_db TO application_role;
-GRANT USAGE ON SCHEMA public TO application_role;
-GRANT SELECT, INSERT, UPDATE ON ALL TABLES IN SCHEMA public TO application_role;
-GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO application_role;
-
--- Read-only role for analytics
-CREATE ROLE analytics_role;
-GRANT CONNECT ON DATABASE od46s_db TO analytics_role;
-GRANT USAGE ON SCHEMA public TO analytics_role;
-GRANT SELECT ON ALL TABLES IN SCHEMA public TO analytics_role;
-```
-
 ## 📊 Implementation Status
 
 ### ✅ Implemented (3 Tables)
@@ -528,16 +272,6 @@ GRANT SELECT ON ALL TABLES IN SCHEMA public TO analytics_role;
 - **route_executions** - Execution tracking
 - **gps_records** - Real-time GPS tracking
 - **collection_point_records** - Collection confirmations
-
-### 📈 Statistics
-- **Total Tables Planned:** 12
-- **Implemented:** 3 (25%)
-- **Missing:** 9 (75%)
-- **Total Fields:** 100+ across all tables
-- **Indexes:** 20+ for performance
-- **Views:** 4 for analytics
-- **Functions:** 3 for calculations
-- **Constraints:** 10+ business rules
 
 ## 🗄️ Data Volume Estimates
 
@@ -574,4 +308,35 @@ route_executions (1) ←→ (many) collection_point_records
 route_collection_points (1) ←→ (many) collection_point_records
 ```
 
-**The database design meets all requirements defined in the [API Contract](API_CONTRACT.md), supporting complete waste collection management operations with real-time tracking, analytics, and mobile offline capabilities.**
+---
+
+## 🎯 **Final Architecture Summary**
+
+### ✅ **Spring Boot + JPA Approach Benefits**
+- **🚀 Portability**: Works with PostgreSQL, MySQL, H2, SQLite
+- **🧪 Testability**: Business logic is unit-testable  
+- **🔧 Maintainability**: IDE support, refactoring, debugging
+- **📦 Versionability**: Git tracks all changes perfectly
+- **🛡️ Security**: Application-layer security (more flexible)
+- **📊 Performance**: JPA second-level cache + query optimization
+
+### 🏗️ **Database-Only vs Spring Boot**
+
+| Feature | ❌ Database-Only | ✅ Spring Boot + JPA |
+|---------|-----------------|---------------------|
+| **Timestamps** | Triggers | `@CreatedDate`, `@LastModifiedDate` |
+| **Analytics** | Views | JPA `@Query` + DTOs |
+| **Calculations** | Functions | Java Methods |
+| **Validations** | CHECK Constraints | Bean Validation |
+| **Security** | RLS + Policies | Spring Security |
+| **Auditing** | Triggers | JPA Auditing |
+
+### 🎯 **Why This Approach Works Better**
+1. **Simpler Deployment**: No complex database migrations
+2. **Better Error Messages**: Bean Validation provides user-friendly messages
+3. **Easier Testing**: Mock repositories, unit test business logic
+4. **IDE Support**: IntelliJ/VSCode auto-completion and refactoring
+5. **Debugging**: Step through Java code vs. SQL debugging
+6. **Team Skills**: Most developers know Java better than PL/pgSQL
+
+**The database design meets all requirements defined in the [API Contract](API_CONTRACT.md), using modern Spring Boot best practices for complete waste collection management operations with real-time tracking, analytics, and mobile offline capabilities.**
