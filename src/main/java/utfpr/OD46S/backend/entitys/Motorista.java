@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import utfpr.OD46S.backend.enums.CategoriaCNH;
+import utfpr.OD46S.backend.enums.StatusMotorista;
 
 @Entity
 @Table(name = "drivers")
@@ -18,8 +19,6 @@ public class Motorista {
     @Id
     @Column(name = "id")
     private Long id;
-
-    // Relacionamento removido temporariamente para resolver erro de transação
 
     @Column(name = "license_number", nullable = false, unique = true)
     private String licenseNumber;

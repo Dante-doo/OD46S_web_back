@@ -5,6 +5,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 import utfpr.OD46S.backend.entitys.Motorista;
 import utfpr.OD46S.backend.enums.CategoriaCNH;
+import utfpr.OD46S.backend.enums.StatusMotorista;
 
 @Setter
 @Getter
@@ -23,6 +24,9 @@ public class MotoristaDTO {
 
     @JsonProperty("categoria_cnh")
     private CategoriaCNH categoriaCnh;
+
+    @JsonProperty("status")
+    private StatusMotorista status;
 
     public Motorista toEntity() {
         Motorista motorista = new Motorista();
