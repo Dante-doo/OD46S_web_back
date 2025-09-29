@@ -20,6 +20,7 @@ O Sistema OD46S foi projetado para modernizar e otimizar a gestão de coleta de 
 - **PostgreSQL** - Banco de dados relacional
 - **Liquibase** - Controle de versão do banco
 - **JWT + BCrypt** - Autenticação e segurança
+- **Swagger/OpenAPI** - Documentação interativa da API
 - **Docker + Docker Compose** - Containerização
 
 ### Frontend (Planejado)
@@ -66,8 +67,9 @@ docker-compose down
 
 ### Portas e URLs
 - **Backend**: http://localhost:8080
-- **PostgreSQL**: localhost:5433
+- **PostgreSQL**: localhost:5432
 - **Health Check**: http://localhost:8080/actuator/health
+- **Documentação da API (Swagger)**: http://localhost:8080/swagger-ui/index.html
 
 ## 📱 Endpoints Implementados
 
