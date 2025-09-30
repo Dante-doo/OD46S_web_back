@@ -189,4 +189,4 @@ docker-compose ps
 
 ---
 
-**Sistema OD46S - Modernizando a coleta de lixo urbano com tecnologia** 🌍
+**Sistema OD46S - Modernizando a coleta de lixo urbano com tecnologia** 🌍 
