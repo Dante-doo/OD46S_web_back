@@ -41,10 +41,10 @@ public class SecurityConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**") // libera todas as rotas
-                        .allowedOrigins("http://localhost:5173") // frontend
+                        .allowedOrigins("*") // frontend
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // inclui OPTIONS
                         .allowedHeaders("*")
-                        .allowCredentials(true);
+                        .allowCredentials(false);
             }
         };
     }

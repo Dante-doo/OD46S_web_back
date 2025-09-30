@@ -25,7 +25,7 @@ databaseChangeLog:
               - column:
                   name: password
                   # BCrypt hash for "admin123" (cost 10)
-                  value: "$2a$10$e0MYzXyjpJS7Pd2ALwx5UuQDyEA7jllI4EHHtoWkwx/dGp/UGxGdm"
+                  value: "$2a$10$9i75y9EgkXmFwocATYea8OnBNsQcqXRGI2psVivZcF7y1tHpKtBPy"
               - column:
                   name: active
                   valueBoolean: true
@@ -70,7 +70,7 @@ databaseChangeLog:
               - column:
                   name: password
                   # BCrypt hash for "admin123" (cost 10)
-                  value: "$2a$10$e0MYzXyjpJS7Pd2ALwx5UuQDyEA7jllI4EHHtoWkwx/dGp/UGxGdm"
+                  value: "$2a$10$9i75y9EgkXmFwocATYea8OnBNsQcqXRGI2psVivZcF7y1tHpKtBPy"
               - column:
                   name: active
                   valueBoolean: true
@@ -115,7 +115,7 @@ databaseChangeLog:
               - column:
                   name: password
                   # BCrypt hash for "driver123" (cost 10)  
-                  value: "$2a$10$TkjXbjwTCyS6gZJfHOFJo.aB8VH5MxRz1dLkqKOWZTKSaQ6NlALYG"
+                  value: "$2a$10$UEonj4Ke/1mTUorqS8D6p.kRBS0kqvt2mbLACJKerG0PyJ5wjZmM2"
               - column:
                   name: active
                   valueBoolean: true
