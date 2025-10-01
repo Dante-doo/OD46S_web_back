@@ -10,7 +10,32 @@
       "item": [
         {
           "name": "Login - Admin",
-          "event": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "try {",
+                  "  const body = res.getBody();   ",
+                  "  const token = body && body.token;",
+                  "",
+                  "  if (token && typeof bru !== 'undefined') {",
+                  "",
+                  "    bru.setEnvVar('jwtToken', token);",
+                  "    bru.setVar('jwtToken', token);",
+                  "",
+                  "    console.log(\"Token salvo no ambiente:\", token);",
+                  "  } else {",
+                  "    console.log(\"Token não encontrado no body da resposta\");",
+                  "  }",
+                  "} catch (e) {",
+                  "  console.log(\"Erro ao extrair token:\", e);",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -53,7 +78,32 @@
         },
         {
           "name": "Login - By CPF",
-          "event": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "try {",
+                  "  const body = res.getBody();   ",
+                  "  const token = body && body.token;",
+                  "",
+                  "  if (token && typeof bru !== 'undefined') {",
+                  "",
+                  "    bru.setEnvVar('jwtToken', token);",
+                  "    bru.setVar('jwtToken', token);",
+                  "",
+                  "    console.log(\"Token salvo no ambiente:\", token);",
+                  "  } else {",
+                  "    console.log(\"Token não encontrado no body da resposta\");",
+                  "  }",
+                  "} catch (e) {",
+                  "  console.log(\"Erro ao extrair token:\", e);",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -96,7 +146,32 @@
         },
         {
           "name": "Login - Driver",
-          "event": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "try {",
+                  "  const body = res.getBody();   ",
+                  "  const token = body && body.token;",
+                  "",
+                  "  if (token && typeof bru !== 'undefined') {",
+                  "",
+                  "    bru.setEnvVar('jwtToken', token);",
+                  "    bru.setVar('jwtToken', token);",
+                  "",
+                  "    console.log(\"Token salvo no ambiente:\", token);",
+                  "  } else {",
+                  "    console.log(\"Token não encontrado no body da resposta\");",
+                  "  }",
+                  "} catch (e) {",
+                  "  console.log(\"Erro ao extrair token:\", e);",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -139,7 +214,32 @@
         },
         {
           "name": "Refresh Token",
-          "event": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "try {",
+                  "  const body = res.getBody();   ",
+                  "  const token = body && body.token;",
+                  "",
+                  "  if (token && typeof bru !== 'undefined') {",
+                  "",
+                  "    bru.setEnvVar('jwtToken', token);",
+                  "    bru.setVar('jwtToken', token);",
+                  "",
+                  "    console.log(\"Token salvo no ambiente:\", token);",
+                  "  } else {",
+                  "    console.log(\"Token não encontrado no body da resposta\");",
+                  "  }",
+                  "} catch (e) {",
+                  "  console.log(\"Erro ao extrair token:\", e);",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -526,7 +626,7 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "",
+      "value": "http://127.0.0.1:8080",
       "type": "default"
     },
     {
