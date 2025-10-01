@@ -178,7 +178,7 @@ delete loginData.password;
 # 🔐 1. AUTHENTICATION
 
 ## 1.1 Login
-**POST** `/auth/login`
+**POST** `/api/v1/auth/login`
 
 ### Request Body
 ```json
@@ -256,7 +256,7 @@ delete loginData.password;
 - Consider implementing **account lockout** after repeated failures
 
 ## 1.2 Register
-**POST** `/auth/register`
+**POST** `/api/v1/auth/register`
 
 ### Request Body
 ```json
@@ -498,7 +498,7 @@ Authorization: Bearer {jwt_token}  # Own user or ADMIN
 # 🚛 3. VEHICLE MANAGEMENT
 
 ## 3.1 List Vehicles
-**GET** `/vehicles`
+**GET** `/api/v1/vehicles`
 
 ### Query Parameters
 ```
@@ -546,7 +546,7 @@ Authorization: Bearer {jwt_token}
 ```
 
 ## 3.2 Get Vehicle by ID
-**GET** `/vehicles/{id}`
+**GET** `/api/v1/vehicles/{id}`
 
 ### Headers
 ```
@@ -554,7 +554,7 @@ Authorization: Bearer {jwt_token}
 ```
 
 ## 3.3 Create Vehicle
-**POST** `/vehicles`
+**POST** `/api/v1/vehicles`
 
 ### Headers
 ```
@@ -578,7 +578,7 @@ Authorization: Bearer {jwt_token}  # Only ADMIN
 ```
 
 ## 3.4 Update Vehicle
-**PUT** `/vehicles/{id}`
+**PUT** `/api/v1/vehicles/{id}`
 
 ### Headers
 ```
@@ -586,7 +586,7 @@ Authorization: Bearer {jwt_token}  # Only ADMIN
 ```
 
 ## 3.5 Delete Vehicle
-**DELETE** `/vehicles/{id}`
+**DELETE** `/api/v1/vehicles/{id}`
 
 ### Headers
 ```
@@ -1174,7 +1174,7 @@ Authorization: Bearer {jwt_token}  # Driver
 # 🔧 10. SYSTEM HEALTH
 
 ## 10.1 Health Check
-**GET** `/health`
+**GET** `/api/v1/health`
 
 ### Response 200
 ```json
@@ -1191,8 +1191,8 @@ Authorization: Bearer {jwt_token}  # Driver
 }
 ```
 
-## 10.2 System Status
-**GET** `/status`
+## 10.2 Basic Health (simple)
+**GET** `/health`
 
 ### Headers
 ```
@@ -1228,22 +1228,29 @@ Authorization: Bearer {jwt_token}  # Only ADMIN
 
 # 📝 Implementation Status
 
-## ✅ Implemented Routes (3)
-- **GET** `/health` - Health check
-- **GET** `/actuator/health` - Spring Boot Actuator health  
-- **POST** `/auth/login` - User authentication (basic structure)
+## ✅ Implemented Routes
+- Auth
+  - **POST** `/api/v1/auth/login`
+  - **POST** `/api/v1/auth/register`
+  - **POST** `/api/v1/auth/refresh`
+  - **GET** `/api/v1/auth/health`
+- Health
+  - **GET** `/api/v1/health`
+  - **GET** `/health`
+  - **GET** `/actuator/health`
+- Vehicles
+  - **GET** `/api/v1/vehicles`
+  - **POST** `/api/v1/vehicles`
+  - **PUT** `/api/v1/vehicles/{id}`
+  - **PATCH** `/api/v1/vehicles/{id}/status`
 
-## ❌ Not Implemented (47 routes)
-- All user management routes (6)
-- All vehicle management routes (5) 
-- All route management routes (8)
-- All execution management routes (5)
-- All GPS tracking routes (2)
-- All collection records routes (2)
-- All analytics routes (4)
-- All mobile sync routes (2)
-- Advanced system status (1)
-- File upload functionality (12)
+## ❌ Not Implemented
+- User management (CRUD)
+- Routes (CRUD + points)
+- Executions (CRUD + transitions)
+- GPS tracking and photo upload
+- Analytics and reports
+- Mobile sync
 
 ## 🗃️ Database Status
 - ✅ Entity structure defined (users, drivers, administrators)
@@ -1262,7 +1269,7 @@ Authorization: Bearer {jwt_token}  # Only ADMIN
 - ❌ File storage not implemented
 - ❌ No business logic implementation
 
-**Total: 3/50 routes implemented (6%)**
+**Approx. total implemented:** 11 endpoints
 
 ---
 
