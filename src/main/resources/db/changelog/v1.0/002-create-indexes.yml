@@ -83,3 +83,30 @@ databaseChangeLog:
             columns:
               - column:
                   name: enabled
+
+  # ==========================================
+  # CHANGESET 4: Create indexes for vehicles table
+  # ==========================================
+  - changeSet:
+      id: 004-create-vehicles-indexes
+      author: od46s-team
+      changes:
+        - createIndex:
+            tableName: vehicles
+            indexName: idx_vehicles_plate
+            unique: true
+            columns:
+              - column:
+                  name: license_plate
+        - createIndex:
+            tableName: vehicles
+            indexName: idx_vehicles_status
+            columns:
+              - column:
+                  name: status
+        - createIndex:
+            tableName: vehicles
+            indexName: idx_vehicles_active
+            columns:
+              - column:
+                  name: active
