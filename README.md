@@ -76,14 +76,17 @@ docker-compose down
 ### Sistema
 | Método | Endpoint | Descrição | Status |
 |--------|----------|-----------|--------|
-| GET | `/actuator/health` | Health check da aplicação | ✅ Implementado |
+| GET | `/actuator/health` | Health check da aplicação (Actuator) | ✅ Implementado |
+| GET | `/api/v1/health` | Health detalhado da API | ✅ Implementado |
+| GET | `/health` | Health simples | ✅ Implementado |
 
-### Autenticação (Planejadas)
+### Autenticação
 | Método | Endpoint | Descrição | Status |
 |--------|----------|-----------|--------|
 | POST | `/api/v1/auth/login` | Login com email/cpf + senha | ✅ Implementado |
 | POST | `/api/v1/auth/register` | Registro de novo usuário | ✅ Implementado |
 | POST | `/api/v1/auth/refresh` | Renovar token JWT | ✅ Implementado |
+| GET | `/api/v1/auth/health` | Health do serviço de autenticação | ✅ Implementado |
 
 ### Gestão de Usuários (Planejadas)
 | Método | Endpoint | Descrição | Status |
@@ -94,13 +97,13 @@ docker-compose down
 | PUT | `/api/v1/users/{id}` | Atualizar usuário | ❌ Não implementado |
 | DELETE | `/api/v1/users/{id}` | Remover usuário | ❌ Não implementado |
 
-### Gestão de Veículos (Planejadas)
+### Gestão de Veículos
 | Método | Endpoint | Descrição | Status |
 |--------|----------|-----------|--------|
-| GET | `/api/v1/vehicles` | Listar veículos | ❌ Não implementado |
-| POST | `/api/v1/vehicles` | Cadastrar veículo | ❌ Não implementado |
-| PUT | `/api/v1/vehicles/{id}` | Atualizar veículo | ❌ Não implementado |
-| PATCH | `/api/v1/vehicles/{id}/status` | Alterar status | ❌ Não implementado |
+| GET | `/api/v1/vehicles` | Listar veículos | ✅ Implementado |
+| POST | `/api/v1/vehicles` | Cadastrar veículo | ✅ Implementado |
+| PUT | `/api/v1/vehicles/{id}` | Atualizar veículo | ✅ Implementado |
+| PATCH | `/api/v1/vehicles/{id}/status` | Alterar status | ✅ Implementado |
 
 ### Gestão de Rotas (Planejadas)
 | Método | Endpoint | Descrição | Status |
@@ -186,6 +189,29 @@ docker exec -it od46s-backend /bin/sh
 # Ver status dos containers
 docker-compose ps
 ```
+
+## 🧰 Scripts de Reset do Ambiente
+
+Use os scripts em `scripts/` para resetar o ambiente Docker e subir tudo novamente do zero.
+
+### macOS / Linux
+```bash
+bash scripts/reset_env.sh
+```
+
+Pré-requisitos: `docker` e `docker-compose` instalados. O script irá:
+- Derrubar o stack (`docker-compose down -v`)
+- Prunar volumes e imagens dangling
+- Remover volumes do projeto se existirem
+- Subir `postgres` e depois `backend` com `--build`
+- Aguardar o health em `http://127.0.0.1:8080/actuator/health`
+
+### Windows (PowerShell)
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/reset_env.ps1
+```
+
+Se necessário, execute o PowerShell como Administrador. O script realiza as mesmas etapas descritas acima.
 
 ---
 
