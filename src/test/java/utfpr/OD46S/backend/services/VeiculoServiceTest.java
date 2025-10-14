@@ -23,7 +23,9 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -35,25 +37,11 @@ class VeiculoServiceTest {
     @InjectMocks
     private VeiculoService veiculoService;
 
-    private VeiculoDTO veiculoDTO;
     private Veiculo veiculo;
+    private VeiculoDTO veiculoDTO;
 
     @BeforeEach
     void setUp() {
-        veiculoDTO = new VeiculoDTO();
-        veiculoDTO.setLicensePlate("ABC1234");
-        veiculoDTO.setModel("Compactor 15m³");
-        veiculoDTO.setBrand("Volvo");
-        veiculoDTO.setYear(2022);
-        veiculoDTO.setCapacityKg(BigDecimal.valueOf(15000.0));
-        veiculoDTO.setFuelType("DIESEL");
-        veiculoDTO.setAverageConsumption(BigDecimal.valueOf(3.5));
-        veiculoDTO.setStatus(StatusVeiculo.AVAILABLE);
-        veiculoDTO.setCurrentKm(12500);
-        veiculoDTO.setAcquisitionDate(LocalDate.of(2022, 1, 15));
-        veiculoDTO.setNotes("New vehicle");
-        veiculoDTO.setActive(true);
-
         veiculo = new Veiculo();
         veiculo.setId(1L);
         veiculo.setLicensePlate("ABC1234");
@@ -70,6 +58,21 @@ class VeiculoServiceTest {
         veiculo.setActive(true);
         veiculo.setCreatedAt(LocalDateTime.now());
         veiculo.setUpdatedAt(LocalDateTime.now());
+
+        veiculoDTO = new VeiculoDTO();
+        veiculoDTO.setId(1L);
+        veiculoDTO.setLicensePlate("ABC1234");
+        veiculoDTO.setModel("Compactor 15m³");
+        veiculoDTO.setBrand("Volvo");
+        veiculoDTO.setYear(2022);
+        veiculoDTO.setCapacityKg(BigDecimal.valueOf(15000.0));
+        veiculoDTO.setFuelType("DIESEL");
+        veiculoDTO.setAverageConsumption(BigDecimal.valueOf(3.5));
+        veiculoDTO.setStatus(StatusVeiculo.AVAILABLE);
+        veiculoDTO.setCurrentKm(12500);
+        veiculoDTO.setAcquisitionDate(LocalDate.of(2022, 1, 15));
+        veiculoDTO.setNotes("New vehicle");
+        veiculoDTO.setActive(true);
     }
 
     @Test
