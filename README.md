@@ -84,7 +84,6 @@ docker-compose down
 | Método | Endpoint | Descrição | Status |
 |--------|----------|-----------|--------|
 | POST | `/api/v1/auth/login` | Login com email/cpf + senha | ✅ Implementado |
-| POST | `/api/v1/auth/register` | Registro de novo usuário | ✅ Implementado |
 | POST | `/api/v1/auth/refresh` | Renovar token JWT | ✅ Implementado |
 | GET | `/api/v1/auth/health` | Health do serviço de autenticação | ✅ Implementado |
 

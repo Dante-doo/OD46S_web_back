@@ -10,7 +10,7 @@ Production: https://api.od46s.com/v1
 
 ### 🔐 Password Security
 - **Storage**: Passwords are encrypted using **BCrypt** (cost factor 10+)
-- **Transmission**: Passwords sent in plain text **only** during login/register via HTTPS
+- **Transmission**: Passwords sent in plain text **only** during login via HTTPS
 - **Never stored or transmitted in plain text**
 - **Never returned in API responses**
 
@@ -255,8 +255,10 @@ delete loginData.password;
 - Failed attempts should be **logged** for security monitoring
 - Consider implementing **account lockout** after repeated failures
 
-## 1.2 Register
-**POST** `/api/v1/auth/register`
+## 1.2 User Management (Admin Only)
+**POST** `/api/v1/users`
+
+> **🔒 ADMIN ONLY**: This endpoint requires administrator authentication.
 
 ### Request Body
 ```json
@@ -264,17 +266,21 @@ delete loginData.password;
   "name": "New User",               // string, required
   "email": "user@od46s.com",        // string, required, unique
   "cpf": "12345678901",            // string, required, unique
-  "password": "SecureP@ssw0rd!",     // string, required (min 6 chars, recommend 8+ with complexity)
-  "type": "DRIVER"                 // ADMIN | DRIVER
+  "password": "SecureP@ssw0rd!",     // string, required (min 6 chars)
+  "type": "DRIVER",                // ADMIN | DRIVER
+  "licenseNumber": "12345678901",   // string, required for DRIVER
+  "licenseCategory": "B",          // string, required for DRIVER
+  "licenseExpiry": "2030-12-31",   // string, required for DRIVER
+  "phone": "47999999999"           // string, optional for DRIVER
 }
 ```
 
 **🔒 Security Implementation:**
+- **Admin authentication required** - only administrators can create users
 - Password **immediately hashed with BCrypt** (cost factor 10+)
 - Plain text password **never persisted**, discarded after hashing
 - **BCrypt salt** automatically generated per password
 - **HTTPS required** to protect password transmission
-- Consider implementing **password complexity validation**
 
 ### Response 201
 ```json
@@ -305,6 +311,12 @@ delete loginData.password;
   }
 }
 ```
+
+**🔒 Security Notes:**
+- **No public registration** - only administrators can create users
+- **Email/CPF uniqueness** enforced at database level
+- **Admin authentication required** for all user creation
+- **Centralized user management** by administrators
 
 ---
 
@@ -1231,9 +1243,14 @@ Authorization: Bearer {jwt_token}  # Only ADMIN
 ## ✅ Implemented Routes
 - Auth
   - **POST** `/api/v1/auth/login`
-  - **POST** `/api/v1/auth/register`
   - **POST** `/api/v1/auth/refresh`
   - **GET** `/api/v1/auth/health`
+- Users (Admin Only)
+  - **GET** `/api/v1/users`
+  - **GET** `/api/v1/users/{id}`
+  - **POST** `/api/v1/users`
+  - **PUT** `/api/v1/users/{id}`
+  - **DELETE** `/api/v1/users/{id}`
 - Health
   - **GET** `/api/v1/health`
   - **GET** `/health`
