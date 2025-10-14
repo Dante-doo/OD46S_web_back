@@ -43,6 +43,41 @@ O Sistema OD46S foi projetado para modernizar e otimizar a gestão de coleta de 
 - **Cloudflare** - CDN gratuito
 - **Let's Encrypt** - SSL gratuito
 
+## ⚙️ Configuração Centralizada
+
+O sistema utiliza um arquivo de configuração centralizado (`.env`) para gerenciar todas as variáveis de ambiente.
+
+### 📁 Arquivo de Configuração
+- `.env` - Configurações centralizadas (único arquivo)
+- `env.example` - Arquivo de exemplo
+
+### 🚀 Script de Automação
+```bash
+# Carregar configurações e executar comandos
+./scripts/load-env.sh [comando]
+
+# Comandos disponíveis:
+./scripts/load-env.sh dev      # Desenvolvimento
+./scripts/load-env.sh docker   # Docker Compose
+./scripts/load-env.sh test     # Executar testes
+./scripts/load-env.sh build    # Build da aplicação
+./scripts/load-env.sh clean    # Limpar e rebuild
+./scripts/load-env.sh logs     # Ver logs
+./scripts/load-env.sh stop     # Parar containers
+```
+
+### 🔧 Configuração Inicial
+```bash
+# 1. Copiar arquivo de exemplo
+cp env.example .env
+
+# 2. Editar configurações conforme necessário
+nano .env
+
+# 3. Executar com configurações centralizadas
+./scripts/load-env.sh docker
+```
+
 ## 🐳 Como Executar com Docker
 
 ### Pré-requisitos
@@ -55,14 +90,29 @@ O Sistema OD46S foi projetado para modernizar e otimizar a gestão de coleta de 
 git clone <repository-url>
 cd OD46S_web_back
 
-# 2. Inicie os containers
-docker-compose up -d
+# 2. Configurar ambiente
+cp env.example .env
 
-# 3. Verifique se está funcionando
+# 3. Iniciar com configuração centralizada
+./scripts/load-env.sh docker
+
+# 4. Verificar se está funcionando
 curl http://localhost:8080/actuator/health
 
-# 4. Para parar
-docker-compose down
+# 5. Para parar
+./scripts/load-env.sh stop
+```
+
+### 🎛️ Comandos Alternativos
+```bash
+# Execução tradicional (ainda funciona)
+docker-compose up -d
+
+# Com configuração específica
+docker-compose --env-file .env up -d
+
+# Com perfil de administração (inclui pgAdmin)
+docker-compose --profile admin up -d
 ```
 
 ### Portas e URLs
@@ -84,18 +134,28 @@ docker-compose down
 | Método | Endpoint | Descrição | Status |
 |--------|----------|-----------|--------|
 | POST | `/api/v1/auth/login` | Login com email/cpf + senha | ✅ Implementado |
-| POST | `/api/v1/auth/register` | Registro de novo usuário | ✅ Implementado |
 | POST | `/api/v1/auth/refresh` | Renovar token JWT | ✅ Implementado |
 | GET | `/api/v1/auth/health` | Health do serviço de autenticação | ✅ Implementado |
 
-### Gestão de Usuários (Planejadas)
+### Gestão de Usuários
 | Método | Endpoint | Descrição | Status |
 |--------|----------|-----------|--------|
-| GET | `/api/v1/users` | Listar usuários (paginado) | ❌ Não implementado |
-| GET | `/api/v1/users/{id}` | Obter usuário específico | ❌ Não implementado |
-| POST | `/api/v1/users` | Criar novo usuário | ❌ Não implementado |
-| PUT | `/api/v1/users/{id}` | Atualizar usuário | ❌ Não implementado |
-| DELETE | `/api/v1/users/{id}` | Remover usuário | ❌ Não implementado |
+| GET | `/api/v1/users` | Listar usuários (paginado) | ✅ Implementado |
+| GET | `/api/v1/users/{id}` | Obter usuário específico | ✅ Implementado |
+| POST | `/api/v1/users` | Criar novo usuário | ✅ Implementado |
+| PUT | `/api/v1/users/{id}` | Atualizar usuário | ✅ Implementado |
+| DELETE | `/api/v1/users/{id}` | Remover usuário | ✅ Implementado |
+
+**🔧 Funcionalidades da API de Usuários:**
+- **📊 Paginação**: Suporte completo com metadata (page, limit, total, has_next, has_prev)
+- **🔍 Busca e Filtros**: Busca por nome/email, filtro por tipo (ADMIN/DRIVER) e status ativo
+- **🔄 Ordenação**: Ordenação por qualquer campo (name, email, created_at) com direção asc/desc
+- **🔒 Segurança**: Operações de criação e remoção restritas a administradores
+- **👥 Tipos de Usuário**: Suporte completo para ADMIN e DRIVER com campos específicos
+- **✅ Validação**: Validação robusta com Bean Validation
+- **🔐 Criptografia**: Senhas criptografadas com BCrypt
+- **📝 Documentação**: Swagger/OpenAPI integrado
+- **🛠️ CRUD Completo**: Todas as operações funcionando (incluindo PUT corrigido)
 
 ### Gestão de Veículos
 | Método | Endpoint | Descrição | Status |
@@ -163,6 +223,7 @@ OD46S_web_back/
 - **[API Contract](API_CONTRACT.md)** - Contrato completo das APIs
 - **[Architecture](ARCHITECTURE.md)** - Arquitetura do sistema
 - **[Database Design](DATABASE_DESIGN.md)** - Design do banco de dados
+- **[Postman Collection](docs/OD46S_API_Collection.postman_collection.json)** - Coleção completa para testes da API
 
 ## 🚀 Desenvolvimento
 
@@ -188,6 +249,85 @@ docker exec -it od46s-backend /bin/sh
 
 # Ver status dos containers
 docker-compose ps
+```
+
+### 🧪 Testando a API
+
+#### Usando Postman
+1. Importe a coleção: `docs/OD46S_API_Collection.postman_collection.json`
+2. Configure a variável `baseUrl` para `http://localhost:8080`
+3. Execute primeiro um login para obter o token JWT
+4. Teste os endpoints de usuários com autenticação
+
+#### Exemplo de Teste com cURL
+```bash
+# 1. Login para obter token
+curl -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "admin@od46s.com", "password": "admin123"}'
+
+# 2. Listar usuários (substitua TOKEN pelo token obtido)
+curl -X GET "http://localhost:8080/api/v1/users?page=1&limit=10" \
+  -H "Authorization: Bearer TOKEN"
+
+# 3. Criar novo usuário
+curl -X POST http://localhost:8080/api/v1/users \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer TOKEN" \
+  -d '{
+    "name": "Novo Usuário",
+    "email": "novo@od46s.com",
+    "cpf": "12345678901",
+    "password": "senha123",
+    "type": "DRIVER",
+    "licenseNumber": "12345678901",
+    "licenseCategory": "B",
+    "licenseExpiry": "2030-12-31"
+  }'
+```
+
+## 📊 Cobertura de Código
+
+O projeto utiliza **JaCoCo** para análise de cobertura de código com relatórios detalhados e métricas automáticas.
+
+### 🔍 Comandos de Cobertura
+
+#### Verificar Cobertura Atual
+```bash
+# Script automatizado com análise completa
+./scripts/coverage-report.sh
+```
+
+#### Gerar Relatórios
+```bash
+# Executar testes com cobertura e gerar relatórios
+./mvnw clean test jacoco:report
+
+# Apenas gerar relatório (após testes)
+./mvnw jacoco:report
+```
+
+#### Verificar Meta de Cobertura
+```bash
+# Verificar se atinge a meta de 80%
+./mvnw jacoco:check
+```
+
+#### Executar Apenas Testes
+```bash
+# Executar todos os testes
+./mvnw test
+
+# Executar testes específicos
+./mvnw test -Dtest=UsuarioControllerTest
+```
+
+### 📁 Relatórios Gerados
+
+#### Relatório HTML (Recomendado)
+```bash
+# Abrir relatório no navegador
+open target/site/jacoco/index.html
 ```
 
 ## 🧰 Scripts de Reset do Ambiente

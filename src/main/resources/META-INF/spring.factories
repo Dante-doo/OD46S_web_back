@@ -1,0 +1,3 @@
+org.springframework.context.ApplicationContextInitializer=\
+utfpr.OD46S.backend.config.DotenvInitializer
+

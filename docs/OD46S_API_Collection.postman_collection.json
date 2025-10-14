@@ -279,104 +279,6 @@
               }
             }
           }
-        },
-        {
-          "name": "Register - Admin",
-          "event": [],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "disabled": false,
-                "type": "default"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{jwtToken}}",
-                "disabled": false,
-                "type": "default"
-              }
-            ],
-            "auth": {
-              "type": "noauth"
-            },
-            "description": "",
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/auth/register",
-              "protocol": "",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "auth",
-                "register"
-              ],
-              "query": [],
-              "variable": []
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Novo Admin\",\n  \"email\": \"novo.admin@od46s.com\",\n  \"cpf\": \"98765432100\",\n  \"password\": \"admin123\",\n  \"type\": \"ADMIN\",\n  \"accessLevel\": \"ADMIN\",\n  \"department\": \"TI\",\n  \"corporatePhone\": \"47999999999\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "Register - Driver",
-          "event": [],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "disabled": false,
-                "type": "default"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{jwtToken}}",
-                "disabled": false,
-                "type": "default"
-              }
-            ],
-            "auth": {
-              "type": "noauth"
-            },
-            "description": "",
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/auth/register",
-              "protocol": "",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "auth",
-                "register"
-              ],
-              "query": [],
-              "variable": []
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Novo Motorista\",\n  \"email\": \"novo.motorista@od46s.com\",\n  \"cpf\": \"98765432101\",\n  \"password\": \"driver123\",\n  \"type\": \"DRIVER\",\n  \"licenseNumber\": \"98765432101\",\n  \"licenseCategory\": \"B\",\n  \"licenseExpiry\": \"2030-12-31\",\n  \"phone\": \"47988888888\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
         }
       ]
     },
@@ -432,6 +334,298 @@
               ],
               "query": [],
               "variable": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "List Users",
+          "event": [],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Listar usuários com paginação, busca e filtros",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users?page=1&limit=20&search=&type=&active=",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Número da página"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Itens por página"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "description": "Buscar por nome ou email"
+                },
+                {
+                  "key": "type",
+                  "value": "",
+                  "description": "Filtrar por tipo (ADMIN|DRIVER)"
+                },
+                {
+                  "key": "active",
+                  "value": "",
+                  "description": "Filtrar por status ativo"
+                }
+              ],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Get User by ID",
+          "event": [],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Obter usuário específico por ID",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/:userId",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                ":userId"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "userId",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create User - Admin",
+          "event": [],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Criar novo usuário administrador (apenas ADMIN)",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Carlos Silva\",\n  \"email\": \"carlos.silva@od46s.com\",\n  \"cpf\": \"11122233344\",\n  \"password\": \"senha123\",\n  \"type\": \"ADMIN\",\n  \"active\": true,\n  \"accessLevel\": \"SUPER_ADMIN\",\n  \"department\": \"Operações\",\n  \"corporatePhone\": \"4733334444\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Create User - Driver",
+          "event": [],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Criar novo usuário motorista (apenas ADMIN)",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ana Santos\",\n  \"email\": \"ana.santos@od46s.com\",\n  \"cpf\": \"55566677788\",\n  \"password\": \"motorista456\",\n  \"type\": \"DRIVER\",\n  \"active\": true,\n  \"license_number\": \"12345678901\",\n  \"license_category\": \"D\",\n  \"license_expiry\": \"2025-06-15\",\n  \"phone\": \"47912345678\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Update User",
+          "event": [],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Atualizar usuário existente",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/:userId",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                ":userId"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "userId",
+                  "value": "1"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Maria Silva Atualizada\",\n  \"phone\": \"47987654321\",\n  \"active\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete User",
+          "event": [],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Remover usuário (apenas ADMIN)",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/:userId",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                ":userId"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "userId",
+                  "value": "1"
+                }
+              ]
             }
           }
         }

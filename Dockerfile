@@ -51,15 +51,10 @@ RUN mkdir -p /app/logs /app/uploads /app/config \
     && chown -R springboot:springboot /app
 
 COPY src/main/resources/application.properties ./config/application-default.properties
-COPY src/main/resources/application-docker.properties ./config/application-docker.properties
 
 # Script para escolher configuração baseada no ambiente
 RUN echo '#!/bin/bash\n\
-if [ "$SPRING_PROFILES_ACTIVE" = "docker" ]; then\n\
-  cp /app/config/application-docker.properties /app/application.properties\n\
-else\n\
-  cp /app/config/application-default.properties /app/application.properties\n\
-fi\n\
+cp /app/config/application-default.properties /app/application.properties\n\
 exec "$@"' > /app/entrypoint.sh \
     && chmod +x /app/entrypoint.sh \
     && chown springboot:springboot /app/entrypoint.sh

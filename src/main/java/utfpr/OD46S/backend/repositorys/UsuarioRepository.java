@@ -1,5 +1,7 @@
 package utfpr.OD46S.backend.repositorys;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import utfpr.OD46S.backend.entitys.Administrator;
@@ -15,4 +17,6 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     boolean existsByEmail(String email);
     boolean existsByCpf(String cpf);
+    
+    Page<Usuario> findByActive(Boolean active, Pageable pageable);
 }
