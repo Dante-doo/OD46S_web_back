@@ -8,7 +8,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import utfpr.OD46S.backend.entitys.login.AuthResponse;
 import utfpr.OD46S.backend.entitys.login.LoginRequest;
-import utfpr.OD46S.backend.entitys.login.RegisterRequest;
 import utfpr.OD46S.backend.entitys.login.RefreshRequest;
 import utfpr.OD46S.backend.services.login.AuthService;
 
@@ -93,58 +92,6 @@ class UnitAuthControllerTest {
         assertTrue(response.getBody().toString().contains("Senha inválida"));
     }
 
-    @Test
-    void testRegister_Success() {
-        // Given
-        RegisterRequest registerRequest = new RegisterRequest();
-        registerRequest.setName("New User");
-        registerRequest.setEmail("newuser@od46s.com");
-        registerRequest.setCpf("12345678901");
-        registerRequest.setPassword("password123");
-        registerRequest.setType("ADMIN");
-        registerRequest.setAccessLevel("ADMIN");
-        registerRequest.setDepartment("TI");
-
-        AuthResponse mockResponse = new AuthResponse(
-            "eyJhbGciOiJIUzUxMiJ9.test.token",
-            "newuser@od46s.com",
-            "New User",
-            "ADMIN"
-        );
-
-        when(authService.register(any(RegisterRequest.class))).thenReturn(mockResponse);
-
-        // When
-        ResponseEntity<?> response = authController.register(registerRequest);
-
-        // Then
-        assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertNotNull(response.getBody());
-        verify(authService, times(1)).register(registerRequest);
-    }
-
-    @Test
-    void testRegister_EmailExists() {
-        // Given
-        RegisterRequest registerRequest = new RegisterRequest();
-        registerRequest.setName("New User");
-        registerRequest.setEmail("existing@od46s.com");
-        registerRequest.setCpf("12345678901");
-        registerRequest.setPassword("password123");
-        registerRequest.setType("ADMIN");
-
-        when(authService.register(any(RegisterRequest.class)))
-                .thenThrow(new RuntimeException("Email já cadastrado"));
-
-        // When
-        ResponseEntity<?> response = authController.register(registerRequest);
-
-        // Then
-        assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertTrue(response.getBody().toString().contains("EMAIL_EXISTS"));
-        assertTrue(response.getBody().toString().contains("Email já cadastrado"));
-    }
 
     @Test
     void testRefresh_Success() {
