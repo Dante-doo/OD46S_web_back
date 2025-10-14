@@ -43,6 +43,41 @@ O Sistema OD46S foi projetado para modernizar e otimizar a gestão de coleta de 
 - **Cloudflare** - CDN gratuito
 - **Let's Encrypt** - SSL gratuito
 
+## ⚙️ Configuração Centralizada
+
+O sistema utiliza um arquivo de configuração centralizado (`.env`) para gerenciar todas as variáveis de ambiente.
+
+### 📁 Arquivo de Configuração
+- `.env` - Configurações centralizadas (único arquivo)
+- `env.example` - Arquivo de exemplo
+
+### 🚀 Script de Automação
+```bash
+# Carregar configurações e executar comandos
+./scripts/load-env.sh [comando]
+
+# Comandos disponíveis:
+./scripts/load-env.sh dev      # Desenvolvimento
+./scripts/load-env.sh docker   # Docker Compose
+./scripts/load-env.sh test     # Executar testes
+./scripts/load-env.sh build    # Build da aplicação
+./scripts/load-env.sh clean    # Limpar e rebuild
+./scripts/load-env.sh logs     # Ver logs
+./scripts/load-env.sh stop     # Parar containers
+```
+
+### 🔧 Configuração Inicial
+```bash
+# 1. Copiar arquivo de exemplo
+cp env.example .env
+
+# 2. Editar configurações conforme necessário
+nano .env
+
+# 3. Executar com configurações centralizadas
+./scripts/load-env.sh docker
+```
+
 ## 🐳 Como Executar com Docker
 
 ### Pré-requisitos
@@ -55,14 +90,29 @@ O Sistema OD46S foi projetado para modernizar e otimizar a gestão de coleta de 
 git clone <repository-url>
 cd OD46S_web_back
 
-# 2. Inicie os containers
-docker-compose up -d
+# 2. Configurar ambiente
+cp env.example .env
 
-# 3. Verifique se está funcionando
+# 3. Iniciar com configuração centralizada
+./scripts/load-env.sh docker
+
+# 4. Verificar se está funcionando
 curl http://localhost:8080/actuator/health
 
-# 4. Para parar
-docker-compose down
+# 5. Para parar
+./scripts/load-env.sh stop
+```
+
+### 🎛️ Comandos Alternativos
+```bash
+# Execução tradicional (ainda funciona)
+docker-compose up -d
+
+# Com configuração específica
+docker-compose --env-file .env up -d
+
+# Com perfil de administração (inclui pgAdmin)
+docker-compose --profile admin up -d
 ```
 
 ### Portas e URLs
