@@ -237,6 +237,50 @@ curl -X POST http://localhost:8080/api/v1/users \
   }'
 ```
 
+## 📊 Cobertura de Código
+
+O projeto utiliza **JaCoCo** para análise de cobertura de código com relatórios detalhados e métricas automáticas.
+
+### 🔍 Comandos de Cobertura
+
+#### Verificar Cobertura Atual
+```bash
+# Script automatizado com análise completa
+./scripts/coverage-report.sh
+```
+
+#### Gerar Relatórios
+```bash
+# Executar testes com cobertura e gerar relatórios
+./mvnw clean test jacoco:report
+
+# Apenas gerar relatório (após testes)
+./mvnw jacoco:report
+```
+
+#### Verificar Meta de Cobertura
+```bash
+# Verificar se atinge a meta de 80%
+./mvnw jacoco:check
+```
+
+#### Executar Apenas Testes
+```bash
+# Executar todos os testes
+./mvnw test
+
+# Executar testes específicos
+./mvnw test -Dtest=UsuarioControllerTest
+```
+
+### 📁 Relatórios Gerados
+
+#### Relatório HTML (Recomendado)
+```bash
+# Abrir relatório no navegador
+open target/site/jacoco/index.html
+```
+
 ## 🧰 Scripts de Reset do Ambiente
 
 Use os scripts em `scripts/` para resetar o ambiente Docker e subir tudo novamente do zero.
