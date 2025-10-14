@@ -37,7 +37,7 @@ public class SecurityConfig {
                         // Preflight CORS
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         // Health endpoints públicos
-                        .requestMatchers(HttpMethod.GET, "/actuator/**", "/health", "/api/v1/health").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/actuator/**", "/health", "/api/v1/health", "/api/v1/auth/health").permitAll()
                         // Autenticação pública somente para login e refresh
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/login", "/api/v1/auth/refresh").permitAll()
                         // Demais rotas exigem autenticação

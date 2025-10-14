@@ -88,14 +88,25 @@ docker-compose down
 | POST | `/api/v1/auth/refresh` | Renovar token JWT | ✅ Implementado |
 | GET | `/api/v1/auth/health` | Health do serviço de autenticação | ✅ Implementado |
 
-### Gestão de Usuários (Planejadas)
+### Gestão de Usuários
 | Método | Endpoint | Descrição | Status |
 |--------|----------|-----------|--------|
-| GET | `/api/v1/users` | Listar usuários (paginado) | ❌ Não implementado |
-| GET | `/api/v1/users/{id}` | Obter usuário específico | ❌ Não implementado |
-| POST | `/api/v1/users` | Criar novo usuário | ❌ Não implementado |
-| PUT | `/api/v1/users/{id}` | Atualizar usuário | ❌ Não implementado |
-| DELETE | `/api/v1/users/{id}` | Remover usuário | ❌ Não implementado |
+| GET | `/api/v1/users` | Listar usuários (paginado) | ✅ Implementado |
+| GET | `/api/v1/users/{id}` | Obter usuário específico | ✅ Implementado |
+| POST | `/api/v1/users` | Criar novo usuário | ✅ Implementado |
+| PUT | `/api/v1/users/{id}` | Atualizar usuário | ✅ Implementado |
+| DELETE | `/api/v1/users/{id}` | Remover usuário | ✅ Implementado |
+
+**🔧 Funcionalidades da API de Usuários:**
+- **📊 Paginação**: Suporte completo com metadata (page, limit, total, has_next, has_prev)
+- **🔍 Busca e Filtros**: Busca por nome/email, filtro por tipo (ADMIN/DRIVER) e status ativo
+- **🔄 Ordenação**: Ordenação por qualquer campo (name, email, created_at) com direção asc/desc
+- **🔒 Segurança**: Operações de criação e remoção restritas a administradores
+- **👥 Tipos de Usuário**: Suporte completo para ADMIN e DRIVER com campos específicos
+- **✅ Validação**: Validação robusta com Bean Validation
+- **🔐 Criptografia**: Senhas criptografadas com BCrypt
+- **📝 Documentação**: Swagger/OpenAPI integrado
+- **🛠️ CRUD Completo**: Todas as operações funcionando (incluindo PUT corrigido)
 
 ### Gestão de Veículos
 | Método | Endpoint | Descrição | Status |
@@ -163,6 +174,7 @@ OD46S_web_back/
 - **[API Contract](API_CONTRACT.md)** - Contrato completo das APIs
 - **[Architecture](ARCHITECTURE.md)** - Arquitetura do sistema
 - **[Database Design](DATABASE_DESIGN.md)** - Design do banco de dados
+- **[Postman Collection](docs/OD46S_API_Collection.postman_collection.json)** - Coleção completa para testes da API
 
 ## 🚀 Desenvolvimento
 
@@ -188,6 +200,41 @@ docker exec -it od46s-backend /bin/sh
 
 # Ver status dos containers
 docker-compose ps
+```
+
+### 🧪 Testando a API
+
+#### Usando Postman
+1. Importe a coleção: `docs/OD46S_API_Collection.postman_collection.json`
+2. Configure a variável `baseUrl` para `http://localhost:8080`
+3. Execute primeiro um login para obter o token JWT
+4. Teste os endpoints de usuários com autenticação
+
+#### Exemplo de Teste com cURL
+```bash
+# 1. Login para obter token
+curl -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "admin@od46s.com", "password": "admin123"}'
+
+# 2. Listar usuários (substitua TOKEN pelo token obtido)
+curl -X GET "http://localhost:8080/api/v1/users?page=1&limit=10" \
+  -H "Authorization: Bearer TOKEN"
+
+# 3. Criar novo usuário
+curl -X POST http://localhost:8080/api/v1/users \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer TOKEN" \
+  -d '{
+    "name": "Novo Usuário",
+    "email": "novo@od46s.com",
+    "cpf": "12345678901",
+    "password": "senha123",
+    "type": "DRIVER",
+    "licenseNumber": "12345678901",
+    "licenseCategory": "B",
+    "licenseExpiry": "2030-12-31"
+  }'
 ```
 
 ## 🧰 Scripts de Reset do Ambiente

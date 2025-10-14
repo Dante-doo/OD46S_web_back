@@ -1244,8 +1244,15 @@ Authorization: Bearer {jwt_token}  # Only ADMIN
   - **PUT** `/api/v1/vehicles/{id}`
   - **PATCH** `/api/v1/vehicles/{id}/status`
 
+## ✅ Implemented
+- **User Management (CRUD)**: ✅ COMPLETE
+  - GET `/api/v1/users` (with pagination, search, filters, sorting)
+  - GET `/api/v1/users/{id}`
+  - POST `/api/v1/users`
+  - PUT `/api/v1/users/{id}` (✅ FIXED)
+  - DELETE `/api/v1/users/{id}`
+
 ## ❌ Not Implemented
-- User management (CRUD)
 - Routes (CRUD + points)
 - Executions (CRUD + transitions)
 - GPS tracking and photo upload
