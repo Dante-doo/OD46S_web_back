@@ -5,8 +5,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import utfpr.OD46S.backend.dtos.RotaDTO;
-import utfpr.OD46S.backend.entitys.Rota;
 import utfpr.OD46S.backend.entitys.rotas.CreateCollectionPointRequest;
+import utfpr.OD46S.backend.entitys.rotas.CreateRouteRequest;
 import utfpr.OD46S.backend.entitys.rotas.ReorderPointsRequest;
 import utfpr.OD46S.backend.services.RotaPontoService;
 import utfpr.OD46S.backend.services.RotaService;
@@ -40,6 +40,12 @@ public class RotaController {
         return ResponseEntity.ok(route);
     }
 
+    @PostMapping
+    public ResponseEntity<RotaDTO> createRoute(@RequestBody CreateRouteRequest request) {
+        RotaDTO route = service.createRoute(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(route);
+    }
+
     @PostMapping("/{id}/points")
     public ResponseEntity<RotaDTO> addCollectionPoint(
             @PathVariable Long id,
@@ -47,6 +53,14 @@ public class RotaController {
         RotaDTO rota = rotaService.getRotaById(id);
         RotaDTO route = rotaPontoService.AddPointToRoute(rota, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(route);
+    }
+
+    @PutMapping("/{id}/status")
+    public ResponseEntity<RotaDTO> changeRouteStatus(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        RotaDTO route = service.changeRouteStatus(id, status);
+        return ResponseEntity.ok(route);
     }
 
     @PutMapping("/{id}/points/reorder")

@@ -39,12 +39,21 @@ public class RotaService {
     }
 
     @Transactional
-    public ResponseEntity<RotaDTO> save(CreateRouteRequest rotaDTO) {
-        Rota entity = rotaDTO.toEntity();
-        Rota savedRota = repository.save(entity);
-        return ResponseEntity.status(201).body(RotaDTO.fromEntity(savedRota));
+    public RotaDTO createRoute(CreateRouteRequest request) {
+        Rota route = request.toEntity();
+        Rota savedRoute = repository.save(route);
+        return RotaDTO.fromEntity(savedRoute);
     }
 
+    public RotaDTO changeRouteStatus(Long id, String status) {
+        Rota rota = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Rota não encontrada com id: " + id));
+
+        rota.setStatus(Enum.valueOf(utfpr.OD46S.backend.enums.RotaStatus.class, status));
+        Rota updatedRota = repository.save(rota);
+
+        return RotaDTO.fromEntity(updatedRota);
+    }
 
     public ResponseEntity<List<Rota>> findAll() {
         List<Rota> rotas = repository.findAll();
