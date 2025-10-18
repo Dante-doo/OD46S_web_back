@@ -1,10 +1,7 @@
 package utfpr.OD46S.backend.entitys;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import utfpr.OD46S.backend.enums.PontoStatus;
 
 import java.time.LocalDateTime;
@@ -14,6 +11,7 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @Table(name = "route_point")
 public class RotaPonto {
 

@@ -1,27 +1,50 @@
 package utfpr.OD46S.backend.services;
 
+import jakarta.transaction.Transactional;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import utfpr.OD46S.backend.dtos.RotaDTO;
 import utfpr.OD46S.backend.entitys.Rota;
+import utfpr.OD46S.backend.entitys.rotas.CreateRouteRequest;
 import utfpr.OD46S.backend.repositorys.RotaRepository;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class RotaService {
 
     private RotaRepository repository;
 
+    private RotaPontoService service;
+
     public RotaService(RotaRepository repository) {
         this.repository = repository;
     }
 
-    public ResponseEntity<Rota> save(RotaDTO rota) {
-        Rota rotaEntity = rota.toEntity();
-        rotaEntity.setId(null);
-        return ResponseEntity.status(200).body(rotaEntity);
+    @Transactional
+    public List<RotaDTO> getAllRoutes() {
+        return repository.findAll()
+                .stream()
+                .map(RotaDTO::fromEntity)
+                .collect(Collectors.toList());
     }
+
+    @Transactional
+    public RotaDTO getRotaById(Long id) {
+        Rota rota = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Rota não encontrada com id: " + id));
+
+        return RotaDTO.fromEntity(rota);
+    }
+
+    @Transactional
+    public ResponseEntity<RotaDTO> save(CreateRouteRequest rotaDTO) {
+        Rota entity = rotaDTO.toEntity();
+        Rota savedRota = repository.save(entity);
+        return ResponseEntity.status(201).body(RotaDTO.fromEntity(savedRota));
+    }
+
 
     public ResponseEntity<List<Rota>> findAll() {
         List<Rota> rotas = repository.findAll();

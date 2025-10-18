@@ -27,9 +27,13 @@ public class RotaDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    private RotaDTO fromEntity(Rota rota) {
+    public static RotaDTO fromEntity(Rota rota) {
         return RotaDTO.builder()
                 .id(rota.getId())
+                .name(rota.getName())
+                .description(rota.getDescription())
+                .estimatedDistance(rota.getEstimatedDistance())
+                .estimatedDuration(rota.getEstimatedDuration())
                 .status(rota.getStatus())
                 .build();
     }
@@ -37,6 +41,7 @@ public class RotaDTO {
     public Rota toEntity() {
         return Rota.builder()
                 .id(this.id)
+                .status(RotaStatus.PLANNED)
                 .build();
     }
 }
