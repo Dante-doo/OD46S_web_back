@@ -184,3 +184,49 @@ databaseChangeLog:
             columns:
               - column:
                   name: active
+
+  # ==========================================
+  # CHANGESET 7: Create indexes for route_assignments table
+  # ==========================================
+  - changeSet:
+      id: 007-create-route-assignments-indexes
+      author: od46s-team
+      changes:
+        - createIndex:
+            tableName: route_assignments
+            indexName: idx_assignments_route
+            columns:
+              - column:
+                  name: route_id
+        - createIndex:
+            tableName: route_assignments
+            indexName: idx_assignments_driver
+            columns:
+              - column:
+                  name: driver_id
+        - createIndex:
+            tableName: route_assignments
+            indexName: idx_assignments_vehicle
+            columns:
+              - column:
+                  name: vehicle_id
+        - createIndex:
+            tableName: route_assignments
+            indexName: idx_assignments_status
+            columns:
+              - column:
+                  name: status
+        - createIndex:
+            tableName: route_assignments
+            indexName: idx_assignments_dates
+            columns:
+              - column:
+                  name: start_date
+              - column:
+                  name: end_date
+        - createIndex:
+            tableName: route_assignments
+            indexName: idx_assignments_created_at
+            columns:
+              - column:
+                  name: created_at

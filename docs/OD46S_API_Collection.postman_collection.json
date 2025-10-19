@@ -1298,6 +1298,225 @@
           }
         }
       ]
+    },
+    {
+      "name": "Assignments (Escalas)",
+      "description": "Endpoints para gestão de escalas/atribuições - vínculo entre rota, motorista e caminhão",
+      "item": [
+        {
+          "name": "Listar Assignments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/assignments?page=1&limit=20&status=ACTIVE",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "assignments"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Página atual"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Itens por página"
+                },
+                {
+                  "key": "route_id",
+                  "value": "",
+                  "disabled": true,
+                  "description": "Filtrar por rota"
+                },
+                {
+                  "key": "driver_id",
+                  "value": "",
+                  "disabled": true,
+                  "description": "Filtrar por motorista"
+                },
+                {
+                  "key": "vehicle_id",
+                  "value": "",
+                  "disabled": true,
+                  "description": "Filtrar por veículo"
+                },
+                {
+                  "key": "status",
+                  "value": "ACTIVE",
+                  "description": "ACTIVE ou INACTIVE"
+                },
+                {
+                  "key": "sort",
+                  "value": "created_at",
+                  "disabled": true,
+                  "description": "Campo para ordenar"
+                },
+                {
+                  "key": "order",
+                  "value": "desc",
+                  "disabled": true,
+                  "description": "asc ou desc"
+                }
+              ]
+            },
+            "description": "Lista todas as escalas com filtros opcionais. Admin vê todas, Driver vê apenas suas."
+          },
+          "response": []
+        },
+        {
+          "name": "Obter Assignment por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/assignments/:assignmentId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "assignments", ":assignmentId"],
+              "variable": [
+                {
+                  "key": "assignmentId",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Retorna informações detalhadas de uma escala específica."
+          },
+          "response": []
+        },
+        {
+          "name": "Criar Assignment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"route_id\": 1,\n  \"driver_id\": 3,\n  \"vehicle_id\": 1,\n  \"start_date\": \"2025-01-01\",\n  \"end_date\": null,\n  \"notes\": \"Escala permanente para rota centro\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/assignments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "assignments"]
+            },
+            "description": "Cria uma nova escala vinculando rota, motorista e veículo. Apenas ADMIN.\n\nValidações:\n- Rota deve estar ativa\n- Motorista deve estar habilitado\n- Veículo deve estar disponível\n- Não pode haver conflito de período"
+          },
+          "response": []
+        },
+        {
+          "name": "Atualizar Assignment",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"route_id\": 1,\n  \"driver_id\": 3,\n  \"vehicle_id\": 1,\n  \"start_date\": \"2025-01-01\",\n  \"end_date\": \"2025-12-31\",\n  \"notes\": \"Escala atualizada\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/assignments/:assignmentId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "assignments", ":assignmentId"],
+              "variable": [
+                {
+                  "key": "assignmentId",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Atualiza uma escala existente. Apenas ADMIN."
+          },
+          "response": []
+        },
+        {
+          "name": "Desativar Assignment",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Motorista transferido para outra rota\",\n  \"end_date\": \"2025-12-31\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/assignments/:assignmentId/deactivate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "assignments", ":assignmentId", "deactivate"],
+              "variable": [
+                {
+                  "key": "assignmentId",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Desativa uma escala, encerrando-a. Apenas ADMIN."
+          },
+          "response": []
+        },
+        {
+          "name": "Minha Escala Atual (Driver)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text",
+                "description": "Token do motorista autenticado"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/assignments/my-current",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "assignments", "my-current"]
+            },
+            "description": "Retorna a escala ativa do motorista autenticado. Apenas DRIVER.\n\nUso: O motorista loga no app mobile e vê sua escala ativa com a rota que deve executar."
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "variable": [

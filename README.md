@@ -168,12 +168,12 @@ docker-compose --profile admin up -d
 
 | Método | Endpoint | Descrição | Status |
 |--------|----------|-----------|--------|
-| GET | `/api/v1/assignments` | Listar escalas | ⏳ Planejado |
-| GET | `/api/v1/assignments/{id}` | Detalhes da escala | ⏳ Planejado |
-| POST | `/api/v1/assignments` | Criar escala (Admin) | ⏳ Planejado |
-| PUT | `/api/v1/assignments/{id}` | Atualizar escala | ⏳ Planejado |
-| PATCH | `/api/v1/assignments/{id}/deactivate` | Desativar escala | ⏳ Planejado |
-| GET | `/api/v1/assignments/my-current` | Escala do motorista | ⏳ Planejado |
+| GET | `/api/v1/assignments` | Listar escalas | ✅ Implementado |
+| GET | `/api/v1/assignments/{id}` | Detalhes da escala | ✅ Implementado |
+| POST | `/api/v1/assignments` | Criar escala (Admin) | ✅ Implementado |
+| PUT | `/api/v1/assignments/{id}` | Atualizar escala | ✅ Implementado |
+| PATCH | `/api/v1/assignments/{id}/deactivate` | Desativar escala | ✅ Implementado |
+| GET | `/api/v1/assignments/my-current` | Escala do motorista | ✅ Implementado |
 
 ### Execuções (Executions) - Coletas Realizadas
 > **💡 Conceito**: Registro de uma coleta específica realizada
@@ -223,12 +223,14 @@ OD46S_web_back/
 │   │   ├── AuthController.java         # Autenticação
 │   │   ├── UsuarioController.java      # Gestão de usuários
 │   │   ├── VeiculoController.java      # Gestão de veículos
-│   │   └── RouteController.java        # Gestão de rotas
+│   │   ├── RouteController.java        # Gestão de rotas
+│   │   └── AssignmentController.java   # Gestão de escalas
 │   ├── services/                        # Lógica de negócio
 │   │   ├── login/AuthService.java      # Autenticação e JWT
 │   │   ├── UsuarioService.java         # Usuários e motoristas
 │   │   ├── VeiculoService.java         # Veículos
-│   │   └── RouteService.java           # Rotas e pontos de coleta
+│   │   ├── RouteService.java           # Rotas e pontos de coleta
+│   │   └── AssignmentService.java      # Escalas (rota+motorista+veículo)
 │   ├── repositories/                    # Acesso aos dados (JPA)
 │   ├── entitys/                         # Entidades JPA
 │   │   ├── Usuario.java                # Usuário base
@@ -236,7 +238,8 @@ OD46S_web_back/
 │   │   ├── Motorista.java              # Motorista (herda Usuario)
 │   │   ├── Veiculo.java                # Veículos da frota
 │   │   ├── Route.java                  # Rotas de coleta
-│   │   └── RouteCollectionPoint.java   # Pontos de coleta
+│   │   ├── RouteCollectionPoint.java   # Pontos de coleta
+│   │   └── RouteAssignment.java        # Escalas (vínculo rota+driver+vehicle)
 │   ├── dtos/                            # Data Transfer Objects
 │   ├── enums/                           # Enumerações
 │   │   ├── StatusVeiculo.java          # Status dos veículos
@@ -244,7 +247,8 @@ OD46S_web_back/
 │   │   ├── CategoriaCNH.java           # Categorias de CNH
 │   │   ├── CollectionType.java         # Tipos de coleta
 │   │   ├── Priority.java               # Prioridades
-│   │   └── WasteType.java              # Tipos de lixo
+│   │   ├── WasteType.java              # Tipos de lixo
+│   │   └── AssignmentStatus.java       # Status de escalas (ACTIVE/INACTIVE)
 │   ├── config/                          # Configurações
 │   │   ├── SecurityConfig.java         # Spring Security
 │   │   ├── JwtAuthFilter.java          # Filtro JWT
@@ -289,8 +293,8 @@ OD46S_web_back/
 - `routes` - Rotas de coleta (com periodicidade)
 - `route_collection_points` - Pontos de coleta em cada rota
 
-**Módulo de Escalas (Planejado)**
-- `route_assignments` - Vínculo rota + motorista + caminhão (duradouro)
+**Módulo de Escalas**
+- `route_assignments` - Vínculo rota + motorista + caminhão (duradouro) ✅
 
 **Módulo de Execuções (Planejado)**
 - `route_executions` - Registro de coletas realizadas (eventos)
@@ -307,11 +311,12 @@ users (base)
 routes
   └─→ route_collection_points (1:N)
 
-route_assignments (escala permanente)
+route_assignments (escala permanente) ✅ IMPLEMENTADO
   ├─→ routes (N:1)
   ├─→ drivers (N:1)
   ├─→ vehicles (N:1)
-  └─→ route_executions (1:N) ← Uma execução por dia
+  ├─→ administrators (N:1) - created_by
+  └─→ route_executions (1:N) ← Uma execução por dia (planejado)
 
 route_executions (coleta realizada)
   ├─→ route_assignments (N:1)
