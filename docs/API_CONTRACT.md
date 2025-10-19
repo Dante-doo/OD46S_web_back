@@ -728,10 +728,14 @@ Authorization: Bearer {jwt_token}  # Only ADMIN
 
 ---
 
-# 📋 5. ROUTE EXECUTION
+# 🔗 5. ROUTE ASSIGNMENTS (Escalas/Atribuições)
 
-## 5.1 List Route Executions
-**GET** `/executions`
+> **💡 Conceito**: Uma ATRIBUIÇÃO é o vínculo DURADOURO entre uma rota, um motorista e um caminhão.  
+> É o **cadastro que interliga** rota + motorista + caminhão.  
+> Duração: dias, semanas, meses ou anos (escala permanente).
+
+## 5.1 List Assignments
+**GET** `/api/v1/assignments`
 
 ### Query Parameters
 ```
@@ -740,10 +744,308 @@ Authorization: Bearer {jwt_token}  # Only ADMIN
 &route_id=1               // filter by route
 &driver_id=2              // filter by driver
 &vehicle_id=3             // filter by vehicle
-&status=IN_PROGRESS       // SCHEDULED|IN_PROGRESS|COMPLETED|CANCELLED
-&start_date=2025-01-01    // filter by start date (YYYY-MM-DD)
-&end_date=2025-01-31      // filter by end date
-&sort=start_time          // sorting
+&status=ACTIVE            // ACTIVE|INACTIVE
+&start_date=2025-01-01    // filter by start date
+&sort=created_at          // sorting
+&order=desc               // direction
+```
+
+### Response 200
+```json
+{
+  "success": true,
+  "data": {
+    "assignments": [
+      {
+        "id": 1,
+        "route": {
+          "id": 1,
+          "name": "Downtown Route A1",
+          "periodicity": "0 8 * * 1,3,5"
+        },
+        "driver": {
+          "id": 2,
+          "name": "John Driver",
+          "license_number": "12345678901"
+        },
+        "vehicle": {
+          "id": 1,
+          "license_plate": "ABC1234",
+          "model": "Mercedes-Benz Atego 1719"
+        },
+        "status": "ACTIVE",
+        "start_date": "2025-01-01",
+        "end_date": null,
+        "notes": "Permanent assignment for downtown area",
+        "created_by": 1,
+        "created_at": "2025-01-01T10:00:00Z",
+        "executions_count": 45
+      }
+    ],
+    "pagination": {
+      "current_page": 1,
+      "total_pages": 5,
+      "total_items": 89,
+      "items_per_page": 20
+    }
+  }
+}
+```
+
+## 5.2 Get Assignment by ID
+**GET** `/api/v1/assignments/{id}`
+
+### Response 200
+```json
+{
+  "success": true,
+  "data": {
+    "assignment": {
+      "id": 1,
+      "route": {
+        "id": 1,
+        "name": "Downtown Route A1",
+        "description": "Commercial area collection",
+        "collection_type": "COMMERCIAL",
+        "periodicity": "0 8 * * 1,3,5",
+        "estimated_time_minutes": 120,
+        "distance_km": 15.5,
+        "collection_points_count": 25
+      },
+      "driver": {
+        "id": 2,
+        "name": "John Driver",
+        "email": "john@od46s.com",
+        "cpf": "12345678901",
+        "license_number": "12345678901",
+        "license_category": "D",
+        "license_expiry": "2028-12-31",
+        "phone": "47999999999"
+      },
+      "vehicle": {
+        "id": 1,
+        "license_plate": "ABC1234",
+        "model": "Mercedes-Benz Atego 1719",
+        "year": 2022,
+        "capacity_kg": 8000,
+        "status": "AVAILABLE"
+      },
+      "status": "ACTIVE",
+      "start_date": "2025-01-01",
+      "end_date": null,
+      "notes": "Permanent assignment for downtown area",
+      "created_by": 1,
+      "created_at": "2025-01-01T10:00:00Z",
+      "updated_at": "2025-01-01T10:00:00Z",
+      "recent_executions": [
+        {
+          "id": 15,
+          "execution_date": "2025-01-15",
+          "start_time": "2025-01-15T08:15:00Z",
+          "end_time": "2025-01-15T10:30:00Z",
+          "status": "COMPLETED"
+        }
+      ],
+      "executions_count": 45
+    }
+  }
+}
+```
+
+## 5.3 Create Assignment
+**POST** `/api/v1/assignments`
+
+> **🔒 ADMIN ONLY**: Este endpoint requer autenticação de administrador.
+
+### Headers
+```
+Authorization: Bearer {jwt_token}
+```
+
+### Request Body
+```json
+{
+  "route_id": 1,                    // int, required
+  "driver_id": 2,                   // int, required
+  "vehicle_id": 1,                  // int, required
+  "start_date": "2025-01-01",      // date (YYYY-MM-DD), required
+  "end_date": null,                 // date (YYYY-MM-DD), optional (null = indefinido)
+  "notes": "Permanent assignment"   // string, optional
+}
+```
+
+### Response 201
+```json
+{
+  "success": true,
+  "data": {
+    "assignment": {
+      "id": 1,
+      "route_id": 1,
+      "driver_id": 2,
+      "vehicle_id": 1,
+      "status": "ACTIVE",
+      "start_date": "2025-01-01",
+      "end_date": null,
+      "notes": "Permanent assignment",
+      "created_by": 1,
+      "created_at": "2025-01-01T10:00:00Z"
+    }
+  },
+  "message": "Assignment created successfully"
+}
+```
+
+### Response 400 (Validation Errors)
+```json
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Validation failed",
+    "details": {
+      "driver_id": "Driver is not active or enabled",
+      "vehicle_id": "Vehicle is not available",
+      "route_id": "Route is not active"
+    }
+  }
+}
+```
+
+### Response 409 (Conflict)
+```json
+{
+  "success": false,
+  "error": {
+    "code": "ASSIGNMENT_CONFLICT",
+    "message": "Driver already has an active assignment for this period",
+    "details": {
+      "existing_assignment_id": 5,
+      "conflicting_route": "Downtown Route A1"
+    }
+  }
+}
+```
+
+## 5.4 Update Assignment
+**PUT** `/api/v1/assignments/{id}`
+
+> **🔒 ADMIN ONLY**
+
+### Headers
+```
+Authorization: Bearer {jwt_token}
+```
+
+### Request Body
+```json
+{
+  "route_id": 1,                    // int, optional
+  "driver_id": 2,                   // int, optional
+  "vehicle_id": 1,                  // int, optional
+  "start_date": "2025-01-01",      // date, optional
+  "end_date": "2025-12-31",        // date, optional
+  "notes": "Updated notes"          // string, optional
+}
+```
+
+## 5.5 Deactivate Assignment
+**PATCH** `/api/v1/assignments/{id}/deactivate`
+
+> **🔒 ADMIN ONLY**
+
+### Headers
+```
+Authorization: Bearer {jwt_token}
+```
+
+### Request Body
+```json
+{
+  "reason": "Driver transferred to another route", // string, optional
+  "end_date": "2025-01-31"                        // date, optional
+}
+```
+
+### Response 200
+```json
+{
+  "success": true,
+  "data": {
+    "assignment": {
+      "id": 1,
+      "status": "INACTIVE",
+      "end_date": "2025-01-31"
+    }
+  },
+  "message": "Assignment deactivated successfully"
+}
+```
+
+## 5.6 Get Driver's Current Assignment
+**GET** `/api/v1/assignments/my-current`
+
+> **🔒 DRIVER**: O motorista autenticado vê sua própria atribuição ativa.
+
+### Headers
+```
+Authorization: Bearer {jwt_token}  # Driver
+```
+
+### Response 200
+```json
+{
+  "success": true,
+  "data": {
+    "assignment": {
+      "id": 1,
+      "route": {
+        "id": 1,
+        "name": "Downtown Route A1",
+        "periodicity": "0 8 * * 1,3,5",
+        "description": "Commercial area - Mon, Wed, Fri at 8am"
+      },
+      "vehicle": {
+        "id": 1,
+        "license_plate": "ABC1234",
+        "model": "Mercedes-Benz Atego 1719"
+      },
+      "start_date": "2025-01-01",
+      "next_scheduled_dates": [
+        "2025-01-20",
+        "2025-01-22",
+        "2025-01-24"
+      ]
+    }
+  }
+}
+```
+
+---
+
+# 📋 6. ROUTE EXECUTIONS (Execuções Individuais)
+
+> **💡 Conceito**: Uma EXECUÇÃO é o registro de UMA COLETA ESPECÍFICA realizada.  
+> Criada automaticamente quando o motorista INICIA uma coleta no app mobile.  
+> Duração: algumas horas (do início ao fim da coleta).  
+> Vinculada a uma ASSIGNMENT (escala).
+
+## 6.1 List Executions
+**GET** `/api/v1/executions`
+
+### Query Parameters
+```
+?page=1                    // pagination
+&limit=20                  // items per page
+&assignment_id=1          // filter by assignment
+&route_id=1               // filter by route
+&driver_id=2              // filter by driver
+&vehicle_id=3             // filter by vehicle
+&status=COMPLETED         // IN_PROGRESS|COMPLETED|CANCELLED
+&execution_date=2025-01-15 // filter by date (YYYY-MM-DD)
+&start_date=2025-01-01    // filter by date range
+&end_date=2025-01-31      // filter by date range
+&sort=execution_date      // sorting
 &order=desc               // direction
 ```
 
@@ -755,9 +1057,67 @@ Authorization: Bearer {jwt_token}  # Only ADMIN
     "executions": [
       {
         "id": 1,
+        "assignment": {
+          "id": 1,
+          "route": {
+            "id": 1,
+            "name": "Downtown Route A1"
+          },
+          "driver": {
+            "id": 2,
+            "name": "John Driver"
+          },
+          "vehicle": {
+            "id": 1,
+            "license_plate": "ABC1234"
+          }
+        },
+        "execution_date": "2025-01-15",
+        "start_time": "2025-01-15T08:15:00Z",
+        "end_time": "2025-01-15T10:30:00Z",
+        "status": "COMPLETED",
+        "initial_km": 12500,
+        "final_km": 12515,
+        "distance_km": 15,
+        "duration_minutes": 135,
+        "total_collected_weight_kg": 1200,
+        "points_visited": 25,
+        "points_collected": 23,
+        "collection_rate": 0.92,
+        "driver_rating": 4,
+        "problems_found": "2 damaged bins at collection points",
+        "created_at": "2025-01-15T08:15:00Z"
+      }
+    ],
+    "pagination": { /* ... */ },
+    "summary": {
+      "total_executions": 150,
+      "completed": 145,
+      "in_progress": 2,
+      "cancelled": 3,
+      "total_distance_km": 2250,
+      "total_weight_collected_kg": 180000
+    }
+  }
+}
+```
+
+## 6.2 Get Execution by ID
+**GET** `/api/v1/executions/{id}`
+
+### Response 200
+```json
+{
+  "success": true,
+  "data": {
+    "execution": {
+      "id": 1,
+      "assignment": {
+        "id": 1,
         "route": {
           "id": 1,
-          "name": "Downtown Route A1"
+          "name": "Downtown Route A1",
+          "collection_points_count": 25
         },
         "driver": {
           "id": 2,
@@ -766,89 +1126,234 @@ Authorization: Bearer {jwt_token}  # Only ADMIN
         "vehicle": {
           "id": 1,
           "license_plate": "ABC1234"
-        },
-        "start_time": "2025-01-15T08:00:00Z",
-        "end_time": "2025-01-15T10:30:00Z",
-        "status": "COMPLETED",
-        "initial_km": 12500,
-        "final_km": 12515,
-        "total_collected_weight_kg": 1200,
-        "points_visited": 25,
-        "points_collected": 23,
-        "driver_rating": 4,
-        "created_at": "2025-01-15T07:45:00Z"
-      }
-    ],
-    "pagination": { /* ... */ }
+        }
+      },
+      "execution_date": "2025-01-15",
+      "start_time": "2025-01-15T08:15:00Z",
+      "end_time": "2025-01-15T10:30:00Z",
+      "status": "COMPLETED",
+      "initial_km": 12500,
+      "final_km": 12515,
+      "distance_km": 15,
+      "duration_minutes": 135,
+      "total_collected_weight_kg": 1200,
+      "points_visited": 25,
+      "points_collected": 23,
+      "collection_rate": 0.92,
+      "initial_notes": "Starting collection, good weather",
+      "final_notes": "Collection completed successfully",
+      "problems_found": "2 damaged bins at points 5 and 12",
+      "driver_rating": 4,
+      "gps_records_count": 450,
+      "collection_records_count": 23,
+      "created_at": "2025-01-15T08:15:00Z"
+    }
   }
 }
 ```
 
-## 5.2 Get Execution by ID
-**GET** `/executions/{id}`
+## 6.3 Start Execution
+**POST** `/api/v1/executions/start`
 
-## 5.3 Create Route Execution
-**POST** `/executions`
+> **🔒 DRIVER or ADMIN**: Motorista inicia sua coleta no app mobile.
 
 ### Headers
 ```
-Authorization: Bearer {jwt_token}  # Only ADMIN
+Authorization: Bearer {jwt_token}  # Driver
 ```
 
 ### Request Body
 ```json
 {
-  "route_id": 1,                    // int, required
-  "driver_id": 2,                   // int, required
-  "vehicle_id": 1,                  // int, required
-  "start_time": "2025-01-16T08:00:00Z", // datetime, required
+  "assignment_id": 1,               // int, required
   "initial_km": 12515,              // int, required
-  "initial_notes": "Starting route execution" // string, optional
-}
-```
-
-## 5.4 Start Execution
-**PATCH** `/executions/{id}/start`
-
-### Headers
-```
-Authorization: Bearer {jwt_token}  # Driver or ADMIN
-```
-
-### Request Body
-```json
-{
-  "initial_km": 12515,              // int, required
-  "latitude": -25.4284,             // decimal, required (current position)
+  "latitude": -25.4284,             // decimal, required (posição atual)
   "longitude": -49.2733,            // decimal, required
   "initial_notes": "Starting collection" // string, optional
 }
 ```
 
-## 5.5 Complete Execution
-**PATCH** `/executions/{id}/complete`
+### Response 201
+```json
+{
+  "success": true,
+  "data": {
+    "execution": {
+      "id": 1,
+      "assignment_id": 1,
+      "execution_date": "2025-01-16",
+      "start_time": "2025-01-16T08:15:23Z",
+      "status": "IN_PROGRESS",
+      "initial_km": 12515,
+      "route": {
+        "id": 1,
+        "name": "Downtown Route A1",
+        "collection_points": [
+          {
+            "id": 1,
+            "sequence_order": 1,
+            "address": "123 Main Street",
+            "latitude": -25.4284,
+            "longitude": -49.2733,
+            "waste_type": "COMMERCIAL"
+          }
+        ]
+      }
+    }
+  },
+  "message": "Execution started successfully"
+}
+```
+
+### Response 400 (Validation Errors)
+```json
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Cannot start execution",
+    "details": {
+      "reason": "Driver already has an execution IN_PROGRESS",
+      "current_execution_id": 5
+    }
+  }
+}
+```
+
+## 6.4 Complete Execution
+**PATCH** `/api/v1/executions/{id}/complete`
+
+> **🔒 DRIVER or ADMIN**: Motorista finaliza a coleta.
 
 ### Headers
 ```
-Authorization: Bearer {jwt_token}  # Driver or ADMIN
+Authorization: Bearer {jwt_token}  # Driver
 ```
 
 ### Request Body
 ```json
 {
   "final_km": 12525,                // int, required
-  "total_collected_weight_kg": 1200, // decimal, required
+  "latitude": -25.4284,             // decimal, required (posição final)
+  "longitude": -49.2733,            // decimal, required
+  "total_collected_weight_kg": 1200, // decimal, optional
   "final_notes": "Collection completed successfully", // string, optional
-  "problems_found": "",             // string, optional
+  "problems_found": "2 damaged bins",  // string, optional
   "driver_rating": 4                // int, optional (1-5)
+}
+```
+
+### Response 200
+```json
+{
+  "success": true,
+  "data": {
+    "execution": {
+      "id": 1,
+      "status": "COMPLETED",
+      "execution_date": "2025-01-16",
+      "start_time": "2025-01-16T08:15:23Z",
+      "end_time": "2025-01-16T10:30:45Z",
+      "duration_minutes": 135,
+      "initial_km": 12515,
+      "final_km": 12525,
+      "distance_km": 10,
+      "total_collected_weight_kg": 1200,
+      "points_visited": 25,
+      "points_collected": 23,
+      "collection_rate": 0.92
+    }
+  },
+  "message": "Execution completed successfully"
+}
+```
+
+## 6.5 Cancel Execution
+**PATCH** `/api/v1/executions/{id}/cancel`
+
+> **🔒 DRIVER or ADMIN**: Cancelar execução em andamento.
+
+### Headers
+```
+Authorization: Bearer {jwt_token}
+```
+
+### Request Body
+```json
+{
+  "cancellation_reason": "Heavy rain, unsafe conditions", // string, required
+  "latitude": -25.4284,             // decimal, optional
+  "longitude": -49.2733             // decimal, optional
+}
+```
+
+### Response 200
+```json
+{
+  "success": true,
+  "data": {
+    "execution": {
+      "id": 1,
+      "status": "CANCELLED",
+      "cancellation_reason": "Heavy rain, unsafe conditions"
+    }
+  },
+  "message": "Execution cancelled"
+}
+```
+
+## 6.6 Get Driver's Current Execution
+**GET** `/api/v1/executions/my-current`
+
+> **🔒 DRIVER**: Motorista vê sua execução atual em andamento.
+
+### Headers
+```
+Authorization: Bearer {jwt_token}  # Driver
+```
+
+### Response 200
+```json
+{
+  "success": true,
+  "data": {
+    "execution": {
+      "id": 1,
+      "assignment_id": 1,
+      "execution_date": "2025-01-16",
+      "start_time": "2025-01-16T08:15:23Z",
+      "status": "IN_PROGRESS",
+      "initial_km": 12515,
+      "route": {
+        "id": 1,
+        "name": "Downtown Route A1",
+        "estimated_time_minutes": 120,
+        "distance_km": 15.5
+      },
+      "elapsed_minutes": 45,
+      "points_visited": 10,
+      "points_remaining": 15
+    }
+  }
+}
+```
+
+### Response 404 (No Active Execution)
+```json
+{
+  "success": false,
+  "error": {
+    "code": "NO_ACTIVE_EXECUTION",
+    "message": "No execution in progress"
+  }
 }
 ```
 
 ---
 
-# 📍 6. GPS TRACKING
+# 📍 7. GPS TRACKING
 
-## 6.1 Send GPS Position
+## 7.1 Send GPS Position
 **POST** `/executions/{execution_id}/gps`
 
 ### Headers
@@ -890,7 +1395,7 @@ Authorization: Bearer {jwt_token}  # Driver or ADMIN
 }
 ```
 
-## 6.2 Get GPS Track
+## 7.2 Get GPS Track
 **GET** `/executions/{execution_id}/gps`
 
 ### Query Parameters
@@ -931,9 +1436,9 @@ Authorization: Bearer {jwt_token}  # Driver or ADMIN
 
 ---
 
-# 🗑️ 7. COLLECTION RECORDS
+# 🗑️ 8. COLLECTION RECORDS
 
-## 7.1 Record Collection Point
+## 8.1 Record Collection Point
 **POST** `/executions/{execution_id}/collections`
 
 ### Headers
@@ -1021,9 +1526,9 @@ description: "Before collection" // string, optional
 
 ---
 
-# 📊 8. ANALYTICS & REPORTS
+# 📊 9. ANALYTICS & REPORTS
 
-## 8.1 Dashboard Statistics
+## 9.1 Dashboard Statistics
 **GET** `/analytics/dashboard`
 
 ### Query Parameters
@@ -1128,9 +1633,9 @@ description: "Before collection" // string, optional
 
 ---
 
-# 📱 9. MOBILE SYNC
+# 📱 10. MOBILE SYNC
 
-## 9.1 Sync Data Download
+## 10.1 Sync Data Download
 **GET** `/mobile/sync/download`
 
 ### Headers
@@ -1161,7 +1666,7 @@ Authorization: Bearer {jwt_token}  # Driver
 }
 ```
 
-## 9.2 Sync Data Upload
+## 10.2 Sync Data Upload
 **POST** `/mobile/sync/upload`
 
 ### Headers
@@ -1183,9 +1688,9 @@ Authorization: Bearer {jwt_token}  # Driver
 
 ---
 
-# 🔧 10. SYSTEM HEALTH
+# 🔧 11. SYSTEM HEALTH
 
-## 10.1 Health Check
+## 11.1 Health Check
 **GET** `/api/v1/health`
 
 ### Response 200
@@ -1203,7 +1708,7 @@ Authorization: Bearer {jwt_token}  # Driver
 }
 ```
 
-## 10.2 Basic Health (simple)
+## 11.2 Basic Health (simple)
 **GET** `/health`
 
 ### Headers
