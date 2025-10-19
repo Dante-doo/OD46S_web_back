@@ -154,3 +154,182 @@ databaseChangeLog:
       rollback:
         - sql:
             sql: "SELECT setval('users_id_seq', 1, false);"
+
+  # ==========================================
+  # CHANGESET 5: Insert sample route
+  # ==========================================
+  - changeSet:
+      id: 005-insert-sample-route
+      author: od46s-team
+      changes:
+        - insert:
+            tableName: routes
+            columns:
+              - column:
+                  name: id
+                  value: 1
+              - column:
+                  name: name
+                  value: "Downtown Route A1"
+              - column:
+                  name: description
+                  value: "Commercial area collection route - Monday, Wednesday, Friday"
+              - column:
+                  name: collection_type
+                  value: "COMMERCIAL"
+              - column:
+                  name: periodicity
+                  value: "0 8 * * 1,3,5"
+              - column:
+                  name: priority
+                  value: "HIGH"
+              - column:
+                  name: estimated_time_minutes
+                  value: 120
+              - column:
+                  name: distance_km
+                  value: 15.5
+              - column:
+                  name: active
+                  valueBoolean: true
+              - column:
+                  name: notes
+                  value: "Heavy traffic area, start early"
+              - column:
+                  name: created_by
+                  value: 1
+
+  # ==========================================
+  # CHANGESET 6: Insert sample collection points
+  # ==========================================
+  - changeSet:
+      id: 006-insert-sample-collection-points
+      author: od46s-team
+      changes:
+        - insert:
+            tableName: route_collection_points
+            columns:
+              - column:
+                  name: id
+                  value: 1
+              - column:
+                  name: route_id
+                  value: 1
+              - column:
+                  name: sequence_order
+                  value: 1
+              - column:
+                  name: address
+                  value: "123 Main Street, Downtown"
+              - column:
+                  name: latitude
+                  value: -25.428400
+              - column:
+                  name: longitude
+                  value: -49.273300
+              - column:
+                  name: waste_type
+                  value: "COMMERCIAL"
+              - column:
+                  name: estimated_capacity_kg
+                  value: 50.00
+              - column:
+                  name: collection_frequency
+                  value: "ALTERNATE"
+              - column:
+                  name: notes
+                  value: "Large office building"
+              - column:
+                  name: active
+                  valueBoolean: true
+        - insert:
+            tableName: route_collection_points
+            columns:
+              - column:
+                  name: id
+                  value: 2
+              - column:
+                  name: route_id
+                  value: 1
+              - column:
+                  name: sequence_order
+                  value: 2
+              - column:
+                  name: address
+                  value: "456 Commerce Avenue, Downtown"
+              - column:
+                  name: latitude
+                  value: -25.429500
+              - column:
+                  name: longitude
+                  value: -49.274200
+              - column:
+                  name: waste_type
+                  value: "COMMERCIAL"
+              - column:
+                  name: estimated_capacity_kg
+                  value: 35.00
+              - column:
+                  name: collection_frequency
+                  value: "ALTERNATE"
+              - column:
+                  name: notes
+                  value: "Shopping center"
+              - column:
+                  name: active
+                  valueBoolean: true
+        - insert:
+            tableName: route_collection_points
+            columns:
+              - column:
+                  name: id
+                  value: 3
+              - column:
+                  name: route_id
+                  value: 1
+              - column:
+                  name: sequence_order
+                  value: 3
+              - column:
+                  name: address
+                  value: "789 Business Street, Downtown"
+              - column:
+                  name: latitude
+                  value: -25.430200
+              - column:
+                  name: longitude
+                  value: -49.275100
+              - column:
+                  name: waste_type
+                  value: "COMMERCIAL"
+              - column:
+                  name: estimated_capacity_kg
+                  value: 45.00
+              - column:
+                  name: collection_frequency
+                  value: "ALTERNATE"
+              - column:
+                  name: notes
+                  value: "Corporate plaza"
+              - column:
+                  name: active
+                  valueBoolean: true
+
+  # ==========================================
+  # CHANGESET 7: Reset route sequences
+  # ==========================================
+  - changeSet:
+      id: 007-reset-route-sequences
+      author: od46s-team
+      changes:
+        - sql:
+            sql: "SELECT setval('routes_id_seq', 1, true);"
+            dbms: postgresql
+        - sql:
+            sql: "SELECT setval('route_collection_points_id_seq', 3, true);"
+            dbms: postgresql
+      rollback:
+        - sql:
+            sql: "SELECT setval('routes_id_seq', 1, false);"
+        - sql:
+            sql: "SELECT setval('route_collection_points_id_seq', 1, false);"
