@@ -7,6 +7,8 @@ import org.springframework.transaction.annotation.Transactional;
 import utfpr.OD46S.backend.entitys.Usuario;
 import utfpr.OD46S.backend.entitys.login.AuthResponse;
 import utfpr.OD46S.backend.entitys.login.LoginRequest;
+import utfpr.OD46S.backend.repositorys.AdministratorRepository;
+import utfpr.OD46S.backend.repositorys.MotoristaRepository;
 import utfpr.OD46S.backend.repositorys.UsuarioRepository;
 import utfpr.OD46S.backend.utils.JwtUtils;
 
@@ -17,6 +19,11 @@ public class AuthService {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
+    @Autowired
+    private AdministratorRepository administratorRepository;
+
+    @Autowired
+    private MotoristaRepository motoristaRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -45,8 +52,16 @@ public class AuthService {
             throw new RuntimeException("Senha inválida");
         }
 
-        String token = jwtUtil.generateToken(user.getEmail());
-        return new AuthResponse(token, user.getEmail(), user.getName(), "USER");
+        // Determinar role do usuário
+        String role = "USER";
+        if (administratorRepository.findById(user.getId()).isPresent()) {
+            role = "ADMIN";
+        } else if (motoristaRepository.findById(user.getId()).isPresent()) {
+            role = "DRIVER";
+        }
+
+        String token = jwtUtil.generateToken(user.getEmail(), role);
+        return new AuthResponse(token, user.getEmail(), user.getName(), role);
     }
 
 
@@ -68,9 +83,17 @@ public class AuthService {
                 throw new RuntimeException("Usuário inativo");
             }
 
+            // Determinar role do usuário
+            String role = "USER";
+            if (administratorRepository.findById(user.getId()).isPresent()) {
+                role = "ADMIN";
+            } else if (motoristaRepository.findById(user.getId()).isPresent()) {
+                role = "DRIVER";
+            }
+
             // Gerar novo token
-            String newToken = jwtUtil.generateToken(user.getEmail());
-            return new AuthResponse(newToken, user.getEmail(), user.getName(), "USER");
+            String newToken = jwtUtil.generateToken(user.getEmail(), role);
+            return new AuthResponse(newToken, user.getEmail(), user.getName(), role);
 
         } catch (Exception e) {
             throw new RuntimeException("Erro ao renovar token: " + e.getMessage());
