@@ -815,6 +815,489 @@
           }
         }
       ]
+    },
+    {
+      "name": "Routes",
+      "item": [
+        {
+          "name": "Listar Rotas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code é 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Resposta contém success e data', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('success');",
+                  "    pm.expect(jsonData).to.have.property('data');",
+                  "    pm.expect(jsonData.data).to.have.property('routes');",
+                  "    pm.expect(jsonData.data).to.have.property('pagination');",
+                  "});",
+                  "",
+                  "pm.test('Rotas é um array', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data.routes).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Listar todas as rotas com paginação, busca e filtros",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/routes?page=1&limit=20&search=&collection_type=&priority=&active=&sort=name&order=asc",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "routes"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Número da página"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Itens por página (máx 100)"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "description": "Buscar por nome da rota"
+                },
+                {
+                  "key": "collection_type",
+                  "value": "",
+                  "description": "RESIDENTIAL|COMMERCIAL|HOSPITAL|SELECTIVE|RECYCLABLE"
+                },
+                {
+                  "key": "priority",
+                  "value": "",
+                  "description": "LOW|MEDIUM|HIGH|URGENT"
+                },
+                {
+                  "key": "active",
+                  "value": "",
+                  "description": "true|false"
+                },
+                {
+                  "key": "sort",
+                  "value": "name",
+                  "description": "Campo para ordenação"
+                },
+                {
+                  "key": "order",
+                  "value": "asc",
+                  "description": "asc|desc"
+                }
+              ],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Buscar Rota por ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code é 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Resposta contém dados da rota', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.have.property('route');",
+                  "    pm.expect(jsonData.data.route).to.have.property('id');",
+                  "    pm.expect(jsonData.data.route).to.have.property('name');",
+                  "    pm.expect(jsonData.data.route).to.have.property('collection_points');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Obter detalhes de uma rota específica incluindo pontos de coleta",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/routes/:routeId",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "routes",
+                ":routeId"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "routeId",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Criar Rota",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code é 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Rota foi criada', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.have.property('route');",
+                  "    pm.expect(jsonData.message).to.equal('Route created successfully');",
+                  "    ",
+                  "    // Salvar ID da rota criada",
+                  "    if (jsonData.data.route && jsonData.data.route.id) {",
+                  "        pm.environment.set('createdRouteId', jsonData.data.route.id);",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "default"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Criar nova rota de coleta (apenas ADMIN)",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/routes",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "routes"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Rota Centro B2\",\n  \"description\": \"Rota de coleta comercial no centro da cidade\",\n  \"collection_type\": \"COMMERCIAL\",\n  \"periodicity\": \"0 8 * * 1,3,5\",\n  \"priority\": \"HIGH\",\n  \"estimated_time_minutes\": 150,\n  \"distance_km\": 18.5,\n  \"active\": true,\n  \"notes\": \"Área de tráfego intenso - iniciar cedo\",\n  \"collection_points\": [\n    {\n      \"sequence_order\": 1,\n      \"address\": \"Av. Principal, 123 - Centro\",\n      \"latitude\": -25.4284,\n      \"longitude\": -49.2733,\n      \"waste_type\": \"COMMERCIAL\",\n      \"estimated_capacity_kg\": 45.0,\n      \"collection_frequency\": \"ALTERNATE\",\n      \"notes\": \"Prédio comercial\",\n      \"active\": true\n    },\n    {\n      \"sequence_order\": 2,\n      \"address\": \"Rua Comércio, 456 - Centro\",\n      \"latitude\": -25.4295,\n      \"longitude\": -49.2742,\n      \"waste_type\": \"COMMERCIAL\",\n      \"estimated_capacity_kg\": 38.0,\n      \"collection_frequency\": \"ALTERNATE\",\n      \"notes\": \"Shopping center\",\n      \"active\": true\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Criar Rota Simples (sem pontos)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code é 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Rota foi criada sem pontos', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data.route).to.have.property('id');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "default"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Criar rota sem pontos de coleta (adicionar depois)",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/routes",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "routes"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Rota Residencial Norte\",\n  \"description\": \"Coleta residencial zona norte\",\n  \"collection_type\": \"RESIDENTIAL\",\n  \"periodicity\": \"0 7 * * 2,4,6\",\n  \"priority\": \"MEDIUM\",\n  \"estimated_time_minutes\": 90,\n  \"distance_km\": 12.0,\n  \"active\": true,\n  \"notes\": \"Bairros residenciais\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Adicionar Ponto à Rota",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code é 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Ponto foi adicionado', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.have.property('point');",
+                  "    pm.expect(jsonData.data.point).to.have.property('id');",
+                  "    pm.expect(jsonData.message).to.equal('Collection point added successfully');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "default"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Adicionar novo ponto de coleta a uma rota existente (apenas ADMIN)",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/routes/:routeId/points",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "routes",
+                ":routeId",
+                "points"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "routeId",
+                  "value": "1"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sequence_order\": 4,\n  \"address\": \"Rua Nova, 789 - Centro\",\n  \"latitude\": -25.4302,\n  \"longitude\": -49.2751,\n  \"waste_type\": \"COMMERCIAL\",\n  \"estimated_capacity_kg\": 40.0,\n  \"collection_frequency\": \"ALTERNATE\",\n  \"notes\": \"Novo estabelecimento comercial\",\n  \"active\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Reordenar Pontos da Rota",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code é 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Pontos foram reordenados', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.have.property('route');",
+                  "    pm.expect(jsonData.message).to.equal('Collection points reordered successfully');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "default"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Reordenar os pontos de coleta de uma rota (apenas ADMIN)",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/routes/:routeId/points/reorder",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "routes",
+                ":routeId",
+                "points",
+                "reorder"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "routeId",
+                  "value": "1"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  { \"id\": 1, \"sequence_order\": 3 },\n  { \"id\": 2, \"sequence_order\": 1 },\n  { \"id\": 3, \"sequence_order\": 2 }\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Filtrar Rotas por Tipo",
+          "event": [],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Filtrar rotas por tipo de coleta (COMMERCIAL neste exemplo)",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/routes?collection_type=COMMERCIAL&priority=HIGH",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "routes"
+              ],
+              "query": [
+                {
+                  "key": "collection_type",
+                  "value": "COMMERCIAL"
+                },
+                {
+                  "key": "priority",
+                  "value": "HIGH"
+                }
+              ],
+              "variable": []
+            }
+          }
+        }
+      ]
     }
   ],
   "variable": [

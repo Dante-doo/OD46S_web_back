@@ -146,17 +146,6 @@ docker-compose --profile admin up -d
 | PUT | `/api/v1/users/{id}` | Atualizar usuário | ✅ Implementado |
 | DELETE | `/api/v1/users/{id}` | Remover usuário | ✅ Implementado |
 
-**🔧 Funcionalidades da API de Usuários:**
-- **📊 Paginação**: Suporte completo com metadata (page, limit, total, has_next, has_prev)
-- **🔍 Busca e Filtros**: Busca por nome/email, filtro por tipo (ADMIN/DRIVER) e status ativo
-- **🔄 Ordenação**: Ordenação por qualquer campo (name, email, created_at) com direção asc/desc
-- **🔒 Segurança**: Operações de criação e remoção restritas a administradores
-- **👥 Tipos de Usuário**: Suporte completo para ADMIN e DRIVER com campos específicos
-- **✅ Validação**: Validação robusta com Bean Validation
-- **🔐 Criptografia**: Senhas criptografadas com BCrypt
-- **📝 Documentação**: Swagger/OpenAPI integrado
-- **🛠️ CRUD Completo**: Todas as operações funcionando (incluindo PUT corrigido)
-
 ### Gestão de Veículos
 | Método | Endpoint | Descrição | Status |
 |--------|----------|-----------|--------|
@@ -168,11 +157,11 @@ docker-compose --profile admin up -d
 ### Gestão de Rotas (Planejadas)
 | Método | Endpoint | Descrição | Status |
 |--------|----------|-----------|--------|
-| GET | `/api/v1/routes` | Listar rotas | ❌ Não implementado |
-| GET | `/api/v1/routes/{id}` | Obter rota com pontos | ❌ Não implementado |
-| POST | `/api/v1/routes` | Criar nova rota | ❌ Não implementado |
-| POST | `/api/v1/routes/{id}/points` | Adicionar ponto à rota | ❌ Não implementado |
-| PUT | `/api/v1/routes/{id}/points/reorder` | Reordenar pontos | ❌ Não implementado |
+| GET | `/api/v1/routes` | Listar rotas | ✅ Implementado |
+| GET | `/api/v1/routes/{id}` | Obter rota com pontos | ✅ Implementado |
+| POST | `/api/v1/routes` | Criar nova rota | ✅ Implementado |
+| POST | `/api/v1/routes/{id}/points` | Adicionar ponto à rota | ✅ Implementado |
+| PUT | `/api/v1/routes/{id}/points/reorder` | Reordenar pontos | ✅ Implementado |
 
 ### APIs Mobile (Planejadas)
 | Método | Endpoint | Descrição | Status |

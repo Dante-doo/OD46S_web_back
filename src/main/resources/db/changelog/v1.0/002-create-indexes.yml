@@ -110,3 +110,77 @@ databaseChangeLog:
             columns:
               - column:
                   name: active
+
+  # ==========================================
+  # CHANGESET 5: Create indexes for routes table
+  # ==========================================
+  - changeSet:
+      id: 005-create-routes-indexes
+      author: od46s-team
+      changes:
+        - createIndex:
+            tableName: routes
+            indexName: idx_routes_name
+            columns:
+              - column:
+                  name: name
+        - createIndex:
+            tableName: routes
+            indexName: idx_routes_collection_type
+            columns:
+              - column:
+                  name: collection_type
+        - createIndex:
+            tableName: routes
+            indexName: idx_routes_priority
+            columns:
+              - column:
+                  name: priority
+        - createIndex:
+            tableName: routes
+            indexName: idx_routes_active
+            columns:
+              - column:
+                  name: active
+        - createIndex:
+            tableName: routes
+            indexName: idx_routes_created_by
+            columns:
+              - column:
+                  name: created_by
+
+  # ==========================================
+  # CHANGESET 6: Create indexes for route_collection_points table
+  # ==========================================
+  - changeSet:
+      id: 006-create-route-collection-points-indexes
+      author: od46s-team
+      changes:
+        - createIndex:
+            tableName: route_collection_points
+            indexName: idx_points_route_id
+            columns:
+              - column:
+                  name: route_id
+        - createIndex:
+            tableName: route_collection_points
+            indexName: idx_points_sequence_order
+            columns:
+              - column:
+                  name: route_id
+              - column:
+                  name: sequence_order
+        - createIndex:
+            tableName: route_collection_points
+            indexName: idx_points_coordinates
+            columns:
+              - column:
+                  name: latitude
+              - column:
+                  name: longitude
+        - createIndex:
+            tableName: route_collection_points
+            indexName: idx_points_active
+            columns:
+              - column:
+                  name: active
