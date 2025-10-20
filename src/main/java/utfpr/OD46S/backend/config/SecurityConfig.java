@@ -3,6 +3,7 @@ package utfpr.OD46S.backend.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.Customizer;
@@ -17,6 +18,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
     @Bean
@@ -37,7 +39,7 @@ public class SecurityConfig {
                         // Preflight CORS
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         // Health endpoints públicos
-                        .requestMatchers(HttpMethod.GET, "/actuator/**", "/health", "/api/v1/health").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/actuator/**", "/health", "/api/v1/health", "/api/v1/auth/health").permitAll()
                         // Autenticação pública somente para login e refresh
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/login", "/api/v1/auth/refresh").permitAll()
                         // Demais rotas exigem autenticação

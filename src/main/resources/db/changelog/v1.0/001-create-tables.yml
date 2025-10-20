@@ -216,3 +216,235 @@ databaseChangeLog:
                   constraints:
                     nullable: false
 
+  # ==========================================
+  # CHANGESET 5: Create routes table
+  # ==========================================
+  - changeSet:
+      id: 005-create-routes-table
+      author: od46s-team
+      changes:
+        - createTable:
+            tableName: routes
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: TEXT
+              - column:
+                  name: collection_type
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: periodicity
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: priority
+                  type: VARCHAR(10)
+                  defaultValue: MEDIUM
+              - column:
+                  name: estimated_time_minutes
+                  type: INTEGER
+              - column:
+                  name: distance_km
+                  type: DECIMAL(8,2)
+              - column:
+                  name: active
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: notes
+                  type: TEXT
+              - column:
+                  name: created_by
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_routes_administrators
+                    references: administrators(id)
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+  # ==========================================
+  # CHANGESET 6: Create route_collection_points table
+  # ==========================================
+  - changeSet:
+      id: 006-create-route-collection-points-table
+      author: od46s-team
+      changes:
+        - createTable:
+            tableName: route_collection_points
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: route_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_points_routes
+                    references: routes(id)
+              - column:
+                  name: sequence_order
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: address
+                  type: VARCHAR(500)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: latitude
+                  type: DECIMAL(10,8)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: longitude
+                  type: DECIMAL(11,8)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: waste_type
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: estimated_capacity_kg
+                  type: DECIMAL(8,2)
+              - column:
+                  name: collection_frequency
+                  type: VARCHAR(20)
+              - column:
+                  name: notes
+                  type: TEXT
+              - column:
+                  name: active
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+  # ==========================================
+  # CHANGESET 7: Add unique constraint for route_collection_points
+  # ==========================================
+  - changeSet:
+      id: 007-add-unique-constraint-route-points
+      author: od46s-team
+      changes:
+        - addUniqueConstraint:
+            tableName: route_collection_points
+            columnNames: route_id, sequence_order
+            constraintName: uk_route_sequence
+
+  # ==========================================
+  # CHANGESET 8: Create route_assignments table
+  # ==========================================
+  - changeSet:
+      id: 008-create-route-assignments-table
+      author: od46s-team
+      changes:
+        - createTable:
+            tableName: route_assignments
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: route_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_assignment_route
+                    references: routes(id)
+              - column:
+                  name: driver_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_assignment_driver
+                    references: drivers(id)
+              - column:
+                  name: vehicle_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_assignment_vehicle
+                    references: vehicles(id)
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  defaultValue: 'ACTIVE'
+                  constraints:
+                    nullable: false
+              - column:
+                  name: start_date
+                  type: DATE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: end_date
+                  type: DATE
+              - column:
+                  name: notes
+                  type: TEXT
+              - column:
+                  name: created_by
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_assignment_created_by
+                    references: administrators(id)
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+

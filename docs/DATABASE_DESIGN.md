@@ -136,36 +136,68 @@ CREATE TABLE route_collection_points (
 );
 ```
 
-### 4. 📋 Executions Module
+### 4. 🔗 Assignments Module (Escalas/Atribuições)
+
+> **💡 Conceito**: Vínculo DURADOURO entre rota, motorista e caminhão.  
+> É o **cadastro que interliga** os três elementos.  
+> Duração: dias, semanas, meses ou anos.
+
+#### route_assignments
+```sql
+CREATE TABLE route_assignments (
+    id BIGSERIAL PRIMARY KEY,
+    route_id BIGINT NOT NULL,
+    driver_id BIGINT NOT NULL,
+    vehicle_id BIGINT NOT NULL,
+    status VARCHAR(20) DEFAULT 'ACTIVE',    -- ACTIVE, INACTIVE
+    start_date DATE NOT NULL,               -- Início da escala
+    end_date DATE,                          -- Fim da escala (NULL = indefinido)
+    notes TEXT,
+    created_by BIGINT NOT NULL,             -- Admin que criou
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (route_id) REFERENCES routes(id),
+    FOREIGN KEY (driver_id) REFERENCES drivers(id),
+    FOREIGN KEY (vehicle_id) REFERENCES vehicles(id),
+    FOREIGN KEY (created_by) REFERENCES administrators(id)
+);
+```
+
+### 5. 📋 Executions Module (Execuções Individuais)
+
+> **💡 Conceito**: Registro de UMA COLETA ESPECÍFICA realizada.  
+> Criada quando motorista INICIA a coleta no app mobile.  
+> Duração: algumas horas (início até fim).  
+> Vinculada a uma ASSIGNMENT.
 
 #### route_executions
 ```sql
 CREATE TABLE route_executions (
     id BIGSERIAL PRIMARY KEY,
-    route_id BIGINT NOT NULL,
-    driver_id BIGINT NOT NULL,
-    vehicle_id BIGINT NOT NULL,
-    start_time TIMESTAMP NOT NULL,
-    end_time TIMESTAMP,
-    status VARCHAR(20) DEFAULT 'SCHEDULED', -- SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED
-    initial_km INTEGER NOT NULL,
-    final_km INTEGER,
+    assignment_id BIGINT NOT NULL,          -- Vinculada à escala
+    execution_date DATE NOT NULL,           -- Dia da execução
+    start_time TIMESTAMP,                   -- Horário REAL de início
+    end_time TIMESTAMP,                     -- Horário REAL de fim
+    status VARCHAR(20) DEFAULT 'IN_PROGRESS', -- IN_PROGRESS, COMPLETED, CANCELLED
+    initial_km INTEGER,                     -- KM ao iniciar
+    final_km INTEGER,                       -- KM ao finalizar
     total_collected_weight_kg DECIMAL(10,2),
     points_visited INTEGER DEFAULT 0,
     points_collected INTEGER DEFAULT 0,
     initial_notes TEXT,
     final_notes TEXT,
     problems_found TEXT,
+    cancellation_reason TEXT,               -- Motivo do cancelamento
     driver_rating INTEGER CHECK (driver_rating BETWEEN 1 AND 5),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
-    FOREIGN KEY (route_id) REFERENCES routes(id),
-    FOREIGN KEY (driver_id) REFERENCES drivers(id),
-    FOREIGN KEY (vehicle_id) REFERENCES vehicles(id)
+    FOREIGN KEY (assignment_id) REFERENCES route_assignments(id) ON DELETE CASCADE,
+    UNIQUE(assignment_id, execution_date)   -- Uma execução por dia por escala
 );
 ```
 
-### 5. 📍 GPS Tracking Module
+### 6. 📍 GPS Tracking Module
 
 #### gps_records
 ```sql
@@ -185,7 +217,7 @@ CREATE TABLE gps_records (
 );
 ```
 
-### 6. 🗑️ Collections Module
+### 7. 🗑️ Collections Module
 
 #### collection_point_records
 ```sql
@@ -240,11 +272,18 @@ CREATE INDEX idx_routes_priority ON routes(priority);
 CREATE INDEX idx_points_route_id ON route_collection_points(route_id);
 CREATE INDEX idx_points_coordinates ON route_collection_points(latitude, longitude);
 
--- Executions
-CREATE INDEX idx_executions_date ON route_executions(start_time);
+-- Assignments (Escalas)
+CREATE INDEX idx_assignments_route ON route_assignments(route_id);
+CREATE INDEX idx_assignments_driver ON route_assignments(driver_id);
+CREATE INDEX idx_assignments_vehicle ON route_assignments(vehicle_id);
+CREATE INDEX idx_assignments_status ON route_assignments(status);
+CREATE INDEX idx_assignments_dates ON route_assignments(start_date, end_date);
+
+-- Executions (Execuções)
+CREATE INDEX idx_executions_assignment ON route_executions(assignment_id);
+CREATE INDEX idx_executions_date ON route_executions(execution_date);
 CREATE INDEX idx_executions_status ON route_executions(status);
-CREATE INDEX idx_executions_driver ON route_executions(driver_id);
-CREATE INDEX idx_executions_vehicle ON route_executions(vehicle_id);
+CREATE INDEX idx_executions_start_time ON route_executions(start_time);
 
 -- GPS
 CREATE INDEX idx_gps_execution ON gps_records(execution_id);
@@ -257,21 +296,6 @@ CREATE INDEX idx_collections_point ON collection_point_records(point_id);
 CREATE INDEX idx_collections_timestamp ON collection_point_records(collection_timestamp);
 CREATE INDEX idx_collections_status ON collection_point_records(collection_status);
 ```
-
-## 📊 Implementation Status
-
-### ✅ Implemented (3 Tables)
-- **users** - Base user table with JPA inheritance
-- **administrators** - Admin-specific fields  
-- **drivers** - Driver-specific fields (license info)
-
-### ❌ Not Implemented (9 Tables)
-- **vehicles** - Fleet management
-- **routes** - Route definitions
-- **route_collection_points** - Specific collection points
-- **route_executions** - Execution tracking
-- **gps_records** - Real-time GPS tracking
-- **collection_point_records** - Collection confirmations
 
 ## 🗄️ Data Volume Estimates
 
@@ -319,24 +343,5 @@ route_collection_points (1) ←→ (many) collection_point_records
 - **📦 Versionability**: Git tracks all changes perfectly
 - **🛡️ Security**: Application-layer security (more flexible)
 - **📊 Performance**: JPA second-level cache + query optimization
-
-### 🏗️ **Database-Only vs Spring Boot**
-
-| Feature | ❌ Database-Only | ✅ Spring Boot + JPA |
-|---------|-----------------|---------------------|
-| **Timestamps** | Triggers | `@CreatedDate`, `@LastModifiedDate` |
-| **Analytics** | Views | JPA `@Query` + DTOs |
-| **Calculations** | Functions | Java Methods |
-| **Validations** | CHECK Constraints | Bean Validation |
-| **Security** | RLS + Policies | Spring Security |
-| **Auditing** | Triggers | JPA Auditing |
-
-### 🎯 **Why This Approach Works Better**
-1. **Simpler Deployment**: No complex database migrations
-2. **Better Error Messages**: Bean Validation provides user-friendly messages
-3. **Easier Testing**: Mock repositories, unit test business logic
-4. **IDE Support**: IntelliJ/VSCode auto-completion and refactoring
-5. **Debugging**: Step through Java code vs. SQL debugging
-6. **Team Skills**: Most developers know Java better than PL/pgSQL
 
 **The database design meets all requirements defined in the [API Contract](API_CONTRACT.md), using modern Spring Boot best practices for complete waste collection management operations with real-time tracking, analytics, and mobile offline capabilities.**

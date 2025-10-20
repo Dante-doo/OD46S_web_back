@@ -15,13 +15,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import utfpr.OD46S.backend.entitys.login.AuthResponse;
 import utfpr.OD46S.backend.entitys.login.LoginRequest;
-import utfpr.OD46S.backend.entitys.login.RegisterRequest;
 import utfpr.OD46S.backend.entitys.login.RefreshRequest;
 import utfpr.OD46S.backend.services.login.AuthService;
 
 // import jakarta.validation.Valid;
 
-@Tag(name = "Autenticação", description = "APIs de gerenciamento de autenticação para login, registro e renovação de token")
+@Tag(name = "Autenticação", description = "APIs de gerenciamento de autenticação para login e renovação de token")
 @RestController
 @RequestMapping("/api/v1/auth")
 @CrossOrigin(origins = "*")
@@ -85,84 +84,6 @@ public class AuthController {
         }
     }
 
-    /**
-     * Register endpoint  
-     * POST /api/v1/auth/register
-     */
-    @Operation(
-        summary = "Registro de usuário",
-        description = "Registra novo usuário (Administrador ou Motorista) e retorna token JWT"
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "201", 
-            description = "Registro realizado com sucesso",
-            content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = AuthResponse.class),
-                examples = @ExampleObject(value = """
-                    {
-                        "token": "eyJhbGciOiJIUzUxMiJ9...",
-                        "email": "newuser@od46s.com",
-                        "name": "New User",
-                        "type": "DRIVER"
-                    }
-                    """)
-            )
-        ),
-        @ApiResponse(
-            responseCode = "409", 
-            description = "Email ou CPF já existe",
-            content = @Content(
-                mediaType = "application/json",
-                examples = @ExampleObject(value = """
-                    {
-                        "success": false,
-                        "error": {
-                            "code": "EMAIL_EXISTS",
-                            "message": "Email already registered"
-                        }
-                    }
-                    """)
-            )
-        ),
-        @ApiResponse(
-            responseCode = "400", 
-            description = "Erro de validação",
-            content = @Content(
-                mediaType = "application/json",
-                examples = @ExampleObject(value = """
-                    {
-                        "success": false,
-                        "error": {
-                            "code": "VALIDATION_ERROR",
-                            "message": "Driver license data is required for drivers"
-                        }
-                    }
-                    """)
-            )
-        )
-    })
-    @PostMapping("/register")
-    public ResponseEntity<?> register(
-        @Parameter(description = "Dados de registro para novo usuário", required = true)
-        @RequestBody RegisterRequest request) {
-        try {
-            AuthResponse response = authService.register(request);
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
-        } catch (RuntimeException e) {
-            if (e.getMessage().contains("Email já cadastrado")) {
-                return ResponseEntity.status(HttpStatus.CONFLICT)
-                        .body("{\"success\": false, \"error\": {\"code\": \"EMAIL_EXISTS\", \"message\": \"" + e.getMessage() + "\"}}");
-            }
-            if (e.getMessage().contains("CPF já cadastrado")) {
-                return ResponseEntity.status(HttpStatus.CONFLICT)
-                        .body("{\"success\": false, \"error\": {\"code\": \"CPF_EXISTS\", \"message\": \"" + e.getMessage() + "\"}}");
-            }
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("{\"success\": false, \"error\": {\"code\": \"VALIDATION_ERROR\", \"message\": \"" + e.getMessage() + "\"}}");
-        }
-    }
 
     /**
      * Refresh token endpoint

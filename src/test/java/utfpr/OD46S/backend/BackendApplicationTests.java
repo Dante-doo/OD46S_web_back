@@ -8,8 +8,9 @@ import org.springframework.test.context.ActiveProfiles;
 @ActiveProfiles("test")
 class BackendApplicationTests {
 
-	@Test
-	void contextLoads() {
-	}
-
+    @Test
+    void contextLoads() {
+        // Este teste verifica se o contexto Spring carrega corretamente
+        // Se chegou até aqui, significa que a aplicação está configurada corretamente
+    }
 }

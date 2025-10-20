@@ -43,6 +43,41 @@ O Sistema OD46S foi projetado para modernizar e otimizar a gestão de coleta de 
 - **Cloudflare** - CDN gratuito
 - **Let's Encrypt** - SSL gratuito
 
+## ⚙️ Configuração Centralizada
+
+O sistema utiliza um arquivo de configuração centralizado (`.env`) para gerenciar todas as variáveis de ambiente.
+
+### 📁 Arquivo de Configuração
+- `.env` - Configurações centralizadas (único arquivo)
+- `env.example` - Arquivo de exemplo
+
+### 🚀 Script de Automação
+```bash
+# Carregar configurações e executar comandos
+./scripts/load-env.sh [comando]
+
+# Comandos disponíveis:
+./scripts/load-env.sh dev      # Desenvolvimento
+./scripts/load-env.sh docker   # Docker Compose
+./scripts/load-env.sh test     # Executar testes
+./scripts/load-env.sh build    # Build da aplicação
+./scripts/load-env.sh clean    # Limpar e rebuild
+./scripts/load-env.sh logs     # Ver logs
+./scripts/load-env.sh stop     # Parar containers
+```
+
+### 🔧 Configuração Inicial
+```bash
+# 1. Copiar arquivo de exemplo
+cp env.example .env
+
+# 2. Editar configurações conforme necessário
+nano .env
+
+# 3. Executar com configurações centralizadas
+./scripts/load-env.sh docker
+```
+
 ## 🐳 Como Executar com Docker
 
 ### Pré-requisitos
@@ -55,14 +90,29 @@ O Sistema OD46S foi projetado para modernizar e otimizar a gestão de coleta de 
 git clone <repository-url>
 cd OD46S_web_back
 
-# 2. Inicie os containers
-docker-compose up -d
+# 2. Configurar ambiente
+cp env.example .env
 
-# 3. Verifique se está funcionando
+# 3. Iniciar com configuração centralizada
+./scripts/load-env.sh docker
+
+# 4. Verificar se está funcionando
 curl http://localhost:8080/actuator/health
 
-# 4. Para parar
-docker-compose down
+# 5. Para parar
+./scripts/load-env.sh stop
+```
+
+### 🎛️ Comandos Alternativos
+```bash
+# Execução tradicional (ainda funciona)
+docker-compose up -d
+
+# Com configuração específica
+docker-compose --env-file .env up -d
+
+# Com perfil de administração (inclui pgAdmin)
+docker-compose --profile admin up -d
 ```
 
 ### Portas e URLs
@@ -84,18 +134,17 @@ docker-compose down
 | Método | Endpoint | Descrição | Status |
 |--------|----------|-----------|--------|
 | POST | `/api/v1/auth/login` | Login com email/cpf + senha | ✅ Implementado |
-| POST | `/api/v1/auth/register` | Registro de novo usuário | ✅ Implementado |
 | POST | `/api/v1/auth/refresh` | Renovar token JWT | ✅ Implementado |
 | GET | `/api/v1/auth/health` | Health do serviço de autenticação | ✅ Implementado |
 
-### Gestão de Usuários (Planejadas)
+### Gestão de Usuários
 | Método | Endpoint | Descrição | Status |
 |--------|----------|-----------|--------|
-| GET | `/api/v1/users` | Listar usuários (paginado) | ❌ Não implementado |
-| GET | `/api/v1/users/{id}` | Obter usuário específico | ❌ Não implementado |
-| POST | `/api/v1/users` | Criar novo usuário | ❌ Não implementado |
-| PUT | `/api/v1/users/{id}` | Atualizar usuário | ❌ Não implementado |
-| DELETE | `/api/v1/users/{id}` | Remover usuário | ❌ Não implementado |
+| GET | `/api/v1/users` | Listar usuários (paginado) | ✅ Implementado |
+| GET | `/api/v1/users/{id}` | Obter usuário específico | ✅ Implementado |
+| POST | `/api/v1/users` | Criar novo usuário | ✅ Implementado |
+| PUT | `/api/v1/users/{id}` | Atualizar usuário | ✅ Implementado |
+| DELETE | `/api/v1/users/{id}` | Remover usuário | ✅ Implementado |
 
 ### Gestão de Veículos
 | Método | Endpoint | Descrição | Status |
@@ -105,35 +154,64 @@ docker-compose down
 | PUT | `/api/v1/vehicles/{id}` | Atualizar veículo | ✅ Implementado |
 | PATCH | `/api/v1/vehicles/{id}/status` | Alterar status | ✅ Implementado |
 
-### Gestão de Rotas (Planejadas)
+### Gestão de Rotas
 | Método | Endpoint | Descrição | Status |
 |--------|----------|-----------|--------|
-| GET | `/api/v1/routes` | Listar rotas | ❌ Não implementado |
-| GET | `/api/v1/routes/{id}` | Obter rota com pontos | ❌ Não implementado |
-| POST | `/api/v1/routes` | Criar nova rota | ❌ Não implementado |
-| POST | `/api/v1/routes/{id}/points` | Adicionar ponto à rota | ❌ Não implementado |
-| PUT | `/api/v1/routes/{id}/points/reorder` | Reordenar pontos | ❌ Não implementado |
+| GET | `/api/v1/routes` | Listar rotas | ✅ Implementado |
+| GET | `/api/v1/routes/{id}` | Obter rota com pontos | ✅ Implementado |
+| POST | `/api/v1/routes` | Criar nova rota | ✅ Implementado |
+| POST | `/api/v1/routes/{id}/points` | Adicionar ponto à rota | ✅ Implementado |
+| PUT | `/api/v1/routes/{id}/points/reorder` | Reordenar pontos | ✅ Implementado |
 
-### APIs Mobile (Planejadas)
-| Método | Endpoint | Descrição | Status |
-|--------|----------|-----------|--------|
-| GET | `/api/v1/mobile/routes` | Rotas do motorista | ❌ Não implementado |
-| POST | `/api/v1/mobile/executions` | Iniciar execução | ❌ Não implementado |
-| POST | `/api/v1/mobile/executions/{id}/gps` | Registrar GPS | ❌ Não implementado |
-| POST | `/api/v1/mobile/executions/{id}/collections` | Registrar coleta | ❌ Não implementado |
-| PUT | `/api/v1/mobile/executions/{id}/finish` | Finalizar execução | ❌ Não implementado |
+### Escalas (Assignments) - Cadastro Interligado
+> **💡 Conceito**: Vínculo duradouro entre rota, motorista e caminhão
 
-### Relatórios (Planejados)
 | Método | Endpoint | Descrição | Status |
 |--------|----------|-----------|--------|
-| GET | `/api/v1/dashboard` | Dashboard com KPIs | ❌ Não implementado |
-| GET | `/api/v1/executions` | Histórico de execuções | ❌ Não implementado |
-| GET | `/api/v1/executions/{id}/tracking` | Tracking GPS | ❌ Não implementado |
+| GET | `/api/v1/assignments` | Listar escalas | ✅ Implementado |
+| GET | `/api/v1/assignments/{id}` | Detalhes da escala | ✅ Implementado |
+| POST | `/api/v1/assignments` | Criar escala (Admin) | ✅ Implementado |
+| PUT | `/api/v1/assignments/{id}` | Atualizar escala | ✅ Implementado |
+| PATCH | `/api/v1/assignments/{id}/deactivate` | Desativar escala | ✅ Implementado |
+| GET | `/api/v1/assignments/my-current` | Escala do motorista | ✅ Implementado |
 
-### Sincronização (Planejada)
+### Execuções (Executions) - Coletas Realizadas
+> **💡 Conceito**: Registro de uma coleta específica realizada
+
 | Método | Endpoint | Descrição | Status |
 |--------|----------|-----------|--------|
-| POST | `/api/v1/mobile/sync` | Sincronizar dados offline | ❌ Não implementado |
+| GET | `/api/v1/executions` | Histórico de execuções | ⏳ Planejado |
+| GET | `/api/v1/executions/{id}` | Detalhes da execução | ⏳ Planejado |
+| POST | `/api/v1/executions/start` | Iniciar coleta (Driver) | ⏳ Planejado |
+| PATCH | `/api/v1/executions/{id}/complete` | Finalizar coleta | ⏳ Planejado |
+| PATCH | `/api/v1/executions/{id}/cancel` | Cancelar execução | ⏳ Planejado |
+| GET | `/api/v1/executions/my-current` | Coleta em andamento | ⏳ Planejado |
+
+### GPS Tracking (Planejado)
+| Método | Endpoint | Descrição | Status |
+|--------|----------|-----------|--------|
+| POST | `/api/v1/executions/{id}/gps` | Registrar posição GPS | ⏳ Planejado |
+| GET | `/api/v1/executions/{id}/gps` | Obter rastro GPS | ⏳ Planejado |
+
+### Registros de Coleta (Planejado)
+| Método | Endpoint | Descrição | Status |
+|--------|----------|-----------|--------|
+| POST | `/api/v1/executions/{id}/collections` | Registrar coleta em ponto | ⏳ Planejado |
+| GET | `/api/v1/executions/{id}/collections` | Listar coletas da execução | ⏳ Planejado |
+
+### Relatórios e Analytics (Planejados)
+| Método | Endpoint | Descrição | Status |
+|--------|----------|-----------|--------|
+| GET | `/api/v1/analytics/dashboard` | Dashboard com KPIs | ⏳ Planejado |
+| GET | `/api/v1/analytics/routes/efficiency` | Eficiência de rotas | ⏳ Planejado |
+| GET | `/api/v1/analytics/drivers/performance` | Performance motoristas | ⏳ Planejado |
+| GET | `/api/v1/analytics/fleet/utilization` | Utilização da frota | ⏳ Planejado |
+
+### Sincronização Mobile (Planejada)
+| Método | Endpoint | Descrição | Status |
+|--------|----------|-----------|--------|
+| GET | `/api/v1/mobile/sync/download` | Download dados offline | ⏳ Planejado |
+| POST | `/api/v1/mobile/sync/upload` | Upload dados coletados | ⏳ Planejado |
 
 ## 📋 Estrutura do Projeto
 
@@ -142,27 +220,117 @@ OD46S_web_back/
 ├── src/main/java/utfpr/OD46S/backend/
 │   ├── BackendApplication.java          # Aplicação principal
 │   ├── controllers/                     # Controllers REST
+│   │   ├── AuthController.java         # Autenticação
+│   │   ├── UsuarioController.java      # Gestão de usuários
+│   │   ├── VeiculoController.java      # Gestão de veículos
+│   │   ├── RouteController.java        # Gestão de rotas
+│   │   └── AssignmentController.java   # Gestão de escalas
 │   ├── services/                        # Lógica de negócio
-│   ├── repositories/                    # Acesso aos dados
-│   ├── entities/                        # Entidades JPA
-│   ├── dtos/                           # Data Transfer Objects
-│   ├── enums/                          # Enumerações
-│   ├── config/                         # Configurações
-│   └── utils/                          # Utilitários
+│   │   ├── login/AuthService.java      # Autenticação e JWT
+│   │   ├── UsuarioService.java         # Usuários e motoristas
+│   │   ├── VeiculoService.java         # Veículos
+│   │   ├── RouteService.java           # Rotas e pontos de coleta
+│   │   └── AssignmentService.java      # Escalas (rota+motorista+veículo)
+│   ├── repositories/                    # Acesso aos dados (JPA)
+│   ├── entitys/                         # Entidades JPA
+│   │   ├── Usuario.java                # Usuário base
+│   │   ├── Administrator.java          # Admin (herda Usuario)
+│   │   ├── Motorista.java              # Motorista (herda Usuario)
+│   │   ├── Veiculo.java                # Veículos da frota
+│   │   ├── Route.java                  # Rotas de coleta
+│   │   ├── RouteCollectionPoint.java   # Pontos de coleta
+│   │   └── RouteAssignment.java        # Escalas (vínculo rota+driver+vehicle)
+│   ├── dtos/                            # Data Transfer Objects
+│   ├── enums/                           # Enumerações
+│   │   ├── StatusVeiculo.java          # Status dos veículos
+│   │   ├── StatusMotorista.java        # Status dos motoristas
+│   │   ├── CategoriaCNH.java           # Categorias de CNH
+│   │   ├── CollectionType.java         # Tipos de coleta
+│   │   ├── Priority.java               # Prioridades
+│   │   ├── WasteType.java              # Tipos de lixo
+│   │   └── AssignmentStatus.java       # Status de escalas (ACTIVE/INACTIVE)
+│   ├── config/                          # Configurações
+│   │   ├── SecurityConfig.java         # Spring Security
+│   │   ├── JwtAuthFilter.java          # Filtro JWT
+│   │   ├── OpenApiConfig.java          # Swagger/OpenAPI
+│   │   └── DotenvInitializer.java      # Carregamento .env
+│   └── utils/                           # Utilitários
+│       └── JwtUtils.java               # Operações JWT
 ├── src/main/resources/
-│   ├── application.properties          # Configurações locais
-│   ├── application-docker.properties   # Configurações Docker
-│   └── db/changelog/                   # Migrations Liquibase
-├── docker-compose.yml                  # Orquestração Docker
-├── Dockerfile                          # Imagem do backend
-└── pom.xml                             # Dependências Maven
+│   ├── application.properties           # Configurações locais
+│   ├── application-docker.properties    # Configurações Docker
+│   └── db/changelog/                    # Migrations Liquibase
+│       ├── db.changelog-master.yml
+│       └── v1.0/
+│           ├── 001-create-tables.yml   # Tabelas principais
+│           ├── 002-create-indexes.yml  # Índices de performance
+│           └── 003-insert-initial-data.yml  # Dados iniciais
+├── docs/                                # Documentação
+│   ├── API_CONTRACT.md                 # Contrato da API
+│   ├── ARCHITECTURE.md                 # Arquitetura
+│   ├── DATABASE_DESIGN.md              # Design do banco
+│   ├── CONFIGURATION.md                # Configuração
+│   └── OD46S_API_Collection.postman_collection.json
+├── docker-compose.yml                   # Orquestração Docker
+├── Dockerfile                           # Imagem do backend
+├── pom.xml                              # Dependências Maven
+└── .env                                 # Variáveis de ambiente (criar a partir do env.example)
+```
+
+## 🗄️ Banco de Dados
+
+### Tabelas Principais
+
+**Módulo de Usuários**
+- `users` - Usuários do sistema (base)
+- `administrators` - Administradores (herança)
+- `drivers` - Motoristas (herança)
+
+**Módulo de Veículos**
+- `vehicles` - Caminhões da frota
+
+**Módulo de Rotas**
+- `routes` - Rotas de coleta (com periodicidade)
+- `route_collection_points` - Pontos de coleta em cada rota
+
+**Módulo de Escalas**
+- `route_assignments` - Vínculo rota + motorista + caminhão (duradouro) ✅
+
+**Módulo de Execuções (Planejado)**
+- `route_executions` - Registro de coletas realizadas (eventos)
+- `gps_records` - Rastreamento GPS das execuções
+- `collection_point_records` - Registro de coleta em cada ponto
+
+### Relacionamentos Principais
+
+```
+users (base)
+  ├─→ administrators (herança)
+  └─→ drivers (herança)
+
+routes
+  └─→ route_collection_points (1:N)
+
+route_assignments (escala permanente) ✅ IMPLEMENTADO
+  ├─→ routes (N:1)
+  ├─→ drivers (N:1)
+  ├─→ vehicles (N:1)
+  ├─→ administrators (N:1) - created_by
+  └─→ route_executions (1:N) ← Uma execução por dia (planejado)
+
+route_executions (coleta realizada)
+  ├─→ route_assignments (N:1)
+  ├─→ gps_records (1:N)
+  └─→ collection_point_records (1:N)
 ```
 
 ## 📚 Documentação Adicional
 
-- **[API Contract](API_CONTRACT.md)** - Contrato completo das APIs
-- **[Architecture](ARCHITECTURE.md)** - Arquitetura do sistema
-- **[Database Design](DATABASE_DESIGN.md)** - Design do banco de dados
+- **[API Contract](docs/API_CONTRACT.md)** - Contrato completo das APIs REST
+- **[Architecture](docs/ARCHITECTURE.md)** - Arquitetura do sistema e padrões
+- **[Database Design](docs/DATABASE_DESIGN.md)** - Design do banco de dados e relacionamentos
+- **[Configuration](docs/CONFIGURATION.md)** - Guia de configuração e variáveis de ambiente
+- **[Postman Collection](docs/OD46S_API_Collection.postman_collection.json)** - Coleção completa para testes da API
 
 ## 🚀 Desenvolvimento
 
@@ -188,6 +356,85 @@ docker exec -it od46s-backend /bin/sh
 
 # Ver status dos containers
 docker-compose ps
+```
+
+### 🧪 Testando a API
+
+#### Usando Postman
+1. Importe a coleção: `docs/OD46S_API_Collection.postman_collection.json`
+2. Configure a variável `baseUrl` para `http://localhost:8080`
+3. Execute primeiro um login para obter o token JWT
+4. Teste os endpoints de usuários com autenticação
+
+#### Exemplo de Teste com cURL
+```bash
+# 1. Login para obter token
+curl -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "admin@od46s.com", "password": "admin123"}'
+
+# 2. Listar usuários (substitua TOKEN pelo token obtido)
+curl -X GET "http://localhost:8080/api/v1/users?page=1&limit=10" \
+  -H "Authorization: Bearer TOKEN"
+
+# 3. Criar novo usuário
+curl -X POST http://localhost:8080/api/v1/users \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer TOKEN" \
+  -d '{
+    "name": "Novo Usuário",
+    "email": "novo@od46s.com",
+    "cpf": "12345678901",
+    "password": "senha123",
+    "type": "DRIVER",
+    "licenseNumber": "12345678901",
+    "licenseCategory": "B",
+    "licenseExpiry": "2030-12-31"
+  }'
+```
+
+## 📊 Cobertura de Código
+
+O projeto utiliza **JaCoCo** para análise de cobertura de código com relatórios detalhados e métricas automáticas.
+
+### 🔍 Comandos de Cobertura
+
+#### Verificar Cobertura Atual
+```bash
+# Script automatizado com análise completa
+./scripts/coverage-report.sh
+```
+
+#### Gerar Relatórios
+```bash
+# Executar testes com cobertura e gerar relatórios
+./mvnw clean test jacoco:report
+
+# Apenas gerar relatório (após testes)
+./mvnw jacoco:report
+```
+
+#### Verificar Meta de Cobertura
+```bash
+# Verificar se atinge a meta de 80%
+./mvnw jacoco:check
+```
+
+#### Executar Apenas Testes
+```bash
+# Executar todos os testes
+./mvnw test
+
+# Executar testes específicos
+./mvnw test -Dtest=UsuarioControllerTest
+```
+
+### 📁 Relatórios Gerados
+
+#### Relatório HTML (Recomendado)
+```bash
+# Abrir relatório no navegador
+open target/site/jacoco/index.html
 ```
 
 ## 🧰 Scripts de Reset do Ambiente

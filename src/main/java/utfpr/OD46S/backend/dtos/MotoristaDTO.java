@@ -39,8 +39,8 @@ public class MotoristaDTO {
     public static MotoristaDTO fromEntity(Motorista entity) {
         MotoristaDTO dto = new MotoristaDTO();
         dto.setId(entity.getId());
-        dto.setCnh(entity.getCnh());
-        dto.setCategoriaCnh(entity.getCategoriaCnh());
+        dto.setCnh(entity.getLicenseNumber());
+        dto.setCategoriaCnh(entity.getLicenseCategory());
         return dto;
     }
 }
