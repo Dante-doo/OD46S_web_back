@@ -1517,6 +1517,232 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "Executions (Execuções)",
+      "description": "Endpoints para gestão de execuções - registro de coletas realizadas",
+      "item": [
+        {
+          "name": "Listar Execuções",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/executions?page=1&limit=20&status=IN_PROGRESS",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "executions"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Página atual"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Itens por página"
+                },
+                {
+                  "key": "assignment_id",
+                  "value": "",
+                  "disabled": true,
+                  "description": "Filtrar por assignment"
+                },
+                {
+                  "key": "driver_id",
+                  "value": "",
+                  "disabled": true,
+                  "description": "Filtrar por motorista"
+                },
+                {
+                  "key": "status",
+                  "value": "IN_PROGRESS",
+                  "description": "IN_PROGRESS, COMPLETED, CANCELLED"
+                },
+                {
+                  "key": "start_date",
+                  "value": "",
+                  "disabled": true,
+                  "description": "Data inicial (YYYY-MM-DD)"
+                },
+                {
+                  "key": "end_date",
+                  "value": "",
+                  "disabled": true,
+                  "description": "Data final (YYYY-MM-DD)"
+                },
+                {
+                  "key": "sort",
+                  "value": "executionDate",
+                  "disabled": true,
+                  "description": "Campo para ordenar"
+                },
+                {
+                  "key": "order",
+                  "value": "desc",
+                  "disabled": true,
+                  "description": "asc ou desc"
+                }
+              ]
+            },
+            "description": "Lista todas as execuções de coletas. Admin vê todas, Driver vê apenas suas."
+          },
+          "response": []
+        },
+        {
+          "name": "Obter Execução por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/executions/:executionId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "executions", ":executionId"],
+              "variable": [
+                {
+                  "key": "executionId",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Retorna detalhes completos de uma execução específica."
+          },
+          "response": []
+        },
+        {
+          "name": "Iniciar Coleta (Driver)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text",
+                "description": "Token do motorista autenticado"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assignment_id\": 1,\n  \"initial_km\": 12500,\n  \"initial_notes\": \"Iniciando coleta - clima bom, trânsito normal\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/executions/start",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "executions", "start"]
+            },
+            "description": "Motorista inicia uma nova execução de coleta. Apenas DRIVER.\n\nValidações:\n- Motorista só pode ter uma execução ativa por vez\n- Assignment deve pertencer ao motorista\n- Não pode haver outra execução no mesmo dia para o mesmo assignment"
+          },
+          "response": []
+        },
+        {
+          "name": "Finalizar Coleta",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"final_km\": 12580,\n  \"total_collected_weight_kg\": 1850.50,\n  \"points_visited\": 15,\n  \"points_collected\": 14,\n  \"final_notes\": \"Coleta finalizada com sucesso. 1 ponto não coletado por estar inacessível.\",\n  \"problems_found\": \"Rua das Flores bloqueada por obra - ponto 7 não coletado\",\n  \"driver_rating\": 5\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/executions/:executionId/complete",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "executions", ":executionId", "complete"],
+              "variable": [
+                {
+                  "key": "executionId",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Finaliza uma execução de coleta em andamento.\n\nPermissões: ADMIN, DRIVER\n\nValidações:\n- Execução deve estar com status IN_PROGRESS\n- driver_rating deve ser entre 1 e 5 (opcional)"
+          },
+          "response": []
+        },
+        {
+          "name": "Cancelar Execução",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Veículo apresentou problema mecânico após 30 minutos de coleta. Necessária manutenção emergencial.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/executions/:executionId/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "executions", ":executionId", "cancel"],
+              "variable": [
+                {
+                  "key": "executionId",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Cancela uma execução de coleta em andamento.\n\nPermissões: ADMIN, DRIVER\n\nValidações:\n- Execução deve estar com status IN_PROGRESS\n- reason é obrigatório"
+          },
+          "response": []
+        },
+        {
+          "name": "Minha Coleta Atual (Driver)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text",
+                "description": "Token do motorista autenticado"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/executions/my-current",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "executions", "my-current"]
+            },
+            "description": "Retorna a execução de coleta em andamento do motorista autenticado. Apenas DRIVER.\n\nUso: O motorista verifica se tem uma coleta em andamento ao abrir o app."
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "variable": [

@@ -13,6 +13,8 @@ import utfpr.OD46S.backend.entitys.Motorista;
 import utfpr.OD46S.backend.entitys.Usuario;
 import utfpr.OD46S.backend.repositorys.AdministratorRepository;
 import utfpr.OD46S.backend.repositorys.MotoristaRepository;
+import utfpr.OD46S.backend.repositorys.RouteAssignmentRepository;
+import utfpr.OD46S.backend.repositorys.RouteExecutionRepository;
 import utfpr.OD46S.backend.repositorys.UsuarioRepository;
 
 import java.time.LocalDate;
@@ -32,6 +34,12 @@ public class UsuarioService {
 
     @Autowired
     private MotoristaRepository motoristaRepository;
+
+    @Autowired
+    private RouteAssignmentRepository assignmentRepository;
+
+    @Autowired
+    private RouteExecutionRepository executionRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -252,19 +260,62 @@ public class UsuarioService {
     }
 
     public void removerUsuario(Long id) {
-        if (!usuarioRepository.existsById(id)) {
-            throw new RuntimeException("Usuário não encontrado");
-        }
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
-        // Remover registros específicos primeiro
+        // Verificar se é motorista com assignments ou executions
+        if (motoristaRepository.existsById(id)) {
+            boolean hasAssignments = assignmentRepository.existsByDriverId(id);
+            boolean hasExecutions = executionRepository.existsByDriverId(id);
+            
+            if (hasAssignments || hasExecutions) {
+                // Soft delete: apenas marca como inativo
+                usuario.setActive(false);
+                usuarioRepository.save(usuario);
+                
+                // Desabilita o motorista também
+                Motorista motorista = motoristaRepository.findById(id).orElse(null);
+                if (motorista != null) {
+                    motorista.setEnabled(false);
+                    motoristaRepository.save(motorista);
+                }
+                
+                throw new RuntimeException(
+                    "Este motorista possui histórico de escalas e/ou execuções. " +
+                    "O usuário foi marcado como INATIVO ao invés de ser deletado para preservar o histórico. " +
+                    "Para reativá-lo, use o endpoint de atualização."
+                );
+            }
+        }
+        
+        // Verificar se é admin com rotas criadas
         if (administratorRepository.existsById(id)) {
-            administratorRepository.deleteById(id);
-        } else if (motoristaRepository.existsById(id)) {
-            motoristaRepository.deleteById(id);
+            // Admins podem ter criado rotas e assignments
+            // Vamos permitir deleção mas alertar se houver dependências
+            // (as rotas e assignments não serão deletadas, apenas o vínculo com created_by será mantido)
         }
 
-        // Remover usuário base
-        usuarioRepository.deleteById(id);
+        // Se chegou aqui, pode fazer deleção física
+        try {
+            // Remover registros específicos primeiro
+            if (administratorRepository.existsById(id)) {
+                administratorRepository.deleteById(id);
+            } else if (motoristaRepository.existsById(id)) {
+                motoristaRepository.deleteById(id);
+            }
+
+            // Remover usuário base
+            usuarioRepository.deleteById(id);
+        } catch (Exception e) {
+            // Se ainda assim falhar, fazer soft delete
+            usuario.setActive(false);
+            usuarioRepository.save(usuario);
+            
+            throw new RuntimeException(
+                "Não foi possível deletar o usuário devido a dependências no sistema. " +
+                "O usuário foi marcado como INATIVO. Erro: " + e.getMessage()
+            );
+        }
     }
 
     private utfpr.OD46S.backend.enums.CategoriaCNH parseLicenseCategory(String category) {

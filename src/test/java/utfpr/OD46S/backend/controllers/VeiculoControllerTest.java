@@ -89,14 +89,16 @@ class VeiculoControllerTest {
         when(veiculoService.cadastrar(any(VeiculoDTO.class))).thenReturn(veiculoDTO);
 
         // When
-        ResponseEntity<VeiculoDTO> response = veiculoController.cadastrar(veiculoDTO);
+        ResponseEntity<?> response = veiculoController.cadastrar(veiculoDTO);
 
         // Then
-        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals("ABC1234", response.getBody().getLicensePlate());
-        assertEquals("Compactor 15m³", response.getBody().getModel());
-        assertEquals(StatusVeiculo.AVAILABLE, response.getBody().getStatus());
+        assertTrue(response.getBody() instanceof VeiculoDTO);
+        VeiculoDTO body = (VeiculoDTO) response.getBody();
+        assertEquals("ABC1234", body.getLicensePlate());
+        assertEquals("Compactor 15m³", body.getModel());
+        assertEquals(StatusVeiculo.AVAILABLE, body.getStatus());
         
         verify(veiculoService, times(1)).cadastrar(veiculoDTO);
     }
@@ -107,8 +109,12 @@ class VeiculoControllerTest {
         when(veiculoService.cadastrar(any(VeiculoDTO.class)))
                 .thenThrow(new RuntimeException("Placa já cadastrada"));
 
-        // When & Then
-        assertThrows(RuntimeException.class, () -> veiculoController.cadastrar(veiculoDTO));
+        // When
+        ResponseEntity<?> response = veiculoController.cadastrar(veiculoDTO);
+
+        // Then
+        assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+        assertNotNull(response.getBody());
         
         verify(veiculoService, times(1)).cadastrar(veiculoDTO);
     }
@@ -125,14 +131,16 @@ class VeiculoControllerTest {
         when(veiculoService.atualizar(eq(1L), any(VeiculoDTO.class))).thenReturn(updatedDTO);
 
         // When
-        ResponseEntity<VeiculoDTO> response = veiculoController.atualizar(1L, updatedDTO);
+        ResponseEntity<?> response = veiculoController.atualizar(1L, updatedDTO);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals("Updated Model", response.getBody().getModel());
-        assertEquals("Updated Brand", response.getBody().getBrand());
-        assertEquals(2023, response.getBody().getYear());
+        assertTrue(response.getBody() instanceof VeiculoDTO);
+        VeiculoDTO body = (VeiculoDTO) response.getBody();
+        assertEquals("Updated Model", body.getModel());
+        assertEquals("Updated Brand", body.getBrand());
+        assertEquals(2023, body.getYear());
         
         verify(veiculoService, times(1)).atualizar(1L, updatedDTO);
     }
@@ -143,8 +151,12 @@ class VeiculoControllerTest {
         when(veiculoService.atualizar(eq(999L), any(VeiculoDTO.class)))
                 .thenThrow(new RuntimeException("Veículo não encontrado"));
 
-        // When & Then
-        assertThrows(RuntimeException.class, () -> veiculoController.atualizar(999L, veiculoDTO));
+        // When
+        ResponseEntity<?> response = veiculoController.atualizar(999L, veiculoDTO);
+
+        // Then
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertNotNull(response.getBody());
         
         verify(veiculoService, times(1)).atualizar(999L, veiculoDTO);
     }
@@ -162,13 +174,15 @@ class VeiculoControllerTest {
         when(veiculoService.alterarStatus(1L, StatusVeiculo.MAINTENANCE)).thenReturn(updatedVeiculo);
 
         // When
-        ResponseEntity<VeiculoDTO> response = veiculoController.alterarStatus(1L, StatusVeiculo.MAINTENANCE);
+        ResponseEntity<?> response = veiculoController.alterarStatus(1L, StatusVeiculo.MAINTENANCE);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals(StatusVeiculo.MAINTENANCE, response.getBody().getStatus());
-        assertEquals("ABC1234", response.getBody().getLicensePlate());
+        assertTrue(response.getBody() instanceof VeiculoDTO);
+        VeiculoDTO body = (VeiculoDTO) response.getBody();
+        assertEquals(StatusVeiculo.MAINTENANCE, body.getStatus());
+        assertEquals("ABC1234", body.getLicensePlate());
         
         verify(veiculoService, times(1)).alterarStatus(1L, StatusVeiculo.MAINTENANCE);
     }
@@ -179,9 +193,12 @@ class VeiculoControllerTest {
         when(veiculoService.alterarStatus(999L, StatusVeiculo.MAINTENANCE))
                 .thenThrow(new RuntimeException("Veículo não encontrado"));
 
-        // When & Then
-        assertThrows(RuntimeException.class, () -> 
-                veiculoController.alterarStatus(999L, StatusVeiculo.MAINTENANCE));
+        // When
+        ResponseEntity<?> response = veiculoController.alterarStatus(999L, StatusVeiculo.MAINTENANCE);
+
+        // Then
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertNotNull(response.getBody());
         
         verify(veiculoService, times(1)).alterarStatus(999L, StatusVeiculo.MAINTENANCE);
     }
@@ -197,12 +214,14 @@ class VeiculoControllerTest {
         when(veiculoService.alterarStatus(1L, StatusVeiculo.IN_USE)).thenReturn(updatedVeiculo);
 
         // When
-        ResponseEntity<VeiculoDTO> response = veiculoController.alterarStatus(1L, StatusVeiculo.IN_USE);
+        ResponseEntity<?> response = veiculoController.alterarStatus(1L, StatusVeiculo.IN_USE);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals(StatusVeiculo.IN_USE, response.getBody().getStatus());
+        assertTrue(response.getBody() instanceof VeiculoDTO);
+        VeiculoDTO body = (VeiculoDTO) response.getBody();
+        assertEquals(StatusVeiculo.IN_USE, body.getStatus());
         
         verify(veiculoService, times(1)).alterarStatus(1L, StatusVeiculo.IN_USE);
     }

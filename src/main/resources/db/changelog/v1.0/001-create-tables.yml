@@ -448,3 +448,95 @@ databaseChangeLog:
                   constraints:
                     nullable: false
 
+  # ==========================================
+  # CHANGESET 9: Create route_executions table
+  # ==========================================
+  - changeSet:
+      id: 009-create-route-executions-table
+      author: od46s-team
+      changes:
+        - createTable:
+            tableName: route_executions
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: assignment_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_execution_assignment
+                    references: route_assignments(id)
+              - column:
+                  name: execution_date
+                  type: DATE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: start_time
+                  type: TIMESTAMP
+              - column:
+                  name: end_time
+                  type: TIMESTAMP
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  defaultValue: 'IN_PROGRESS'
+                  constraints:
+                    nullable: false
+              - column:
+                  name: initial_km
+                  type: INTEGER
+              - column:
+                  name: final_km
+                  type: INTEGER
+              - column:
+                  name: total_collected_weight_kg
+                  type: DECIMAL(10,2)
+              - column:
+                  name: points_visited
+                  type: INTEGER
+                  defaultValueNumeric: 0
+              - column:
+                  name: points_collected
+                  type: INTEGER
+                  defaultValueNumeric: 0
+              - column:
+                  name: initial_notes
+                  type: TEXT
+              - column:
+                  name: final_notes
+                  type: TEXT
+              - column:
+                  name: problems_found
+                  type: TEXT
+              - column:
+                  name: cancellation_reason
+                  type: TEXT
+              - column:
+                  name: driver_rating
+                  type: INTEGER
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+  # ==========================================
+  # CHANGESET 10: Add unique constraint for route_executions
+  # ==========================================
+  - changeSet:
+      id: 010-add-unique-constraint-route-executions
+      author: od46s-team
+      changes:
+        - addUniqueConstraint:
+            tableName: route_executions
+            columnNames: assignment_id, execution_date
+            constraintName: uk_assignment_execution_date
+

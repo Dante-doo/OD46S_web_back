@@ -230,3 +230,35 @@ databaseChangeLog:
             columns:
               - column:
                   name: created_at
+
+  # ==========================================
+  # CHANGESET 8: Create indexes for route_executions table
+  # ==========================================
+  - changeSet:
+      id: 008-create-route-executions-indexes
+      author: od46s-team
+      changes:
+        - createIndex:
+            tableName: route_executions
+            indexName: idx_executions_assignment
+            columns:
+              - column:
+                  name: assignment_id
+        - createIndex:
+            tableName: route_executions
+            indexName: idx_executions_date
+            columns:
+              - column:
+                  name: execution_date
+        - createIndex:
+            tableName: route_executions
+            indexName: idx_executions_status
+            columns:
+              - column:
+                  name: status
+        - createIndex:
+            tableName: route_executions
+            indexName: idx_executions_start_time
+            columns:
+              - column:
+                  name: start_time

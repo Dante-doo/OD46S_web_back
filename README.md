@@ -180,12 +180,12 @@ docker-compose --profile admin up -d
 
 | Método | Endpoint | Descrição | Status |
 |--------|----------|-----------|--------|
-| GET | `/api/v1/executions` | Histórico de execuções | ⏳ Planejado |
-| GET | `/api/v1/executions/{id}` | Detalhes da execução | ⏳ Planejado |
-| POST | `/api/v1/executions/start` | Iniciar coleta (Driver) | ⏳ Planejado |
-| PATCH | `/api/v1/executions/{id}/complete` | Finalizar coleta | ⏳ Planejado |
-| PATCH | `/api/v1/executions/{id}/cancel` | Cancelar execução | ⏳ Planejado |
-| GET | `/api/v1/executions/my-current` | Coleta em andamento | ⏳ Planejado |
+| GET | `/api/v1/executions` | Histórico de execuções | ✅ Implementado |
+| GET | `/api/v1/executions/{id}` | Detalhes da execução | ✅ Implementado |
+| POST | `/api/v1/executions/start` | Iniciar coleta (Driver) | ✅ Implementado |
+| PATCH | `/api/v1/executions/{id}/complete` | Finalizar coleta | ✅ Implementado |
+| PATCH | `/api/v1/executions/{id}/cancel` | Cancelar execução | ✅ Implementado |
+| GET | `/api/v1/executions/my-current` | Coleta em andamento | ✅ Implementado |
 
 ### GPS Tracking (Planejado)
 | Método | Endpoint | Descrição | Status |

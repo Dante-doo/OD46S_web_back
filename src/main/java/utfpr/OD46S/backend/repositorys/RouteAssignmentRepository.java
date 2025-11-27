@@ -73,5 +73,8 @@ public interface RouteAssignmentRepository extends JpaRepository<RouteAssignment
     List<RouteAssignment> findByVehicleIdAndStatus(Long vehicleId, AssignmentStatus status);
 
     List<RouteAssignment> findByRouteIdAndStatus(Long routeId, AssignmentStatus status);
+
+    @Query("SELECT COUNT(ra) > 0 FROM RouteAssignment ra WHERE ra.driver.id = :driverId")
+    boolean existsByDriverId(@Param("driverId") Long driverId);
 }
 
