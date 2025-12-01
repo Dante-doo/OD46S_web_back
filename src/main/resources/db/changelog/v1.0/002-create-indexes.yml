@@ -262,3 +262,29 @@ databaseChangeLog:
             columns:
               - column:
                   name: start_time
+
+  # ==========================================
+  # CHANGESET 9: Create indexes for gps_records table
+  # ==========================================
+  - changeSet:
+      id: 009-create-gps-records-indexes
+      author: od46s-team
+      changes:
+        - createIndex:
+            tableName: gps_records
+            indexName: idx_gps_execution
+            columns:
+              - column:
+                  name: execution_id
+        - createIndex:
+            tableName: gps_records
+            indexName: idx_gps_timestamp
+            columns:
+              - column:
+                  name: gps_timestamp
+        - createIndex:
+            tableName: gps_records
+            indexName: idx_gps_event_type
+            columns:
+              - column:
+                  name: event_type

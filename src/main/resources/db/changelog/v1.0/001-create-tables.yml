@@ -540,3 +540,62 @@ databaseChangeLog:
             columnNames: assignment_id, execution_date
             constraintName: uk_assignment_execution_date
 
+  # ==========================================
+  # CHANGESET 11: Create gps_records table
+  # ==========================================
+  - changeSet:
+      id: 011-create-gps-records-table
+      author: od46s-team
+      changes:
+        - createTable:
+            tableName: gps_records
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: execution_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_gps_execution
+                    references: route_executions(id)
+              - column:
+                  name: gps_timestamp
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: latitude
+                  type: DECIMAL(10,8)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: longitude
+                  type: DECIMAL(11,8)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: speed_kmh
+                  type: DECIMAL(5,2)
+              - column:
+                  name: heading_degrees
+                  type: INTEGER
+              - column:
+                  name: accuracy_meters
+                  type: DECIMAL(5,2)
+              - column:
+                  name: event_type
+                  type: VARCHAR(20)
+                  defaultValue: 'NORMAL'
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+

@@ -142,24 +142,175 @@ databaseChangeLog:
                   value: "47777777777"
 
   # ==========================================
-  # CHANGESET 4: Reset sequence values
+  # CHANGESET 4: Insert TEMPORARY admin for testing (DELETE/UPDATE)
   # ==========================================
   - changeSet:
-      id: 004-reset-sequences
+      id: 004-insert-temp-admin-for-tests
+      author: od46s-team
+      changes:
+        - insert:
+            tableName: users
+            columns:
+              - column:
+                  name: id
+                  value: 4
+              - column:
+                  name: name
+                  value: "TEMP Admin Test"
+              - column:
+                  name: email
+                  value: "temp.admin@od46s.com"
+              - column:
+                  name: cpf
+                  value: "44444444444"
+              - column:
+                  name: password
+                  # BCrypt hash for "test123" (cost 10)
+                  value: "$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z2H6tEWYJO8SqHLzHDDFfJFu"
+              - column:
+                  name: active
+                  valueBoolean: true
+        - insert:
+            tableName: administrators
+            columns:
+              - column:
+                  name: id
+                  value: 4
+              - column:
+                  name: access_level
+                  value: "ADMIN"
+              - column:
+                  name: department
+                  value: "Testing Department"
+              - column:
+                  name: corporate_phone
+                  value: "47444444444"
+
+  # ==========================================
+  # CHANGESET 5: Insert TEMPORARY driver for testing (DELETE/UPDATE)
+  # ==========================================
+  - changeSet:
+      id: 005-insert-temp-driver-for-tests
+      author: od46s-team
+      changes:
+        - insert:
+            tableName: users
+            columns:
+              - column:
+                  name: id
+                  value: 5
+              - column:
+                  name: name
+                  value: "TEMP Driver Test"
+              - column:
+                  name: email
+                  value: "temp.driver@od46s.com"
+              - column:
+                  name: cpf
+                  value: "55555555555"
+              - column:
+                  name: password
+                  # BCrypt hash for "test123" (cost 10)
+                  value: "$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z2H6tEWYJO8SqHLzHDDFfJFu"
+              - column:
+                  name: active
+                  valueBoolean: true
+        - insert:
+            tableName: drivers
+            columns:
+              - column:
+                  name: id
+                  value: 5
+              - column:
+                  name: license_number
+                  value: "99999999999"
+              - column:
+                  name: license_category
+                  value: "D"
+              - column:
+                  name: license_expiry
+                  value: "2025-12-31"
+              - column:
+                  name: enabled
+                  valueBoolean: true
+              - column:
+                  name: phone
+                  value: "47555555555"
+
+  # ==========================================
+  # CHANGESET 6: Insert TEMPORARY vehicle for testing (DELETE/UPDATE)
+  # ==========================================
+  - changeSet:
+      id: 006-insert-temp-vehicle-for-tests
+      author: od46s-team
+      changes:
+        - insert:
+            tableName: vehicles
+            columns:
+              - column:
+                  name: id
+                  value: 1
+              - column:
+                  name: license_plate
+                  value: "TMP1234"
+              - column:
+                  name: model
+                  value: "TEMP Test Vehicle"
+              - column:
+                  name: brand
+                  value: "Test Brand"
+              - column:
+                  name: year
+                  value: 2020
+              - column:
+                  name: capacity_kg
+                  value: 5000.00
+              - column:
+                  name: fuel_type
+                  value: "DIESEL"
+              - column:
+                  name: average_consumption
+                  value: 5.0
+              - column:
+                  name: status
+                  value: "AVAILABLE"
+              - column:
+                  name: current_km
+                  value: 50000
+              - column:
+                  name: acquisition_date
+                  value: "2020-01-01"
+              - column:
+                  name: notes
+                  value: "TEMPORARY vehicle for DELETE/UPDATE tests"
+              - column:
+                  name: active
+                  valueBoolean: true
+
+  # ==========================================
+  # CHANGESET 7: Reset sequence values
+  # ==========================================
+  - changeSet:
+      id: 007-reset-sequences
       author: od46s-team
       changes:
         - sql:
-            sql: "SELECT setval('users_id_seq', 3, true);"
+            sql: "SELECT setval('users_id_seq', 5, true);"
+            dbms: postgresql
+        - sql:
+            sql: "SELECT setval('vehicles_id_seq', 1, true);"
             dbms: postgresql
       rollback:
         - sql:
             sql: "SELECT setval('users_id_seq', 1, false);"
+        - sql:
+            sql: "SELECT setval('vehicles_id_seq', 1, false);"
 
   # ==========================================
-  # CHANGESET 5: Insert sample route
+  # CHANGESET 8: Insert sample route
   # ==========================================
   - changeSet:
-      id: 005-insert-sample-route
+      id: 008-insert-sample-route
       author: od46s-team
       changes:
         - insert:
@@ -200,10 +351,10 @@ databaseChangeLog:
                   value: 1
 
   # ==========================================
-  # CHANGESET 6: Insert sample collection points
+  # CHANGESET 9: Insert sample collection points
   # ==========================================
   - changeSet:
-      id: 006-insert-sample-collection-points
+      id: 009-insert-sample-collection-points
       author: od46s-team
       changes:
         - insert:
@@ -316,10 +467,10 @@ databaseChangeLog:
                   valueBoolean: true
 
   # ==========================================
-  # CHANGESET 7: Reset route sequences
+  # CHANGESET 10: Reset route sequences
   # ==========================================
   - changeSet:
-      id: 007-reset-route-sequences
+      id: 010-reset-route-sequences
       author: od46s-team
       changes:
         - sql:

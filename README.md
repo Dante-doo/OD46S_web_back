@@ -187,11 +187,13 @@ docker-compose --profile admin up -d
 | PATCH | `/api/v1/executions/{id}/cancel` | Cancelar execução | ✅ Implementado |
 | GET | `/api/v1/executions/my-current` | Coleta em andamento | ✅ Implementado |
 
-### GPS Tracking (Planejado)
+### GPS Tracking
+> **💡 Conceito**: Rastreamento em tempo real durante execuções
+
 | Método | Endpoint | Descrição | Status |
 |--------|----------|-----------|--------|
-| POST | `/api/v1/executions/{id}/gps` | Registrar posição GPS | ⏳ Planejado |
-| GET | `/api/v1/executions/{id}/gps` | Obter rastro GPS | ⏳ Planejado |
+| POST | `/api/v1/executions/{id}/gps` | Registrar posição GPS | ✅ Implementado |
+| GET | `/api/v1/executions/{id}/gps` | Obter rastro GPS | ✅ Implementado |
 
 ### Registros de Coleta (Planejado)
 | Método | Endpoint | Descrição | Status |

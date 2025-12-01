@@ -537,7 +537,7 @@
           }
         },
         {
-          "name": "Update User",
+          "name": "Update User (TEMP Admin)",
           "event": [],
           "request": {
             "method": "PUT",
@@ -558,7 +558,7 @@
             "auth": {
               "type": "noauth"
             },
-            "description": "Atualizar usuário existente",
+            "description": "Atualizar usuário TEMPORÁRIO (ID 4 - TEMP Admin Test)",
             "url": {
               "raw": "{{baseUrl}}/api/v1/users/:userId",
               "protocol": "",
@@ -575,13 +575,14 @@
               "variable": [
                 {
                   "key": "userId",
-                  "value": "1"
+                  "value": "4",
+                  "description": "ID do TEMP Admin Test (dados de exemplo)"
                 }
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Maria Silva Atualizada\",\n  \"phone\": \"47987654321\",\n  \"active\": true\n}",
+              "raw": "{\n  \"name\": \"TEMP Admin Test - UPDATED\",\n  \"department\": \"Testing Department - Updated\",\n  \"active\": true\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -591,7 +592,62 @@
           }
         },
         {
-          "name": "Delete User",
+          "name": "Update User (TEMP Driver)",
+          "event": [],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "disabled": false,
+                "type": "default"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "disabled": false,
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Atualizar usuário TEMPORÁRIO (ID 5 - TEMP Driver Test)",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/:userId",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                ":userId"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "userId",
+                  "value": "5",
+                  "description": "ID do TEMP Driver Test (dados de exemplo)"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"TEMP Driver Test - UPDATED\",\n  \"phone\": \"47999999999\",\n  \"active\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete User (TEMP - Safe to Delete)",
           "event": [],
           "request": {
             "method": "DELETE",
@@ -606,7 +662,7 @@
             "auth": {
               "type": "noauth"
             },
-            "description": "Remover usuário (apenas ADMIN)",
+            "description": "Remover usuário TEMPORÁRIO (ID 4 ou 5 - dados de teste). NUNCA delete IDs 1, 2 ou 3 (permanentes)!",
             "url": {
               "raw": "{{baseUrl}}/api/v1/users/:userId",
               "protocol": "",
@@ -623,7 +679,8 @@
               "variable": [
                 {
                   "key": "userId",
-                  "value": "1"
+                  "value": "4",
+                  "description": "ID 4 ou 5 (TEMP) - Safe to delete"
                 }
               ]
             }
@@ -761,7 +818,7 @@
           }
         },
         {
-          "name": "Update vehicle",
+          "name": "Update vehicle (TEMP Vehicle)",
           "event": [],
           "request": {
             "method": "PUT",
@@ -782,7 +839,7 @@
             "auth": {
               "type": "noauth"
             },
-            "description": "",
+            "description": "Atualizar veículo TEMPORÁRIO (ID 1 - TMP1234)",
             "url": {
               "raw": "{{baseUrl}}/api/v1/vehicles/:vehicleId",
               "protocol": "",
@@ -799,13 +856,14 @@
               "variable": [
                 {
                   "key": "vehicleId",
-                  "value": "1"
+                  "value": "1",
+                  "description": "ID do TEMP Test Vehicle (dados de exemplo)"
                 }
               ]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"licensePlate\": \"ABC1234\",\n  \"model\": \"Compactor 14m³\",\n  \"brand\": \"Volvo\",\n  \"year\": 2022,\n  \"capacityKg\": 14000,\n  \"fuelType\": \"DIESEL\",\n  \"averageConsumption\": 3.2,\n  \"status\": \"IN_USE\",\n  \"currentKm\": 13000,\n  \"acquisitionDate\": \"2022-01-15\",\n  \"notes\": \"Updated\",\n  \"active\": true\n}",
+              "raw": "{\n  \"licensePlate\": \"TMP1234\",\n  \"model\": \"TEMP Test Vehicle - UPDATED\",\n  \"brand\": \"Test Brand\",\n  \"year\": 2020,\n  \"capacityKg\": 5500.00,\n  \"fuelType\": \"DIESEL\",\n  \"averageConsumption\": 5.5,\n  \"status\": \"IN_USE\",\n  \"currentKm\": 51000,\n  \"acquisitionDate\": \"2020-01-01\",\n  \"notes\": \"Updated for testing\",\n  \"active\": true\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1739,6 +1797,148 @@
               "path": ["api", "v1", "executions", "my-current"]
             },
             "description": "Retorna a execução de coleta em andamento do motorista autenticado. Apenas DRIVER.\n\nUso: O motorista verifica se tem uma coleta em andamento ao abrir o app."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "GPS Tracking",
+      "description": "Endpoints para rastreamento GPS durante execuções",
+      "item": [
+        {
+          "name": "Registrar Posição GPS",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text",
+                "description": "Token do motorista autenticado"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"latitude\": -25.4284,\n  \"longitude\": -49.2733,\n  \"speed_kmh\": 35.5,\n  \"heading_degrees\": 180,\n  \"accuracy_meters\": 10.5,\n  \"event_type\": \"NORMAL\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/executions/:executionId/gps",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "executions", ":executionId", "gps"],
+              "variable": [
+                {
+                  "key": "executionId",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Registra uma posição GPS durante a execução da coleta. Apenas DRIVER.\n\nCampos:\n- latitude: -90 a 90 (obrigatório)\n- longitude: -180 a 180 (obrigatório)\n- speed_kmh: velocidade em km/h (opcional)\n- heading_degrees: direção 0-359 (opcional)\n- accuracy_meters: precisão em metros (opcional)\n- event_type: NORMAL, STOP, START, END (opcional)\n- gps_timestamp: timestamp customizado (opcional)"
+          },
+          "response": []
+        },
+        {
+          "name": "Registrar Múltiplas Posições GPS (Batch)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text",
+                "description": "Token do motorista autenticado"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"latitude\": -25.4284,\n    \"longitude\": -49.2733,\n    \"speed_kmh\": 35.5,\n    \"heading_degrees\": 180,\n    \"event_type\": \"START\"\n  },\n  {\n    \"latitude\": -25.4295,\n    \"longitude\": -49.2742,\n    \"speed_kmh\": 40.0,\n    \"heading_degrees\": 185,\n    \"event_type\": \"NORMAL\"\n  },\n  {\n    \"latitude\": -25.4302,\n    \"longitude\": -49.2751,\n    \"speed_kmh\": 0,\n    \"heading_degrees\": 185,\n    \"event_type\": \"STOP\"\n  }\n]"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/executions/:executionId/gps",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "executions", ":executionId", "gps"],
+              "variable": [
+                {
+                  "key": "executionId",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Registra múltiplas posições GPS de uma vez (batch). Útil para sincronização offline.\n\nEnvie um array de objetos com os mesmos campos da requisição individual."
+          },
+          "response": []
+        },
+        {
+          "name": "Obter Rastro GPS Completo",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/executions/:executionId/gps",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "executions", ":executionId", "gps"],
+              "variable": [
+                {
+                  "key": "executionId",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Retorna o rastro completo de GPS de uma execução.\n\nPermissões: ADMIN, DRIVER\n\nInclui estatísticas:\n- Total de pontos\n- Distância total percorrida (km)\n- Timestamps primeiro e último ponto"
+          },
+          "response": []
+        },
+        {
+          "name": "Obter Rastro GPS (Período Específico)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/executions/:executionId/gps?start_time=2025-01-01T08:00:00&end_time=2025-01-01T12:00:00",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "executions", ":executionId", "gps"],
+              "query": [
+                {
+                  "key": "start_time",
+                  "value": "2025-01-01T08:00:00",
+                  "description": "Timestamp início (ISO 8601)"
+                },
+                {
+                  "key": "end_time",
+                  "value": "2025-01-01T12:00:00",
+                  "description": "Timestamp fim (ISO 8601)"
+                }
+              ],
+              "variable": [
+                {
+                  "key": "executionId",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Retorna o rastro de GPS de uma execução em um período específico.\n\nParâmetros:\n- start_time: timestamp inicial (formato ISO 8601)\n- end_time: timestamp final (formato ISO 8601)"
           },
           "response": []
         }
