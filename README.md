@@ -21,7 +21,8 @@ O Sistema OD46S foi projetado para modernizar e otimizar a gestão de coleta de 
 - **Liquibase** - Controle de versão do banco
 - **JWT + BCrypt** - Autenticação e segurança
 - **Swagger/OpenAPI** - Documentação interativa da API
-- **Docker + Docker Compose** - Containerização
+- **MinIO** - Armazenamento S3-compatible para fotos (eventos GPS)
+- **Docker + Docker Compose** - Containerização e orquestração
 
 ### Frontend (Planejado)
 - **React 18** - Interface web
@@ -57,13 +58,16 @@ O sistema utiliza um arquivo de configuração centralizado (`.env`) para gerenc
 ./scripts/load-env.sh [comando]
 
 # Comandos disponíveis:
-./scripts/load-env.sh dev      # Desenvolvimento
-./scripts/load-env.sh docker   # Docker Compose
-./scripts/load-env.sh test     # Executar testes
-./scripts/load-env.sh build    # Build da aplicação
-./scripts/load-env.sh clean    # Limpar e rebuild
-./scripts/load-env.sh logs     # Ver logs
-./scripts/load-env.sh stop     # Parar containers
+./scripts/load-env.sh dev           # Desenvolvimento local
+./scripts/load-env.sh docker        # Docker Compose
+./scripts/load-env.sh test          # Executar testes
+./scripts/load-env.sh build         # Build da aplicação
+./scripts/load-env.sh clean         # Limpar e rebuild (remove volumes)
+./scripts/load-env.sh reset         # Reset completo (limpa tudo)
+./scripts/load-env.sh logs          # Ver logs em tempo real
+./scripts/load-env.sh stop          # Parar containers (mantém volumes)
+./scripts/load-env.sh down          # Parar e remover containers
+./scripts/load-env.sh down-volumes  # Parar e remover containers + volumes
 ```
 
 ### 🔧 Configuração Inicial
@@ -77,6 +81,24 @@ nano .env
 # 3. Executar com configurações centralizadas
 ./scripts/load-env.sh docker
 ```
+
+### 🔧 Troubleshooting
+
+**Erro de Liquibase (checksum validation failed):**
+```bash
+# Solução: Limpar o banco de dados e recriar
+./scripts/load-env.sh clean
+
+# Ou reset completo (mais seguro)
+./scripts/load-env.sh reset
+```
+
+**Diferença entre os comandos:**
+- `stop` - Para containers, mantém tudo (volumes, networks)
+- `down` - Remove containers e networks, mantém volumes (banco preservado)
+- `down-volumes` - Remove tudo incluindo volumes (⚠️ apaga banco!)
+- `clean` - Build + down-volumes + up (resolve problemas de Liquibase)
+- `reset` - Igual ao clean, mas com aviso de 5 segundos
 
 ## 🐳 Como Executar com Docker
 
@@ -118,6 +140,8 @@ docker-compose --profile admin up -d
 ### Portas e URLs
 - **Backend**: http://localhost:8080
 - **PostgreSQL**: localhost:5432
+- **MinIO API**: http://localhost:9000
+- **MinIO Console**: http://localhost:9001 (login: minioadmin/minioadmin)
 - **Health Check**: http://localhost:8080/actuator/health
 - **Documentação da API (Swagger)**: http://localhost:8080/swagger-ui/index.html
 
@@ -187,13 +211,47 @@ docker-compose --profile admin up -d
 | PATCH | `/api/v1/executions/{id}/cancel` | Cancelar execução | ✅ Implementado |
 | GET | `/api/v1/executions/my-current` | Coleta em andamento | ✅ Implementado |
 
-### GPS Tracking
-> **💡 Conceito**: Rastreamento em tempo real durante execuções
+### GPS Tracking & Eventos
+> **💡 Conceito**: Rastreamento em tempo real durante execuções + registro de eventos/ocorrências com fotos
 
 | Método | Endpoint | Descrição | Status |
 |--------|----------|-----------|--------|
-| POST | `/api/v1/executions/{id}/gps` | Registrar posição GPS | ✅ Implementado |
-| GET | `/api/v1/executions/{id}/gps` | Obter rastro GPS | ✅ Implementado |
+| POST | `/api/v1/executions/{id}/gps` | Registrar GPS/evento com foto opcional | ✅ Implementado |
+| GET | `/api/v1/executions/{id}/gps` | Obter rastro GPS completo | ✅ Implementado |
+| GET | `/api/v1/files/gps-photos/{executionId}/{filename}` | Baixar foto de evento | ✅ Implementado |
+
+**Tipos de Eventos Suportados:**
+- `START` - Início da coleta
+- `NORMAL` - Percurso normal (GPS periódico)
+- `STOP` - Parada qualquer
+- `BREAK` - Intervalo/Descanso
+- `FUEL` - Abastecimento
+- `LUNCH` - Almoço
+- `PROBLEM` - Problema encontrado
+- `OBSERVATION` - Observação
+- `PHOTO` - Registro fotográfico
+- `END` - Fim da coleta
+
+**Dados Capturados:**
+- Latitude/Longitude (obrigatório)
+- Velocidade, direção, precisão (opcional)
+- Tipo de evento (default: NORMAL)
+- Descrição textual (opcional)
+- Foto (opcional, max 10MB, JPG/PNG/WebP)
+- Timestamp
+
+**Exemplo de Uso:**
+```bash
+# Registrar parada com problema e foto
+POST /api/v1/executions/123/gps
+Content-Type: multipart/form-data
+
+latitude=-25.4284
+longitude=-49.2733
+event_type=PROBLEM
+description=Lixeira transbordando, lixo na calçada
+photo=@foto_problema.jpg
+```
 
 ### Registros de Coleta (Planejado)
 | Método | Endpoint | Descrição | Status |
@@ -255,6 +313,7 @@ OD46S_web_back/
 │   │   ├── SecurityConfig.java         # Spring Security
 │   │   ├── JwtAuthFilter.java          # Filtro JWT
 │   │   ├── OpenApiConfig.java          # Swagger/OpenAPI
+│   │   ├── MinioConfig.java            # Configuração MinIO
 │   │   └── DotenvInitializer.java      # Carregamento .env
 │   └── utils/                           # Utilitários
 │       └── JwtUtils.java               # Operações JWT
@@ -298,10 +357,15 @@ OD46S_web_back/
 **Módulo de Escalas**
 - `route_assignments` - Vínculo rota + motorista + caminhão (duradouro) ✅
 
-**Módulo de Execuções (Planejado)**
-- `route_executions` - Registro de coletas realizadas (eventos)
-- `gps_records` - Rastreamento GPS das execuções
-- `collection_point_records` - Registro de coleta em cada ponto
+**Módulo de Execuções**
+- `route_executions` - Registro de coletas realizadas ✅
+- `gps_records` - Rastreamento GPS + eventos + fotos (description, photo_url) ✅
+- `collection_point_records` - Registro de coleta em cada ponto (planejado)
+
+**Armazenamento de Arquivos**
+- MinIO (S3-compatible) - Fotos de eventos GPS (max 10MB, JPG/PNG/WebP) ✅
+- Bucket: `od46s-files`
+- Path: `gps-photos/execution_{id}/photo_{timestamp}_{uuid}.{ext}`
 
 ### Relacionamentos Principais
 

@@ -67,7 +67,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"admin@od46s.com\",\n  \"password\": \"admin123\"\n}",
+              "raw": "{\n  \"email\": \"admin@od46s.com\",\n  \"password\": \"od46s123\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -135,7 +135,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"cpf\": \"11111111111\",\n  \"password\": \"admin123\"\n}",
+              "raw": "{\n  \"cpf\": \"11111111111\",\n  \"password\": \"od46s123\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -203,7 +203,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"joao.driver@od46s.com\",\n  \"password\": \"driver123\"\n}",
+              "raw": "{\n  \"email\": \"joao.driver@od46s.com\",\n  \"password\": \"od46s123\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1803,29 +1803,54 @@
       ]
     },
     {
-      "name": "GPS Tracking",
-      "description": "Endpoints para rastreamento GPS durante execuções",
+      "name": "GPS Tracking & Eventos",
+      "description": "Rastreamento GPS + registro de eventos/ocorrências com fotos durante execuções",
       "item": [
         {
-          "name": "Registrar Posição GPS",
+          "name": "Registrar GPS Normal",
           "request": {
             "method": "POST",
             "header": [
               {
                 "key": "Authorization",
                 "value": "Bearer {{jwtToken}}",
-                "type": "text",
-                "description": "Token do motorista autenticado"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json",
                 "type": "text"
               }
             ],
             "body": {
-              "mode": "raw",
-              "raw": "{\n  \"latitude\": -25.4284,\n  \"longitude\": -49.2733,\n  \"speed_kmh\": 35.5,\n  \"heading_degrees\": 180,\n  \"accuracy_meters\": 10.5,\n  \"event_type\": \"NORMAL\"\n}"
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "latitude",
+                  "value": "-25.4284",
+                  "type": "text"
+                },
+                {
+                  "key": "longitude",
+                  "value": "-49.2733",
+                  "type": "text"
+                },
+                {
+                  "key": "speed_kmh",
+                  "value": "35.5",
+                  "type": "text"
+                },
+                {
+                  "key": "heading_degrees",
+                  "value": "180",
+                  "type": "text"
+                },
+                {
+                  "key": "accuracy_meters",
+                  "value": "10.5",
+                  "type": "text"
+                },
+                {
+                  "key": "event_type",
+                  "value": "NORMAL",
+                  "type": "text"
+                }
+              ]
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/executions/:executionId/gps",
@@ -1838,30 +1863,45 @@
                 }
               ]
             },
-            "description": "Registra uma posição GPS durante a execução da coleta. Apenas DRIVER.\n\nCampos:\n- latitude: -90 a 90 (obrigatório)\n- longitude: -180 a 180 (obrigatório)\n- speed_kmh: velocidade em km/h (opcional)\n- heading_degrees: direção 0-359 (opcional)\n- accuracy_meters: precisão em metros (opcional)\n- event_type: NORMAL, STOP, START, END (opcional)\n- gps_timestamp: timestamp customizado (opcional)"
+            "description": "Registra posição GPS normal durante percurso.\n\nTipos de evento: START, NORMAL, STOP, BREAK, FUEL, LUNCH, PROBLEM, OBSERVATION, PHOTO, END"
           },
           "response": []
         },
         {
-          "name": "Registrar Múltiplas Posições GPS (Batch)",
+          "name": "Registrar Parada para Almoço",
           "request": {
             "method": "POST",
             "header": [
               {
                 "key": "Authorization",
                 "value": "Bearer {{jwtToken}}",
-                "type": "text",
-                "description": "Token do motorista autenticado"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json",
                 "type": "text"
               }
             ],
             "body": {
-              "mode": "raw",
-              "raw": "[\n  {\n    \"latitude\": -25.4284,\n    \"longitude\": -49.2733,\n    \"speed_kmh\": 35.5,\n    \"heading_degrees\": 180,\n    \"event_type\": \"START\"\n  },\n  {\n    \"latitude\": -25.4295,\n    \"longitude\": -49.2742,\n    \"speed_kmh\": 40.0,\n    \"heading_degrees\": 185,\n    \"event_type\": \"NORMAL\"\n  },\n  {\n    \"latitude\": -25.4302,\n    \"longitude\": -49.2751,\n    \"speed_kmh\": 0,\n    \"heading_degrees\": 185,\n    \"event_type\": \"STOP\"\n  }\n]"
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "latitude",
+                  "value": "-25.4284",
+                  "type": "text"
+                },
+                {
+                  "key": "longitude",
+                  "value": "-49.2733",
+                  "type": "text"
+                },
+                {
+                  "key": "event_type",
+                  "value": "LUNCH",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Parada para almoço - 12h30",
+                  "type": "text"
+                }
+              ]
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/executions/:executionId/gps",
@@ -1874,7 +1914,115 @@
                 }
               ]
             },
-            "description": "Registra múltiplas posições GPS de uma vez (batch). Útil para sincronização offline.\n\nEnvie um array de objetos com os mesmos campos da requisição individual."
+            "description": "Exemplo de registro de parada para almoço com descrição."
+          },
+          "response": []
+        },
+        {
+          "name": "Registrar Problema COM FOTO",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "latitude",
+                  "value": "-25.4284",
+                  "type": "text"
+                },
+                {
+                  "key": "longitude",
+                  "value": "-49.2733",
+                  "type": "text"
+                },
+                {
+                  "key": "event_type",
+                  "value": "PROBLEM",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Lixeira transbordando, lixo espalhado na calçada",
+                  "type": "text"
+                },
+                {
+                  "key": "photo",
+                  "type": "file",
+                  "src": [],
+                  "description": "Selecione uma foto (JPG/PNG/WebP, max 10MB)"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/executions/:executionId/gps",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "executions", ":executionId", "gps"],
+              "variable": [
+                {
+                  "key": "executionId",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Exemplo de registro de problema com foto.\n\nA foto é enviada via multipart/form-data e armazenada no MinIO.\nRetorna a URL da foto no campo photo_url."
+          },
+          "response": []
+        },
+        {
+          "name": "Registrar Abastecimento",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "latitude",
+                  "value": "-25.4300",
+                  "type": "text"
+                },
+                {
+                  "key": "longitude",
+                  "value": "-49.2750",
+                  "type": "text"
+                },
+                {
+                  "key": "event_type",
+                  "value": "FUEL",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Abastecimento - Posto Ipiranga",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/executions/:executionId/gps",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "executions", ":executionId", "gps"],
+              "variable": [
+                {
+                  "key": "executionId",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Exemplo de registro de parada para abastecimento."
           },
           "response": []
         },
@@ -1939,6 +2087,38 @@
               ]
             },
             "description": "Retorna o rastro de GPS de uma execução em um período específico.\n\nParâmetros:\n- start_time: timestamp inicial (formato ISO 8601)\n- end_time: timestamp final (formato ISO 8601)"
+          },
+          "response": []
+        },
+        {
+          "name": "Baixar Foto de Evento",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/files/gps-photos/:executionId/:filename",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "files", "gps-photos", ":executionId", ":filename"],
+              "variable": [
+                {
+                  "key": "executionId",
+                  "value": "1",
+                  "description": "ID da execução"
+                },
+                {
+                  "key": "filename",
+                  "value": "photo_20250115_083045_a1b2c3d4.jpg",
+                  "description": "Nome do arquivo (obtido do campo photo_url)"
+                }
+              ]
+            },
+            "description": "Baixa uma foto armazenada no MinIO.\n\nO filename deve ser obtido do campo photo_url retornado ao registrar GPS com foto.\n\nRetorna:\n- Content-Type: image/jpeg, image/png ou image/webp\n- Binary image data"
           },
           "response": []
         }

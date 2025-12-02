@@ -33,6 +33,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      minio:
+        condition: service_healthy
     env_file:
       - .env
     environment:
@@ -94,12 +96,17 @@ services:
       # Cache e Session
       CACHE_TYPE: ${CACHE_TYPE}
       SESSION_STORE_TYPE: ${SESSION_STORE_TYPE}
+
+      # MinIO
+      MINIO_URL: ${MINIO_URL_DOCKER:-http://minio:9000}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME}
       
     ports:
       - "${APP_PORT}:8080"
     volumes:
       - backend_logs:/app/logs
-      - backend_uploads:/app/uploads
     networks:
       - od46s-network
     healthcheck:
@@ -108,6 +115,30 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
+
+  # MinIO (Armazenamento de arquivos S3-compatible)
+  minio:
+    image: minio/minio:latest
+    container_name: od46s-minio
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"  # API
+      - "9001:9001"  # Console Web
+    volumes:
+      - minio_data:/data
+    networks:
+      - od46s-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # pgAdmin (opcional - para gerenciar banco via web)
   pgadmin:
@@ -137,7 +168,7 @@ volumes:
     driver: local
   backend_logs:
     driver: local
-  backend_uploads:
+  minio_data:
     driver: local
   pgadmin_data:
     driver: local

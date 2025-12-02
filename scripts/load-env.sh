@@ -80,25 +80,32 @@ show_help() {
     echo -e "   ./scripts/load-env.sh [comando]"
     echo -e ""
     echo -e "${BLUE}📋 Comandos disponíveis:${NC}"
-    echo -e "   ${GREEN}dev${NC}          - Executar aplicação em modo desenvolvimento"
-    echo -e "   ${GREEN}docker${NC}       - Executar com Docker Compose"
+    echo -e "   ${GREEN}dev${NC}           - Executar aplicação em modo desenvolvimento"
+    echo -e "   ${GREEN}docker${NC}        - Executar com Docker Compose"
     echo -e "   ${GREEN}test${NC}          - Executar testes"
-    echo -e "   ${GREEN}build${NC}        - Build da aplicação"
-    echo -e "   ${GREEN}clean${NC}         - Limpar e rebuild"
+    echo -e "   ${GREEN}build${NC}         - Build da aplicação"
+    echo -e "   ${GREEN}clean${NC}         - Limpar, rebuild e recriar DB (remove volumes)"
+    echo -e "   ${GREEN}reset${NC}         - Reset completo (limpa volumes e rebuild)"
     echo -e "   ${GREEN}logs${NC}          - Ver logs do Docker"
-    echo -e "   ${GREEN}stop${NC}          - Parar containers"
-    echo -e "   ${GREEN}debug${NC}        - Debug da aplicação (porta 5005)"
+    echo -e "   ${GREEN}stop${NC}          - Parar containers (mantém volumes)"
+    echo -e "   ${GREEN}down${NC}          - Parar e remover containers (mantém volumes)"
+    echo -e "   ${GREEN}down-volumes${NC}  - Parar e remover containers + volumes"
+    echo -e "   ${GREEN}debug${NC}         - Debug da aplicação (porta 5005)"
     echo -e "   ${GREEN}debug-suspend${NC} - Debug suspenso (porta 5005)"
     echo -e "   ${GREEN}docker-debug${NC}  - Debug do Docker"
-    echo -e "   ${GREEN}test-debug${NC}  - Debug dos testes"
-    echo -e "   ${GREEN}coverage${NC}     - Gerar relatório de cobertura"
+    echo -e "   ${GREEN}test-debug${NC}    - Debug dos testes"
+    echo -e "   ${GREEN}coverage${NC}      - Gerar relatório de cobertura"
     echo -e "   ${GREEN}check${NC}         - Verificar configurações do .env"
     echo -e "   ${GREEN}help${NC}          - Mostrar esta ajuda"
     echo -e ""
     echo -e "${BLUE}💡 Exemplos:${NC}"
-    echo -e "   ./scripts/load-env.sh dev"
-    echo -e "   ./scripts/load-env.sh docker"
-    echo -e "   ./scripts/load-env.sh test"
+    echo -e "   ./scripts/load-env.sh dev          # Rodar localmente"
+    echo -e "   ./scripts/load-env.sh docker       # Rodar com Docker"
+    echo -e "   ./scripts/load-env.sh clean        # Rebuild com DB limpo"
+    echo -e "   ./scripts/load-env.sh reset        # Reset completo (cuidado!)"
+    echo -e "   ./scripts/load-env.sh logs         # Ver logs em tempo real"
+    echo -e ""
+    echo -e "${YELLOW}⚠️  Comandos 'clean', 'reset' e 'down-volumes' removem o banco de dados!${NC}"
 }
 
 # Processar argumentos
@@ -124,17 +131,43 @@ case "${1:-help}" in
         ;;
     "clean")
         echo -e "${GREEN}🧹 Limpando e rebuildando...${NC}"
+        echo -e "${YELLOW}⚠️  Isso irá remover todos os volumes (banco de dados será limpo)${NC}"
         run_with_env ./mvnw clean package -DskipTests
-        run_with_env docker-compose down
+        run_with_env docker-compose down -v
         run_with_env docker-compose up --build -d
+        echo -e "${GREEN}✅ Aplicação limpa e recriada com sucesso!${NC}"
         ;;
     "logs")
         echo -e "${GREEN}📋 Mostrando logs...${NC}"
         run_with_env docker-compose logs -f
         ;;
+    "reset")
+        echo -e "${RED}🔄 RESET COMPLETO DO AMBIENTE${NC}"
+        echo -e "${YELLOW}⚠️  Isso irá remover TODOS os volumes (dados do banco serão perdidos!)${NC}"
+        echo -e "${YELLOW}⚠️  Aguarde 5 segundos para cancelar (Ctrl+C)...${NC}"
+        sleep 5
+        echo -e "${GREEN}🧹 Limpando projeto Maven...${NC}"
+        run_with_env ./mvnw clean package -DskipTests
+        echo -e "${GREEN}🐳 Removendo containers e volumes...${NC}"
+        run_with_env docker-compose down -v
+        echo -e "${GREEN}🔨 Reconstruindo e iniciando...${NC}"
+        run_with_env docker-compose up --build -d
+        echo -e "${GREEN}✅ Reset completo concluído!${NC}"
+        echo -e "${BLUE}📊 Status dos containers:${NC}"
+        run_with_env docker-compose ps
+        ;;
     "stop")
-        echo -e "${GREEN}🛑 Parando containers...${NC}"
+        echo -e "${GREEN}🛑 Parando containers (volumes mantidos)...${NC}"
+        run_with_env docker-compose stop
+        ;;
+    "down")
+        echo -e "${GREEN}🛑 Parando e removendo containers (volumes mantidos)...${NC}"
         run_with_env docker-compose down
+        ;;
+    "down-volumes")
+        echo -e "${RED}🛑 Parando e removendo containers + volumes${NC}"
+        echo -e "${YELLOW}⚠️  Dados do banco serão perdidos!${NC}"
+        run_with_env docker-compose down -v
         ;;
     "debug")
         debug_app

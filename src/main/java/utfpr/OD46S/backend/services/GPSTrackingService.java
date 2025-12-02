@@ -79,6 +79,20 @@ public class GPSTrackingService {
             }
         }
 
+        if (request.containsKey("description")) {
+            String description = (String) request.get("description");
+            if (description != null && !description.trim().isEmpty()) {
+                gpsRecord.setDescription(description);
+            }
+        }
+
+        if (request.containsKey("photo_url")) {
+            String photoUrl = (String) request.get("photo_url");
+            if (photoUrl != null && !photoUrl.trim().isEmpty()) {
+                gpsRecord.setPhotoUrl(photoUrl);
+            }
+        }
+
         gpsRecordRepository.save(gpsRecord);
 
         GPSRecordDTO dto = toDTO(gpsRecord);
@@ -215,6 +229,8 @@ public class GPSTrackingService {
         dto.setHeadingDegrees(record.getHeadingDegrees());
         dto.setAccuracyMeters(record.getAccuracyMeters());
         dto.setEventType(record.getEventType());
+        dto.setDescription(record.getDescription());
+        dto.setPhotoUrl(record.getPhotoUrl());
         dto.setCreatedAt(record.getCreatedAt());
         return dto;
     }

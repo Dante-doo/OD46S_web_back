@@ -6,16 +6,16 @@
 
 | ID | Nome | Email | Senha | Tipo | CPF | Descrição |
 |----|------|-------|-------|------|-----|-----------|
-| 1 | System Administrator | admin@od46s.com | `admin123` | ADMIN | 11111111111 | ✅ Super Admin - Permanente |
-| 2 | Maria Silva | maria.silva@od46s.com | `admin123` | ADMIN | 22222222222 | ✅ Admin Operacional - Permanente |
-| 3 | João Motorista | joao.driver@od46s.com | `driver123` | DRIVER | 33333333333 | ✅ Motorista Exemplo - Permanente |
+| 1 | System Administrator | admin@od46s.com | `od46s123` | ADMIN | 11111111111 | ✅ Super Admin - Permanente |
+| 2 | Maria Silva | maria.silva@od46s.com | `od46s123` | ADMIN | 22222222222 | ✅ Admin Operacional - Permanente |
+| 3 | João Motorista | joao.driver@od46s.com | `od46s123` | DRIVER | 33333333333 | ✅ Motorista Exemplo - Permanente |
 
 ### Usuários Temporários (SAFE TO DELETE/UPDATE)
 
 | ID | Nome | Email | Senha | Tipo | CPF | Descrição |
 |----|------|-------|-------|------|-----|-----------|
-| 4 | TEMP Admin Test | temp.admin@od46s.com | `test123` | ADMIN | 44444444444 | 🧪 Dados de teste - DELETE/UPDATE |
-| 5 | TEMP Driver Test | temp.driver@od46s.com | `test123` | DRIVER | 55555555555 | 🧪 Dados de teste - DELETE/UPDATE |
+| 4 | TEMP Admin Test | temp.admin@od46s.com | `od46s123` | ADMIN | 44444444444 | 🧪 Dados de teste - DELETE/UPDATE |
+| 5 | TEMP Driver Test | temp.driver@od46s.com | `od46s123` | DRIVER | 55555555555 | 🧪 Dados de teste - DELETE/UPDATE |
 
 ---
 
@@ -90,7 +90,7 @@ POST /api/v1/users
   "name": "TEMP Admin Test",
   "email": "temp.admin.new@od46s.com",
   "cpf": "66666666666",
-  "password": "test123",
+  "password": "od46s123",
   "type": "ADMIN",
   "active": true,
   "accessLevel": "ADMIN",
@@ -106,7 +106,7 @@ POST /api/v1/users
   "name": "TEMP Driver Test",
   "email": "temp.driver.new@od46s.com",
   "cpf": "77777777777",
-  "password": "test123",
+  "password": "od46s123",
   "type": "DRIVER",
   "active": true,
   "license_number": "88888888888",
@@ -142,7 +142,7 @@ POST /api/v1/vehicles
 ### 1. **Login**
 ```
 POST /api/v1/auth/login
-{ "email": "admin@od46s.com", "password": "admin123" }
+{ "email": "admin@od46s.com", "password": "od46s123" }
 ```
 
 ### 2. **Criar Assignment** (Admin)
@@ -168,14 +168,39 @@ POST /api/v1/executions/start
 ```
 
 ### 4. **Registrar GPS** (Driver)
+
+**GPS Normal:**
 ```
 POST /api/v1/executions/1/gps
-{
-  "latitude": -25.4284,
-  "longitude": -49.2733,
-  "speed_kmh": 35.5,
-  "event_type": "START"
-}
+Content-Type: multipart/form-data
+
+latitude=-25.4284
+longitude=-49.2733
+speed_kmh=35.5
+event_type=NORMAL
+```
+
+**Parada para Almoço:**
+```
+POST /api/v1/executions/1/gps
+Content-Type: multipart/form-data
+
+latitude=-25.4284
+longitude=-49.2733
+event_type=LUNCH
+description=Parada para almoço - 30min
+```
+
+**Problema COM FOTO:**
+```
+POST /api/v1/executions/1/gps
+Content-Type: multipart/form-data
+
+latitude=-25.4284
+longitude=-49.2733
+event_type=PROBLEM
+description=Lixeira transbordando, lixo espalhado na calçada
+photo=@foto_problema.jpg
 ```
 
 ### 5. **Finalizar Execução** (Driver)
@@ -206,6 +231,13 @@ PATCH /api/v1/executions/1/complete
 ### Erro: "Execution not in progress"
 - Só pode registrar GPS em execuções com status `IN_PROGRESS`
 
+### Erro: "File size exceeds maximum limit"
+- Fotos devem ter no máximo 10MB
+- Formatos aceitos: JPG, PNG, WebP
+
+### Erro: "Only JPEG, PNG and WebP images are allowed"
+- Envie apenas arquivos de imagem válidos
+
 ---
 
 ## 📌 Notas Importantes
@@ -214,6 +246,9 @@ PATCH /api/v1/executions/1/complete
 2. **Soft Delete**: Usuários com histórico são marcados como inativos ao invés de deletados
 3. **Validações**: Coordenadas GPS, CNH, placas e CPFs são validados
 4. **Sequências**: IDs começam após os dados iniciais (users: 6+, vehicles: 2+)
+5. **Fotos GPS**: Armazenadas no MinIO (S3-compatible), max 10MB, formatos: JPG/PNG/WebP
+6. **Tipos de Eventos GPS**: START, NORMAL, STOP, BREAK, FUEL, LUNCH, PROBLEM, OBSERVATION, PHOTO, END
+7. **MinIO Console**: http://localhost:9001 (minioadmin/minioadmin) para gerenciar arquivos
 
 ---
 

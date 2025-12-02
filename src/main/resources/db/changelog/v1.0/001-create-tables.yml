@@ -593,6 +593,12 @@ databaseChangeLog:
                   type: VARCHAR(20)
                   defaultValue: 'NORMAL'
               - column:
+                  name: description
+                  type: TEXT
+              - column:
+                  name: photo_url
+                  type: VARCHAR(500)
+              - column:
                   name: created_at
                   type: TIMESTAMP
                   defaultValueComputed: CURRENT_TIMESTAMP

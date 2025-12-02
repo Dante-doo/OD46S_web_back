@@ -9,7 +9,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import utfpr.OD46S.backend.services.GPSTrackingService;
+import utfpr.OD46S.backend.services.MinioStorageService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -24,29 +26,43 @@ public class GPSTrackingController {
     @Autowired
     private GPSTrackingService gpsTrackingService;
 
+    @Autowired
+    private MinioStorageService minioStorageService;
+
     @PostMapping("/{executionId}/gps")
     @PreAuthorize("hasRole('DRIVER')")
     @Operation(
-            summary = "Registrar posição GPS",
-            description = "Registra uma ou múltiplas posições GPS durante a execução da coleta. Apenas DRIVER."
+            summary = "Registrar posição GPS / Evento",
+            description = "Registra posição GPS, eventos (paradas, problemas, etc) e foto opcional durante a execução. Apenas DRIVER."
     )
     public ResponseEntity<?> registrarPosicaoGPS(
             @PathVariable Long executionId,
-            @RequestBody Object request) {
+            @RequestParam(value = "latitude") String latitude,
+            @RequestParam(value = "longitude") String longitude,
+            @RequestParam(value = "speed_kmh", required = false) String speedKmh,
+            @RequestParam(value = "heading_degrees", required = false) String headingDegrees,
+            @RequestParam(value = "accuracy_meters", required = false) String accuracyMeters,
+            @RequestParam(value = "event_type", defaultValue = "NORMAL") String eventType,
+            @RequestParam(value = "description", required = false) String description,
+            @RequestParam(value = "photo", required = false) MultipartFile photo) {
         try {
-            Map<String, Object> response;
-            
-            // Verificar se é uma lista de posições ou uma única posição
-            if (request instanceof List) {
-                @SuppressWarnings("unchecked")
-                List<Map<String, Object>> posicoes = (List<Map<String, Object>>) request;
-                response = gpsTrackingService.registrarMultiplasPosicoes(executionId, posicoes);
-            } else {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> posicao = (Map<String, Object>) request;
-                response = gpsTrackingService.registrarPosicaoGPS(executionId, posicao);
+            // Construir mapa de request
+            Map<String, Object> request = new java.util.HashMap<>();
+            request.put("latitude", latitude);
+            request.put("longitude", longitude);
+            if (speedKmh != null) request.put("speed_kmh", speedKmh);
+            if (headingDegrees != null) request.put("heading_degrees", headingDegrees);
+            if (accuracyMeters != null) request.put("accuracy_meters", accuracyMeters);
+            request.put("event_type", eventType);
+            if (description != null) request.put("description", description);
+
+            // Upload de foto se fornecida
+            if (photo != null && !photo.isEmpty()) {
+                String photoUrl = minioStorageService.storeGPSPhoto(executionId, photo);
+                request.put("photo_url", photoUrl);
             }
-            
+
+            Map<String, Object> response = gpsTrackingService.registrarPosicaoGPS(executionId, request);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (RuntimeException e) {
             HttpStatus status = HttpStatus.BAD_REQUEST;

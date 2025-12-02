@@ -1351,27 +1351,71 @@ Authorization: Bearer {jwt_token}  # Driver
 
 ---
 
-# 📍 7. GPS TRACKING
+# 📍 7. GPS TRACKING & EVENTOS
 
-## 7.1 Send GPS Position
+> **💡 Conceito**: Sistema unificado de rastreamento GPS + registro de eventos/ocorrências com fotos durante execuções
+
+## 7.1 Registrar GPS / Evento com Foto
 **POST** `/executions/{execution_id}/gps`
 
 ### Headers
 ```
 Authorization: Bearer {jwt_token}  # Driver or ADMIN
+Content-Type: multipart/form-data
 ```
 
-### Request Body
-```json
-{
-  "gps_timestamp": "2025-01-15T08:30:00Z", // datetime, required
-  "latitude": -25.4284,             // decimal, required
-  "longitude": -49.2733,            // decimal, required
-  "speed_kmh": 25.5,               // decimal, optional
-  "heading_degrees": 180,           // int, optional (0-359)
-  "accuracy_meters": 5.0,          // decimal, optional
-  "event_type": "NORMAL"           // NORMAL|STOP|START|END
-}
+### Request Body (multipart/form-data)
+```
+latitude: -25.4284              // decimal, required
+longitude: -49.2733             // decimal, required
+speed_kmh: 25.5                // decimal, optional
+heading_degrees: 180            // int, optional (0-359)
+accuracy_meters: 5.0           // decimal, optional
+event_type: NORMAL             // enum, optional (default: NORMAL)
+description: "Descrição"       // string, optional
+photo: (file)                  // image file, optional (max 10MB, JPG/PNG/WebP)
+```
+
+### Event Types
+- `START` - Início da coleta
+- `NORMAL` - Percurso normal (registro GPS periódico)
+- `STOP` - Parada qualquer
+- `BREAK` - Intervalo/Descanso
+- `FUEL` - Abastecimento
+- `LUNCH` - Almoço
+- `PROBLEM` - Problema encontrado
+- `OBSERVATION` - Observação
+- `PHOTO` - Registro fotográfico específico
+- `END` - Fim da coleta
+
+### Use Cases
+
+**Caso 1: GPS Normal (rastreamento periódico)**
+```
+POST /api/v1/executions/123/gps
+latitude=-25.4284
+longitude=-49.2733
+speed_kmh=35.5
+event_type=NORMAL
+```
+
+**Caso 2: Parada para Almoço**
+```
+POST /api/v1/executions/123/gps
+latitude=-25.4284
+longitude=-49.2733
+event_type=LUNCH
+description=Parada para almoço
+```
+
+**Caso 3: Problema com Foto**
+```
+POST /api/v1/executions/123/gps
+latitude=-25.4284
+longitude=-49.2733
+event_type=PROBLEM
+description=Lixeira transbordando, lixo espalhado na calçada
+photo=@foto_problema.jpg
 ```
 
 ### Response 201
@@ -1388,15 +1432,33 @@ Authorization: Bearer {jwt_token}  # Driver or ADMIN
       "speed_kmh": 25.5,
       "heading_degrees": 180,
       "accuracy_meters": 5.0,
-      "event_type": "NORMAL",
+      "event_type": "PROBLEM",
+      "description": "Lixeira transbordando, lixo espalhado na calçada",
+      "photo_url": "/api/v1/files/gps-photos/123/photo_20250115_083045_a1b2c3d4.jpg",
       "created_at": "2025-01-15T08:30:05Z"
     }
   }
 }
 ```
 
-## 7.2 Get GPS Track
+### Response 400 (Validation Error)
+```json
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Latitude and longitude are required"
+  }
+}
+```
+
+## 7.2 Obter Rastro GPS Completo
 **GET** `/executions/{execution_id}/gps`
+
+### Headers
+```
+Authorization: Bearer {jwt_token}  # Driver or ADMIN
+```
 
 ### Query Parameters
 ```
@@ -1420,7 +1482,21 @@ Authorization: Bearer {jwt_token}  # Driver or ADMIN
         "speed_kmh": 25.5,
         "heading_degrees": 180,
         "accuracy_meters": 5.0,
-        "event_type": "NORMAL"
+        "event_type": "NORMAL",
+        "description": null,
+        "photo_url": null
+      },
+      {
+        "id": 2,
+        "gps_timestamp": "2025-01-15T09:15:00Z",
+        "latitude": -25.4290,
+        "longitude": -49.2740,
+        "speed_kmh": 0.0,
+        "heading_degrees": null,
+        "accuracy_meters": 3.0,
+        "event_type": "PROBLEM",
+        "description": "Lixeira transbordando",
+        "photo_url": "/api/v1/files/gps-photos/123/photo_20250115_091500_b2c3d4e5.jpg"
       }
     ],
     "execution": {
@@ -1429,10 +1505,85 @@ Authorization: Bearer {jwt_token}  # Driver or ADMIN
       "driver_name": "John Driver",
       "vehicle_plate": "ABC1234",
       "status": "IN_PROGRESS"
+    },
+    "statistics": {
+      "total_points": 450,
+      "events_count": {
+        "NORMAL": 440,
+        "STOP": 5,
+        "PROBLEM": 2,
+        "LUNCH": 1,
+        "BREAK": 2
+      },
+      "photos_count": 3,
+      "distance_calculated_km": 15.2
     }
   }
 }
 ```
+
+## 7.3 Baixar Foto de Evento
+**GET** `/files/gps-photos/{execution_id}/{filename}`
+
+### Headers
+```
+Authorization: Bearer {jwt_token}  # Driver or ADMIN
+```
+
+### Path Parameters
+```
+execution_id: integer  // ID da execução
+filename: string       // Nome do arquivo (obtido do campo photo_url)
+```
+
+### Response 200
+```
+Content-Type: image/jpeg (or image/png, image/webp)
+Content-Disposition: inline; filename="photo_20250115_091500_b2c3d4e5.jpg"
+
+[Binary image data]
+```
+
+### Response 404
+```json
+{
+  "success": false,
+  "error": {
+    "code": "FILE_NOT_FOUND",
+    "message": "File not found"
+  }
+}
+```
+
+## 7.4 Armazenamento de Fotos
+
+**Tecnologia**: MinIO (S3-compatible storage)
+
+**Estrutura de Armazenamento**:
+```
+Bucket: od46s-files
+Path: gps-photos/execution_{id}/photo_{timestamp}_{uuid}.{ext}
+
+Exemplo:
+gps-photos/
+  ├── execution_123/
+  │   ├── photo_20250115_083045_a1b2c3d4.jpg
+  │   ├── photo_20250115_091500_b2c3d4e5.jpg
+  │   └── photo_20250115_103020_c3d4e5f6.png
+  └── execution_124/
+      └── photo_20250115_140000_d4e5f6g7.jpg
+```
+
+**Limites e Validações**:
+- Tamanho máximo: 10MB por foto
+- Formatos aceitos: JPG, JPEG, PNG, WebP
+- Armazenamento: Persistente no volume Docker `minio_data`
+- Acesso: Apenas usuários autenticados (ADMIN ou DRIVER)
+
+**URLs de Acesso**:
+- API: `/api/v1/files/gps-photos/{execution_id}/{filename}`
+- MinIO Console: http://localhost:9001 (minioadmin/minioadmin)
+- MinIO API: http://localhost:9000
 
 ---
 

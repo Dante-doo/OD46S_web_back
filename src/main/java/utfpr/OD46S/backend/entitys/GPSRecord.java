@@ -37,6 +37,14 @@ public class GPSRecord {
     @Column(name = "event_type", length = 20)
     private String eventType = "NORMAL";
 
+    // Descrição adicional para eventos especiais (paradas, problemas, etc)
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
+
+    // URL da foto (opcional) - armazenada no MinIO
+    @Column(name = "photo_url", length = 500)
+    private String photoUrl;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -133,6 +141,22 @@ public class GPSRecord {
 
     public void setEventType(String eventType) {
         this.eventType = eventType;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getPhotoUrl() {
+        return photoUrl;
+    }
+
+    public void setPhotoUrl(String photoUrl) {
+        this.photoUrl = photoUrl;
     }
 
     public LocalDateTime getCreatedAt() {

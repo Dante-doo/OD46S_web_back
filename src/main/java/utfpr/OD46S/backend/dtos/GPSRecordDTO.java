@@ -14,6 +14,8 @@ public class GPSRecordDTO {
     private Integer headingDegrees;
     private BigDecimal accuracyMeters;
     private String eventType;
+    private String description;
+    private String photoUrl;
     private LocalDateTime createdAt;
 
     // Constructors
@@ -91,6 +93,22 @@ public class GPSRecordDTO {
 
     public void setEventType(String eventType) {
         this.eventType = eventType;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getPhotoUrl() {
+        return photoUrl;
+    }
+
+    public void setPhotoUrl(String photoUrl) {
+        this.photoUrl = photoUrl;
     }
 
     public LocalDateTime getCreatedAt() {

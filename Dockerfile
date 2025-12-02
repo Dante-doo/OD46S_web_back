@@ -47,7 +47,7 @@ WORKDIR /app
 
 COPY --from=build /app/target/*.jar app.jar
 
-RUN mkdir -p /app/logs /app/uploads /app/config \
+RUN mkdir -p /app/logs /app/config \
     && chown -R springboot:springboot /app
 
 COPY src/main/resources/application.properties ./config/application-default.properties

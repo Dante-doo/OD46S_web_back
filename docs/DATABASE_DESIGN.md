@@ -9,6 +9,7 @@ The OD46S System database was designed to support complete urban waste collectio
 ### Technologies
 - **PostgreSQL 15** - Primary database
 - **JPA/Hibernate** - ORM and mapping
+- **MinIO** - S3-compatible file storage for photos
 - **Docker** - Containerization
 - **JOINED Inheritance** - JPA strategy for user types
 
@@ -197,7 +198,9 @@ CREATE TABLE route_executions (
 );
 ```
 
-### 6. 📍 GPS Tracking Module
+### 6. 📍 GPS Tracking & Events Module
+
+> **💡 Conceito**: Sistema unificado de GPS + eventos/ocorrências com fotos
 
 #### gps_records
 ```sql
@@ -210,12 +213,33 @@ CREATE TABLE gps_records (
     speed_kmh DECIMAL(5,2),
     heading_degrees INTEGER CHECK (heading_degrees BETWEEN 0 AND 359),
     accuracy_meters DECIMAL(5,2),
-    event_type VARCHAR(20) DEFAULT 'NORMAL', -- NORMAL, STOP, START, END
+    event_type VARCHAR(20) DEFAULT 'NORMAL', -- START, NORMAL, STOP, BREAK, FUEL, LUNCH, PROBLEM, OBSERVATION, PHOTO, END
+    description TEXT,                        -- Descrição do evento (opcional)
+    photo_url VARCHAR(500),                  -- URL da foto no MinIO (opcional)
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
     FOREIGN KEY (execution_id) REFERENCES route_executions(id) ON DELETE CASCADE
 );
 ```
+
+**Event Types**:
+- `START` - Início da coleta
+- `NORMAL` - Rastreamento periódico normal
+- `STOP` - Parada qualquer
+- `BREAK` - Intervalo/Descanso
+- `FUEL` - Abastecimento
+- `LUNCH` - Almoço
+- `PROBLEM` - Problema encontrado
+- `OBSERVATION` - Observação
+- `PHOTO` - Registro fotográfico
+- `END` - Fim da coleta
+
+**Photo Storage (MinIO)**:
+- Bucket: `od46s-files`
+- Path: `gps-photos/execution_{id}/photo_{timestamp}_{uuid}.{ext}`
+- Max size: 10MB per photo
+- Formats: JPG, PNG, WebP
+- Access: `/api/v1/files/gps-photos/{executionId}/{filename}`
 
 ### 7. 🗑️ Collections Module
 
@@ -285,10 +309,12 @@ CREATE INDEX idx_executions_date ON route_executions(execution_date);
 CREATE INDEX idx_executions_status ON route_executions(status);
 CREATE INDEX idx_executions_start_time ON route_executions(start_time);
 
--- GPS
+-- GPS & Events
 CREATE INDEX idx_gps_execution ON gps_records(execution_id);
 CREATE INDEX idx_gps_timestamp ON gps_records(gps_timestamp);
 CREATE INDEX idx_gps_location ON gps_records(latitude, longitude);
+CREATE INDEX idx_gps_event_type ON gps_records(event_type); -- Para filtrar eventos específicos
+CREATE INDEX idx_gps_with_photo ON gps_records(execution_id) WHERE photo_url IS NOT NULL; -- Registros com foto
 
 -- Collections
 CREATE INDEX idx_collections_execution ON collection_point_records(execution_id);
@@ -312,10 +338,14 @@ CREATE INDEX idx_collections_status ON collection_point_records(collection_statu
 
 ### Storage Requirements
 ```
-📊 Database Size: ~2GB/year
-📸 Photos: ~50GB/year (if 20% upload photos)
+📊 Database (PostgreSQL): ~2GB/year
+📸 Photos (MinIO): ~50GB/year (if 20% of GPS events have photos)
 📈 Total: ~52GB/year
 💾 5-year projection: ~260GB
+
+Breakdown:
+- PostgreSQL: Structured data (users, routes, executions, GPS coordinates)
+- MinIO: Unstructured data (photos from GPS events/problems)
 ```
 
 ## 🔄 Database Relationships
