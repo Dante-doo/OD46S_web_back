@@ -52,16 +52,21 @@ public class AuthService {
             throw new RuntimeException("Senha inválida");
         }
 
-        // Determinar role do usuário
+        // Determinar role do usuário e obter IDs específicos
         String role = "USER";
+        Long driverId = null;
+        Long adminId = null;
+        
         if (administratorRepository.findById(user.getId()).isPresent()) {
             role = "ADMIN";
+            adminId = user.getId();
         } else if (motoristaRepository.findById(user.getId()).isPresent()) {
             role = "DRIVER";
+            driverId = user.getId();
         }
 
         String token = jwtUtil.generateToken(user.getEmail(), role);
-        return new AuthResponse(token, user.getEmail(), user.getName(), role);
+        return new AuthResponse(token, user.getEmail(), user.getName(), role, user.getId(), driverId, adminId);
     }
 
 
@@ -83,17 +88,22 @@ public class AuthService {
                 throw new RuntimeException("Usuário inativo");
             }
 
-            // Determinar role do usuário
+            // Determinar role do usuário e obter IDs específicos
             String role = "USER";
+            Long driverId = null;
+            Long adminId = null;
+            
             if (administratorRepository.findById(user.getId()).isPresent()) {
                 role = "ADMIN";
+                adminId = user.getId();
             } else if (motoristaRepository.findById(user.getId()).isPresent()) {
                 role = "DRIVER";
+                driverId = user.getId();
             }
 
             // Gerar novo token
             String newToken = jwtUtil.generateToken(user.getEmail(), role);
-            return new AuthResponse(newToken, user.getEmail(), user.getName(), role);
+            return new AuthResponse(newToken, user.getEmail(), user.getName(), role, user.getId(), driverId, adminId);
 
         } catch (Exception e) {
             throw new RuntimeException("Erro ao renovar token: " + e.getMessage());

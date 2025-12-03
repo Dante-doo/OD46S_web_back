@@ -10,14 +10,13 @@ import org.springframework.transaction.annotation.Transactional;
 import utfpr.OD46S.backend.dtos.RouteAssignmentDTO;
 import utfpr.OD46S.backend.entitys.*;
 import utfpr.OD46S.backend.enums.AssignmentStatus;
-import utfpr.OD46S.backend.enums.StatusMotorista;
 import utfpr.OD46S.backend.enums.StatusVeiculo;
 import utfpr.OD46S.backend.repositorys.*;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Collectors;
 
 @Service
@@ -136,15 +135,51 @@ public class AssignmentService {
         LocalDate startDate = LocalDate.parse(startDateStr);
         LocalDate endDate = endDateStr != null ? LocalDate.parse(endDateStr) : null;
 
-        // Check for conflicts
+        // Permite múltiplas atribuições ativas para o mesmo motorista
+        // O sistema permite que um motorista tenha várias rotas atribuídas,
+        // mas apenas uma execução ativa por vez (validado no ExecutionService)
+        
+        // Verifica conflitos de datas E periodicidade para o veículo
+        // Um veículo não pode estar em dois lugares ao mesmo tempo
+        // Mas pode ter rotas em dias diferentes da semana (ex: terça e quinta)
         LocalDate checkEndDate = endDate != null ? endDate : startDate.plusYears(100); // Far future for open-ended
-
-        if (assignmentRepository.existsActiveAssignmentForDriverInPeriod(driverId, startDate, checkEndDate)) {
-            throw new RuntimeException("Driver already has an active assignment for this period");
-        }
-
-        if (assignmentRepository.existsActiveAssignmentForVehicleInPeriod(vehicleId, startDate, checkEndDate)) {
-            throw new RuntimeException("Vehicle already has an active assignment for this period");
+        
+        // Extrai os dias da semana da nova rota
+        Set<DayOfWeek> newRouteDaysOfWeek = extractDaysOfWeekFromPeriodicity(route.getPeriodicity(), startDate);
+        
+        List<RouteAssignment> existingVehicleAssignments = assignmentRepository.findByVehicleIdAndStatus(vehicleId, AssignmentStatus.ACTIVE);
+        for (RouteAssignment existing : existingVehicleAssignments) {
+            // Verifica se há sobreposição de períodos de datas
+            boolean hasDateOverlap = false;
+            
+            if (existing.getEndDate() == null) {
+                // Atribuição existente sem data de fim - conflita se começar antes do fim da nova
+                hasDateOverlap = existing.getStartDate().isBefore(checkEndDate) || existing.getStartDate().isEqual(checkEndDate);
+            } else {
+                // Verifica sobreposição de intervalos
+                hasDateOverlap = (existing.getStartDate().isBefore(checkEndDate) || existing.getStartDate().isEqual(checkEndDate))
+                    && (existing.getEndDate().isAfter(startDate) || existing.getEndDate().isEqual(startDate));
+            }
+            
+            if (hasDateOverlap) {
+                // Se há sobreposição de datas, verifica se os dias da semana conflitam
+                Set<DayOfWeek> existingRouteDaysOfWeek = extractDaysOfWeekFromPeriodicity(
+                    existing.getRoute().getPeriodicity(), existing.getStartDate());
+                
+                // Verifica se há interseção entre os dias da semana
+                Set<DayOfWeek> intersection = new HashSet<>(newRouteDaysOfWeek);
+                intersection.retainAll(existingRouteDaysOfWeek);
+                
+                if (!intersection.isEmpty()) {
+                    // Há conflito: mesmo veículo, mesmo período de datas, mesmo(s) dia(s) da semana
+                    throw new RuntimeException("Vehicle already has an active assignment that conflicts with the requested schedule. " +
+                        "Period: " + existing.getStartDate() + " to " + 
+                        (existing.getEndDate() != null ? existing.getEndDate() : "open-ended") + 
+                        ", Days: " + formatDaysOfWeek(existingRouteDaysOfWeek) +
+                        ". New assignment would conflict on days: " + formatDaysOfWeek(intersection));
+                }
+                // Se não há interseção de dias da semana, permite (ex: terça vs quinta)
+            }
         }
 
         // Create assignment
@@ -347,6 +382,125 @@ public class AssignmentService {
         ));
 
         return dto;
+    }
+    
+    /**
+     * Extrai os dias da semana da periodicidade da rota.
+     * Suporta:
+     * - Formato cron: "0 8 * * 1,3,5" (minuto hora dia mês dia-da-semana)
+     *   No cron, 0=domingo, 1=segunda, 2=terça, 3=quarta, 4=quinta, 5=sexta, 6=sábado
+     * - Formato texto: "TERÇA", "QUINTA", "SEGUNDA,QUARTA", "MONDAY,WEDNESDAY", etc.
+     * Se não conseguir extrair, assume que a rota ocorre no dia da semana da data de início.
+     */
+    private Set<DayOfWeek> extractDaysOfWeekFromPeriodicity(String periodicity, LocalDate startDate) {
+        Set<DayOfWeek> days = new HashSet<>();
+        
+        if (periodicity == null || periodicity.trim().isEmpty()) {
+            // Se não há periodicidade, assume o dia da semana da data de início
+            days.add(startDate.getDayOfWeek());
+            return days;
+        }
+        
+        String periodicityTrimmed = periodicity.trim();
+        
+        // Verifica se é formato cron (contém espaços e números no padrão cron)
+        // Formato cron típico: "0 8 * * 1,3,5" ou "0 8 * * 2"
+        // Padrão: número espaço número espaço * espaço * espaço (número ou vírgula ou *)
+        if (periodicityTrimmed.matches("\\d+\\s+\\d+\\s+\\*\\s+\\*\\s+[0-6,*\\s]+")) {
+            // Formato cron: "0 8 * * 1,3,5"
+            // Extrai o último campo (dia da semana)
+            String[] cronParts = periodicityTrimmed.split("\\s+");
+            if (cronParts.length >= 5) {
+                String dayOfWeekField = cronParts[4]; // Último campo é o dia da semana
+                
+                // Mapeamento cron para DayOfWeek (cron: 0=domingo, 1=segunda, ..., 6=sábado)
+                Map<Integer, DayOfWeek> cronDayMap = new HashMap<>();
+                cronDayMap.put(0, DayOfWeek.SUNDAY);    // Domingo
+                cronDayMap.put(1, DayOfWeek.MONDAY);    // Segunda
+                cronDayMap.put(2, DayOfWeek.TUESDAY);   // Terça
+                cronDayMap.put(3, DayOfWeek.WEDNESDAY); // Quarta
+                cronDayMap.put(4, DayOfWeek.THURSDAY);  // Quinta
+                cronDayMap.put(5, DayOfWeek.FRIDAY);   // Sexta
+                cronDayMap.put(6, DayOfWeek.SATURDAY); // Sábado
+                
+                // Pode ter múltiplos dias separados por vírgula: "1,3,5"
+                String[] dayNumbers = dayOfWeekField.split(",");
+                for (String dayNumStr : dayNumbers) {
+                    dayNumStr = dayNumStr.trim();
+                    if (dayNumStr.equals("*")) {
+                        // * significa todos os dias
+                        days.addAll(cronDayMap.values());
+                        break;
+                    }
+                    try {
+                        int dayNum = Integer.parseInt(dayNumStr);
+                        if (cronDayMap.containsKey(dayNum)) {
+                            days.add(cronDayMap.get(dayNum));
+                        }
+                    } catch (NumberFormatException e) {
+                        // Ignora valores não numéricos
+                    }
+                }
+            }
+        } else {
+            // Formato texto: "TERÇA", "QUINTA", "SEGUNDA,QUARTA", etc.
+            String periodicityUpper = periodicityTrimmed.toUpperCase();
+            
+            // Mapeamento de nomes de dias em português e inglês
+            Map<String, DayOfWeek> dayMap = new HashMap<>();
+            dayMap.put("SEGUNDA", DayOfWeek.MONDAY);
+            dayMap.put("MONDAY", DayOfWeek.MONDAY);
+            dayMap.put("TERÇA", DayOfWeek.TUESDAY);
+            dayMap.put("TERCA", DayOfWeek.TUESDAY);
+            dayMap.put("TUESDAY", DayOfWeek.TUESDAY);
+            dayMap.put("QUARTA", DayOfWeek.WEDNESDAY);
+            dayMap.put("WEDNESDAY", DayOfWeek.WEDNESDAY);
+            dayMap.put("QUINTA", DayOfWeek.THURSDAY);
+            dayMap.put("THURSDAY", DayOfWeek.THURSDAY);
+            dayMap.put("SEXTA", DayOfWeek.FRIDAY);
+            dayMap.put("FRIDAY", DayOfWeek.FRIDAY);
+            dayMap.put("SÁBADO", DayOfWeek.SATURDAY);
+            dayMap.put("SABADO", DayOfWeek.SATURDAY);
+            dayMap.put("SATURDAY", DayOfWeek.SATURDAY);
+            dayMap.put("DOMINGO", DayOfWeek.SUNDAY);
+            dayMap.put("SUNDAY", DayOfWeek.SUNDAY);
+            
+            // Tenta extrair dias separados por vírgula, ponto e vírgula, ou espaço
+            String[] parts = periodicityUpper.split("[,;\\s]+");
+            
+            for (String part : parts) {
+                part = part.trim();
+                if (dayMap.containsKey(part)) {
+                    days.add(dayMap.get(part));
+                }
+            }
+        }
+        
+        // Se não encontrou nenhum dia, assume o dia da semana da data de início
+        if (days.isEmpty()) {
+            days.add(startDate.getDayOfWeek());
+        }
+        
+        return days;
+    }
+    
+    /**
+     * Formata os dias da semana para exibição em mensagens de erro
+     */
+    private String formatDaysOfWeek(Set<DayOfWeek> days) {
+        Map<DayOfWeek, String> dayNames = new HashMap<>();
+        dayNames.put(DayOfWeek.MONDAY, "Segunda");
+        dayNames.put(DayOfWeek.TUESDAY, "Terça");
+        dayNames.put(DayOfWeek.WEDNESDAY, "Quarta");
+        dayNames.put(DayOfWeek.THURSDAY, "Quinta");
+        dayNames.put(DayOfWeek.FRIDAY, "Sexta");
+        dayNames.put(DayOfWeek.SATURDAY, "Sábado");
+        dayNames.put(DayOfWeek.SUNDAY, "Domingo");
+        
+        return days.stream()
+                .sorted()
+                .map(dayNames::get)
+                .collect(Collectors.joining(", "));
     }
 
     private Long getLongFromMap(Map<String, Object> map, String key) {
