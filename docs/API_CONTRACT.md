@@ -1351,74 +1351,155 @@ Authorization: Bearer {jwt_token}  # Driver
 
 ---
 
-# 📍 7. GPS TRACKING & EVENTOS
+# 📍 7. GPS TRACKING & EVENTOS (Sistema Unificado)
 
-> **💡 Conceito**: Sistema unificado de rastreamento GPS + registro de eventos/ocorrências com fotos durante execuções
+> **💡 Conceito**: Um único endpoint para rastreamento GPS + eventos + coletas em pontos com fotos
 
-## 7.1 Registrar GPS / Evento com Foto
+## 7.1 Registrar GPS / Evento / Coleta com Foto
 **POST** `/executions/{execution_id}/gps`
 
 ### Headers
 ```
-Authorization: Bearer {jwt_token}  # Driver or ADMIN
+Authorization: Bearer {jwt_token}  # Driver only
 Content-Type: multipart/form-data
 ```
 
 ### Request Body (multipart/form-data)
+
+**Campos Obrigatórios:**
 ```
 latitude: -25.4284              // decimal, required
 longitude: -49.2733             // decimal, required
+```
+
+**Campos Opcionais - Rastreamento:**
+```
 speed_kmh: 25.5                // decimal, optional
 heading_degrees: 180            // int, optional (0-359)
 accuracy_meters: 5.0           // decimal, optional
 event_type: NORMAL             // enum, optional (default: NORMAL)
+is_automatic: true             // boolean, optional (true = GPS auto, false = manual)
+```
+
+**Campos Opcionais - Sincronização Offline:**
+```
+is_offline: true               // boolean, optional (true = sincronização, false = tempo real)
+gps_timestamp: 2025-12-01T14:23:45  // ISO-8601, optional (hora da coleta real)
+```
+
+**Campos Opcionais - Eventos/Problemas:**
+```
 description: "Descrição"       // string, optional
 photo: (file)                  // image file, optional (max 10MB, JPG/PNG/WebP)
 ```
 
+**Campos Opcionais - Coleta em Pontos:**
+```
+point_id: 15                   // int, optional - ID do ponto de coleta
+collected_weight_kg: 45.5      // decimal, optional - Peso coletado em kg
+point_condition: NORMAL        // enum, optional - NORMAL, SATURATED, DAMAGED, INACCESSIBLE
+```
+
 ### Event Types
+
+**Percurso:**
 - `START` - Início da coleta
 - `NORMAL` - Percurso normal (registro GPS periódico)
 - `STOP` - Parada qualquer
 - `BREAK` - Intervalo/Descanso
 - `FUEL` - Abastecimento
 - `LUNCH` - Almoço
-- `PROBLEM` - Problema encontrado
+
+**Coleta em Pontos:**
+- `POINT_ARRIVAL` - Chegada no ponto de coleta
+- `POINT_COLLECTED` - Ponto coletado com sucesso ✅
+- `POINT_SKIPPED` - Ponto não coletado (pulado) ❌
+- `POINT_PROBLEM` - Problema no ponto de coleta ⚠️
+
+**Gerais:**
+- `PROBLEM` - Problema geral
 - `OBSERVATION` - Observação
 - `PHOTO` - Registro fotográfico específico
 - `END` - Fim da coleta
 
 ### Use Cases
 
-**Caso 1: GPS Normal (rastreamento periódico)**
+**Caso 1: GPS Normal (rastreamento periódico automático)**
 ```
 POST /api/v1/executions/123/gps
 latitude=-25.4284
 longitude=-49.2733
 speed_kmh=35.5
 event_type=NORMAL
+is_automatic=true
 ```
+> 💡 O celular envia isso automaticamente a cada 30s
 
-**Caso 2: Parada para Almoço**
+**Caso 2: Parada para Almoço (evento manual)**
 ```
 POST /api/v1/executions/123/gps
 latitude=-25.4284
 longitude=-49.2733
 event_type=LUNCH
+is_automatic=false
 description=Parada para almoço
 ```
+> 💡 Motorista clicou no botão "Almoço"
 
-**Caso 3: Problema com Foto**
+**Caso 3: Problema com Foto (evento manual)**
 ```
 POST /api/v1/executions/123/gps
 latitude=-25.4284
 longitude=-49.2733
 event_type=PROBLEM
+is_automatic=false
 description=Lixeira transbordando, lixo espalhado na calçada
 photo=@foto_problema.jpg
 ```
+> 💡 Motorista registrou problema e anexou foto
 
-### Response 201
+**Caso 4: Coleta em Ponto (evento manual)**
+```
+POST /api/v1/executions/123/gps
+latitude=-25.4284
+longitude=-49.2733
+event_type=POINT_COLLECTED
+is_automatic=false
+point_id=15
+collected_weight_kg=45.5
+point_condition=NORMAL
+description=Coleta realizada, lixeira em bom estado
+photo=@foto_lixeira.jpg
+```
+> 💡 Motorista confirmou coleta no ponto
+
+**Caso 5: Ponto Não Coletado (Pulado)**
+```
+POST /api/v1/executions/123/gps
+latitude=-25.4290
+longitude=-49.2740
+event_type=POINT_SKIPPED
+point_id=16
+point_condition=INACCESSIBLE
+description=Portão trancado, sem acesso ao local
+photo=@foto_portao.jpg
+```
+
+**Caso 6: Sincronização Offline (individual)**
+```
+POST /api/v1/executions/123/gps
+latitude=-25.4284
+longitude=-49.2733
+event_type=POINT_COLLECTED
+is_automatic=false
+is_offline=true
+gps_timestamp=2025-12-01T14:23:45
+point_id=15
+collected_weight_kg=45.5
+```
+> 💡 Registrado offline, enviando depois
+
+###  Response 201
 ```json
 {
   "success": true,
@@ -1433,13 +1514,24 @@ photo=@foto_problema.jpg
       "heading_degrees": 180,
       "accuracy_meters": 5.0,
       "event_type": "PROBLEM",
+      "is_automatic": false,
+      "is_offline": false,
+      "sync_delay_seconds": 5,
       "description": "Lixeira transbordando, lixo espalhado na calçada",
-      "photo_url": "/api/v1/files/gps-photos/123/photo_20250115_083045_a1b2c3d4.jpg",
+      "photo_url": "/api/v1/files/gps-photos/123/456",
+      "point_id": null,
+      "collected_weight_kg": null,
+      "point_condition": null,
       "created_at": "2025-01-15T08:30:05Z"
     }
   }
 }
 ```
+
+### Notas sobre o campo `id`
+- O campo `id` retornado é o identificador único do registro GPS
+- Este `id` pode ser usado diretamente para buscar a foto: `/api/v1/files/gps-photos/{execution_id}/{id}`
+- O campo `photo_url` já contém a URL completa pronta para uso (se a foto foi enviada)
 
 ### Response 400 (Validation Error)
 ```json
@@ -1452,7 +1544,100 @@ photo=@foto_problema.jpg
 }
 ```
 
-## 7.2 Obter Rastro GPS Completo
+## 7.2 Registrar GPS em Lote (Batch - Sincronização Offline)
+**POST** `/executions/{execution_id}/gps/batch`
+
+### Headers
+```
+Authorization: Bearer {jwt_token}  # Driver only
+Content-Type: application/json
+```
+
+### Request Body (JSON Array)
+```json
+[
+  {
+    "latitude": -25.4284,
+    "longitude": -49.2733,
+    "event_type": "NORMAL",
+    "is_automatic": true,
+    "is_offline": true,
+    "gps_timestamp": "2025-12-01T14:20:00"
+  },
+  {
+    "latitude": -25.4290,
+    "longitude": -49.2740,
+    "event_type": "POINT_COLLECTED",
+    "is_automatic": false,
+    "is_offline": true,
+    "gps_timestamp": "2025-12-01T14:45:12",
+    "point_id": 15,
+    "collected_weight_kg": 45.5,
+    "point_condition": "NORMAL"
+  }
+]
+```
+
+### Response 201
+```json
+{
+  "success": true,
+  "data": {
+    "total_records": 2,
+    "success_count": 2,
+    "error_count": 0,
+    "errors": [],
+    "saved_records": [
+      {
+        "id": 1,
+        "execution_id": 123,
+        "gps_timestamp": "2025-12-01T14:20:00",
+        "latitude": -25.4284,
+        "longitude": -49.2733,
+        "event_type": "NORMAL",
+        "is_automatic": true,
+        "is_offline": true,
+        "photo_url": null,
+        "point_id": null,
+        "collected_weight_kg": null,
+        "point_condition": null
+      },
+      {
+        "id": 2,
+        "execution_id": 123,
+        "gps_timestamp": "2025-12-01T14:45:12",
+        "latitude": -25.4290,
+        "longitude": -49.2740,
+        "event_type": "POINT_COLLECTED",
+        "is_automatic": false,
+        "is_offline": true,
+        "photo_url": null,
+        "point_id": 15,
+        "collected_weight_kg": 45.5,
+        "point_condition": "NORMAL"
+      }
+    ]
+  }
+}
+```
+
+### Notas sobre saved_records
+- Cada registro retornado contém o campo `id` que é o ID único do registro GPS
+- Este `id` pode ser usado para buscar a foto associada: `/api/v1/files/gps-photos/{execution_id}/{id}`
+- O campo `photo_url` será `null` para registros criados via batch (fotos devem ser enviadas individualmente)
+
+### Response 400 (Batch Size Limit)
+```json
+{
+  "success": false,
+  "error": {
+    "code": "BATCH_TOO_LARGE",
+    "message": "Maximum batch size is 500 records"
+  }
+}
+```
+
+## 7.3 Obter Rastro GPS Completo
 **GET** `/executions/{execution_id}/gps`
 
 ### Headers
@@ -1482,9 +1667,15 @@ Authorization: Bearer {jwt_token}  # Driver or ADMIN
         "speed_kmh": 25.5,
         "heading_degrees": 180,
         "accuracy_meters": 5.0,
-        "event_type": "NORMAL",
-        "description": null,
-        "photo_url": null
+      "event_type": "NORMAL",
+      "is_automatic": true,
+      "is_offline": false,
+      "sync_delay_seconds": 0,
+      "description": null,
+      "photo_url": null,
+      "point_id": null,
+      "collected_weight_kg": null,
+      "point_condition": null
       },
       {
         "id": 2,
@@ -1494,9 +1685,33 @@ Authorization: Bearer {jwt_token}  # Driver or ADMIN
         "speed_kmh": 0.0,
         "heading_degrees": null,
         "accuracy_meters": 3.0,
-        "event_type": "PROBLEM",
-        "description": "Lixeira transbordando",
-        "photo_url": "/api/v1/files/gps-photos/123/photo_20250115_091500_b2c3d4e5.jpg"
+        "event_type": "POINT_COLLECTED",
+        "is_automatic": false,
+        "is_offline": false,
+        "sync_delay_seconds": 3,
+        "description": "Coleta realizada com sucesso",
+        "photo_url": "/api/v1/files/gps-photos/123/2",
+        "point_id": 1,
+        "collected_weight_kg": 45.5,
+        "point_condition": "NORMAL"
+      },
+      {
+        "id": 3,
+        "gps_timestamp": "2025-01-15T10:00:00Z",
+        "latitude": -25.4302,
+        "longitude": -49.2751,
+        "speed_kmh": 0.0,
+        "heading_degrees": null,
+        "accuracy_meters": 3.0,
+        "event_type": "POINT_SKIPPED",
+        "is_automatic": false,
+        "is_offline": false,
+        "sync_delay_seconds": 4,
+        "description": "Portão trancado, sem acesso",
+        "photo_url": "/api/v1/files/gps-photos/123/3",
+        "point_id": 2,
+        "collected_weight_kg": null,
+        "point_condition": "INACCESSIBLE"
       }
     ],
     "execution": {
@@ -1523,7 +1738,7 @@ Authorization: Bearer {jwt_token}  # Driver or ADMIN
 ```
 
 ## 7.3 Baixar Foto de Evento
-**GET** `/files/gps-photos/{execution_id}/{filename}`
+**GET** `/files/gps-photos/{execution_id}/{gps_record_id}`
 
 ### Headers
 ```
@@ -1532,17 +1747,22 @@ Authorization: Bearer {jwt_token}  # Driver or ADMIN
 
 ### Path Parameters
 ```
-execution_id: integer  // ID da execução
-filename: string       // Nome do arquivo (obtido do campo photo_url)
+execution_id: integer    // ID da execução
+gps_record_id: integer   // ID do registro GPS (obtido do campo id do registro GPS)
 ```
 
 ### Response 200
 ```
 Content-Type: image/jpeg (or image/png, image/webp)
-Content-Disposition: inline; filename="photo_20250115_091500_b2c3d4e5.jpg"
+Content-Disposition: inline; filename="photo_{gps_record_id}.{ext}"
 
 [Binary image data]
 ```
+
+### Notas
+- O `gps_record_id` é o mesmo valor do campo `id` retornado no registro GPS
+- A extensão do arquivo é detectada automaticamente (jpg, jpeg, png, webp)
+- A URL completa pode ser obtida do campo `photo_url` retornado nos endpoints de GPS
 
 ### Response 404
 ```json
@@ -1562,17 +1782,23 @@ Content-Disposition: inline; filename="photo_20250115_091500_b2c3d4e5.jpg"
 **Estrutura de Armazenamento**:
 ```
 Bucket: od46s-files
-Path: gps-photos/execution_{id}/photo_{timestamp}_{uuid}.{ext}
+Path: gps-photos/execution_{execution_id}/{gps_record_id}.{ext}
 
 Exemplo:
 gps-photos/
   ├── execution_123/
-  │   ├── photo_20250115_083045_a1b2c3d4.jpg
-  │   ├── photo_20250115_091500_b2c3d4e5.jpg
-  │   └── photo_20250115_103020_c3d4e5f6.png
+  │   ├── 1.jpg
+  │   ├── 2.jpg
+  │   └── 3.png
   └── execution_124/
-      └── photo_20250115_140000_d4e5f6g7.jpg
+      └── 10.jpg
 ```
+
+**Organização**:
+- Arquivos são organizados por `execution_id` e identificados pelo `gps_record_id`
+- Cada registro GPS pode ter no máximo uma foto associada
+- A extensão do arquivo é preservada do arquivo original enviado
+- O nome do arquivo no MinIO é simplesmente `{gps_record_id}.{ext}`
 
 **Limites e Validações**:
 - Tamanho máximo: 10MB por foto
@@ -1581,9 +1807,14 @@ gps-photos/
 - Acesso: Apenas usuários autenticados (ADMIN ou DRIVER)
 
 **URLs de Acesso**:
-- API: `/api/v1/files/gps-photos/{execution_id}/{filename}`
+- API: `/api/v1/files/gps-photos/{execution_id}/{gps_record_id}`
 - MinIO Console: http://localhost:9001 (minioadmin/minioadmin)
 - MinIO API: http://localhost:9000
+
+**Fluxo de Upload**:
+1. Registro GPS é criado primeiro (obtém ID)
+2. Foto é enviada e armazenada usando o ID do registro GPS
+3. URL da foto é salva no campo `photo_url` do registro GPS
 
 ---
 

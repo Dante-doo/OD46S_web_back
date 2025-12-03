@@ -220,44 +220,79 @@ docker-compose --profile admin up -d
 | GET | `/api/v1/executions/{id}/gps` | Obter rastro GPS completo | ✅ Implementado |
 | GET | `/api/v1/files/gps-photos/{executionId}/{filename}` | Baixar foto de evento | ✅ Implementado |
 
-**Tipos de Eventos Suportados:**
+**Tipos de Eventos - Percurso:**
 - `START` - Início da coleta
 - `NORMAL` - Percurso normal (GPS periódico)
 - `STOP` - Parada qualquer
 - `BREAK` - Intervalo/Descanso
 - `FUEL` - Abastecimento
 - `LUNCH` - Almoço
-- `PROBLEM` - Problema encontrado
+
+**Tipos de Eventos - Coleta em Pontos:**
+- `POINT_ARRIVAL` - Chegada no ponto
+- `POINT_COLLECTED` - Ponto coletado ✅
+- `POINT_SKIPPED` - Ponto não coletado ❌
+- `POINT_PROBLEM` - Problema no ponto ⚠️
+
+**Tipos de Eventos - Gerais:**
+- `PROBLEM` - Problema geral
 - `OBSERVATION` - Observação
 - `PHOTO` - Registro fotográfico
 - `END` - Fim da coleta
 
-**Dados Capturados:**
-- Latitude/Longitude (obrigatório)
-- Velocidade, direção, precisão (opcional)
-- Tipo de evento (default: NORMAL)
-- Descrição textual (opcional)
-- Foto (opcional, max 10MB, JPG/PNG/WebP)
-- Timestamp
+**Campos Disponíveis:**
 
-**Exemplo de Uso:**
+*Obrigatórios:*
+- `latitude`, `longitude` - Coordenadas GPS
+
+*Opcionais - Rastreamento:*
+- `speed_kmh`, `heading_degrees`, `accuracy_meters` - Dados de GPS
+- `event_type` - Tipo de evento (default: NORMAL)
+- `is_automatic` - GPS automático (true) ou manual (false)
+
+*Opcionais - Eventos/Problemas:*
+- `description` - Descrição textual
+- `photo` - Foto (max 10MB, JPG/PNG/WebP)
+
+*Opcionais - Coleta em Pontos:*
+- `point_id` - ID do ponto de coleta da rota
+- `collected_weight_kg` - Peso coletado em kg
+- `point_condition` - NORMAL, SATURATED, DAMAGED, INACCESSIBLE
+
+**Exemplos de Uso:**
+
 ```bash
-# Registrar parada com problema e foto
+# 1. GPS normal (rastreamento automático a cada 30s)
 POST /api/v1/executions/123/gps
-Content-Type: multipart/form-data
+latitude=-25.4284&longitude=-49.2733
+event_type=NORMAL&is_automatic=true
 
-latitude=-25.4284
-longitude=-49.2733
-event_type=PROBLEM
-description=Lixeira transbordando, lixo na calçada
-photo=@foto_problema.jpg
+# 2. Problema com foto (evento manual)
+POST /api/v1/executions/123/gps
+is_automatic=false
+latitude=-25.4284&longitude=-49.2733
+event_type=PROBLEM&description=Rua bloqueada
+photo=@foto.jpg
+
+# 3. Coleta em ponto com sucesso
+POST /api/v1/executions/123/gps
+latitude=-25.4284&longitude=-49.2733
+event_type=POINT_COLLECTED
+point_id=15
+collected_weight_kg=45.5
+point_condition=NORMAL
+description=Coleta realizada com sucesso
+photo=@foto_lixeira.jpg
+
+# 4. Ponto não coletado (pulado)
+POST /api/v1/executions/123/gps
+latitude=-25.4284&longitude=-49.2733
+event_type=POINT_SKIPPED
+point_id=16
+point_condition=INACCESSIBLE
+description=Portão trancado, sem acesso
+photo=@foto_portao.jpg
 ```
-
-### Registros de Coleta (Planejado)
-| Método | Endpoint | Descrição | Status |
-|--------|----------|-----------|--------|
-| POST | `/api/v1/executions/{id}/collections` | Registrar coleta em ponto | ⏳ Planejado |
-| GET | `/api/v1/executions/{id}/collections` | Listar coletas da execução | ⏳ Planejado |
 
 ### Relatórios e Analytics (Planejados)
 | Método | Endpoint | Descrição | Status |
@@ -267,11 +302,18 @@ photo=@foto_problema.jpg
 | GET | `/api/v1/analytics/drivers/performance` | Performance motoristas | ⏳ Planejado |
 | GET | `/api/v1/analytics/fleet/utilization` | Utilização da frota | ⏳ Planejado |
 
-### Sincronização Mobile (Planejada)
+### Sincronização Mobile
+> **💡 Sistema de Sincronização Offline**: Registra dados localmente e sincroniza quando retornar internet
+
 | Método | Endpoint | Descrição | Status |
 |--------|----------|-----------|--------|
-| GET | `/api/v1/mobile/sync/download` | Download dados offline | ⏳ Planejado |
-| POST | `/api/v1/mobile/sync/upload` | Upload dados coletados | ⏳ Planejado |
+| POST | `/api/v1/executions/{id}/gps` | Registro individual (suporta `gps_timestamp`, `is_offline`) | ✅ Implementado |
+| POST | `/api/v1/executions/{id}/gps/batch` | Sincronização em lote (até 500 registros) | ✅ Implementado |
+
+**Campos para Sincronização:**
+- `is_offline` - Marca registro como offline/sincronizado (default: false)
+- `gps_timestamp` - Timestamp real da coleta (ISO-8601)
+- `sync_delay_seconds` - Calculado automaticamente (tempo entre coleta e envio)
 
 ## 📋 Estrutura do Projeto
 

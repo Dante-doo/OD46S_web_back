@@ -213,33 +213,51 @@ CREATE TABLE gps_records (
     speed_kmh DECIMAL(5,2),
     heading_degrees INTEGER CHECK (heading_degrees BETWEEN 0 AND 359),
     accuracy_meters DECIMAL(5,2),
-    event_type VARCHAR(20) DEFAULT 'NORMAL', -- START, NORMAL, STOP, BREAK, FUEL, LUNCH, PROBLEM, OBSERVATION, PHOTO, END
+    event_type VARCHAR(20) DEFAULT 'NORMAL',
+    is_automatic BOOLEAN DEFAULT TRUE NOT NULL, -- GPS automático (true) ou evento manual (false)
+    is_offline BOOLEAN DEFAULT FALSE NOT NULL,  -- Registrado offline (true) ou tempo real (false)
     description TEXT,                        -- Descrição do evento (opcional)
     photo_url VARCHAR(500),                  -- URL da foto no MinIO (opcional)
+    
+    -- Campos para eventos de COLETA em pontos (opcionais)
+    point_id BIGINT,                         -- ID do ponto de coleta (se aplicável)
+    collected_weight_kg DECIMAL(8,2),        -- Peso coletado em kg (se aplicável)
+    point_condition VARCHAR(30),             -- NORMAL, SATURATED, DAMAGED, INACCESSIBLE
+    
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
-    FOREIGN KEY (execution_id) REFERENCES route_executions(id) ON DELETE CASCADE
+    FOREIGN KEY (execution_id) REFERENCES route_executions(id) ON DELETE CASCADE,
+    FOREIGN KEY (point_id) REFERENCES route_collection_points(id) ON DELETE SET NULL
 );
 ```
 
-**Event Types**:
+**Event Types - Percurso**:
 - `START` - Início da coleta
 - `NORMAL` - Rastreamento periódico normal
 - `STOP` - Parada qualquer
 - `BREAK` - Intervalo/Descanso
 - `FUEL` - Abastecimento
 - `LUNCH` - Almoço
-- `PROBLEM` - Problema encontrado
+
+**Event Types - Coleta em Pontos**:
+- `POINT_ARRIVAL` - Chegada no ponto
+- `POINT_COLLECTED` - Ponto coletado com sucesso
+- `POINT_SKIPPED` - Ponto não coletado
+- `POINT_PROBLEM` - Problema no ponto de coleta
+
+**Event Types - Gerais**:
+- `PROBLEM` - Problema geral
 - `OBSERVATION` - Observação
 - `PHOTO` - Registro fotográfico
 - `END` - Fim da coleta
 
 **Photo Storage (MinIO)**:
 - Bucket: `od46s-files`
-- Path: `gps-photos/execution_{id}/photo_{timestamp}_{uuid}.{ext}`
+- Path: `gps-photos/execution_{execution_id}/{gps_record_id}.{ext}`
 - Max size: 10MB per photo
 - Formats: JPG, PNG, WebP
-- Access: `/api/v1/files/gps-photos/{executionId}/{filename}`
+- Access: `/api/v1/files/gps-photos/{executionId}/{gpsRecordId}`
+- Organização: Arquivos são identificados pelo ID do registro GPS, facilitando rastreabilidade e organização
 
 ### 7. 🗑️ Collections Module
 

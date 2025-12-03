@@ -7,9 +7,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.UUID;
 
 @Service
 public class MinioStorageService {
@@ -21,9 +18,10 @@ public class MinioStorageService {
     private String bucketName;
 
     /**
-     * Armazena uma foto de GPS/evento no MinIO
+     * Armazena uma foto de GPS/evento no MinIO usando o ID do registro GPS
+     * Organiza os arquivos por executionId e usa o gpsRecordId como identificador
      */
-    public String storeGPSPhoto(Long executionId, MultipartFile file) {
+    public String storeGPSPhoto(Long executionId, Long gpsRecordId, MultipartFile file) {
         try {
             // Criar bucket se não existir
             ensureBucketExists();
@@ -31,11 +29,12 @@ public class MinioStorageService {
             // Validar arquivo
             validateFile(file);
 
-            // Gerar nome único para o arquivo
-            String fileName = generateUniqueFileName(file.getOriginalFilename());
+            // Obter extensão do arquivo original
+            String extension = getFileExtension(file.getOriginalFilename());
 
-            // Definir o path no MinIO
-            String objectName = String.format("gps-photos/execution_%d/%s", executionId, fileName);
+            // Definir o path no MinIO usando o ID do registro GPS
+            // Formato: gps-photos/execution_{id}/{gpsRecordId}.{ext}
+            String objectName = String.format("gps-photos/execution_%d/%d%s", executionId, gpsRecordId, extension);
 
             // Upload do arquivo
             minioClient.putObject(
@@ -47,12 +46,64 @@ public class MinioStorageService {
                     .build()
             );
 
-            // Retornar URL de acesso
-            return String.format("/api/v1/files/gps-photos/%d/%s", executionId, fileName);
+            // Retornar URL de acesso usando o ID do registro
+            return String.format("/api/v1/files/gps-photos/%d/%d", executionId, gpsRecordId);
 
         } catch (Exception e) {
             throw new RuntimeException("Failed to store file in MinIO: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * Recupera uma foto GPS pelo ID do registro
+     */
+    public InputStream getGPSPhoto(Long executionId, Long gpsRecordId) {
+        try {
+            // Tentar diferentes extensões comuns
+            String[] extensions = {".jpg", ".jpeg", ".png", ".webp"};
+            
+            for (String ext : extensions) {
+                String objectName = String.format("gps-photos/execution_%d/%d%s", executionId, gpsRecordId, ext);
+                try {
+                    return minioClient.getObject(
+                        GetObjectArgs.builder()
+                            .bucket(bucketName)
+                            .object(objectName)
+                            .build()
+                    );
+                } catch (Exception e) {
+                    // Tentar próxima extensão
+                    continue;
+                }
+            }
+            
+            throw new RuntimeException("GPS photo not found for record ID: " + gpsRecordId);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to retrieve GPS photo from MinIO: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Obtém a extensão do arquivo GPS pelo ID do registro
+     */
+    public String getGPSPhotoExtension(Long executionId, Long gpsRecordId) {
+        String[] extensions = {".jpg", ".jpeg", ".png", ".webp"};
+        
+        for (String ext : extensions) {
+            String objectName = String.format("gps-photos/execution_%d/%d%s", executionId, gpsRecordId, ext);
+            try {
+                minioClient.statObject(
+                    StatObjectArgs.builder()
+                        .bucket(bucketName)
+                        .object(objectName)
+                        .build()
+                );
+                return ext.substring(1); // Remove o ponto
+            } catch (Exception e) {
+                continue;
+            }
+        }
+        return "jpg"; // Default
     }
 
     /**
@@ -118,21 +169,13 @@ public class MinioStorageService {
     }
 
     /**
-     * Gera um nome único para o arquivo
+     * Obtém a extensão do arquivo
      */
-    private String generateUniqueFileName(String originalFilename) {
-        String timestamp = LocalDateTime.now()
-                .format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
-        
-        String extension = "";
+    private String getFileExtension(String originalFilename) {
         if (originalFilename != null && originalFilename.contains(".")) {
-            extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+            return originalFilename.substring(originalFilename.lastIndexOf("."));
         }
-
-        return String.format("photo_%s_%s%s", 
-                           timestamp, 
-                           UUID.randomUUID().toString().substring(0, 8),
-                           extension);
+        return ".jpg"; // Default
     }
 }
 

@@ -593,11 +593,35 @@ databaseChangeLog:
                   type: VARCHAR(20)
                   defaultValue: 'NORMAL'
               - column:
+                  name: is_automatic
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: is_offline
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
                   name: description
                   type: TEXT
               - column:
                   name: photo_url
                   type: VARCHAR(500)
+              - column:
+                  name: point_id
+                  type: BIGINT
+                  constraints:
+                    foreignKeyName: fk_gps_collection_point
+                    references: route_collection_points(id)
+              - column:
+                  name: collected_weight_kg
+                  type: DECIMAL(8,2)
+              - column:
+                  name: point_condition
+                  type: VARCHAR(30)
               - column:
                   name: created_at
                   type: TIMESTAMP

@@ -203,6 +203,50 @@ description=Lixeira transbordando, lixo espalhado na calçada
 photo=@foto_problema.jpg
 ```
 
+**Coleta em Ponto (Sucesso):**
+```
+POST /api/v1/executions/1/gps
+Content-Type: multipart/form-data
+
+latitude=-25.4284
+longitude=-49.2733
+event_type=POINT_COLLECTED
+point_id=1
+collected_weight_kg=45.5
+point_condition=NORMAL
+description=Lixeira em bom estado, coleta ok
+photo=@foto_lixeira_coletada.jpg
+```
+
+**Ponto Não Coletado (Pulado):**
+```
+POST /api/v1/executions/1/gps
+Content-Type: multipart/form-data
+
+latitude=-25.4290
+longitude=-49.2740
+event_type=POINT_SKIPPED
+point_id=2
+point_condition=INACCESSIBLE
+description=Portão trancado, sem acesso ao local
+photo=@foto_portao_trancado.jpg
+```
+
+**Problema no Ponto (Lixeira Saturada):**
+```
+POST /api/v1/executions/1/gps
+Content-Type: multipart/form-data
+
+latitude=-25.4302
+longitude=-49.2751
+event_type=POINT_PROBLEM
+point_id=3
+collected_weight_kg=80.0
+point_condition=SATURATED
+description=Lixeira transbordando mas consegui coletar tudo
+photo=@foto_lixeira_saturada.jpg
+```
+
 ### 5. **Finalizar Execução** (Driver)
 ```
 PATCH /api/v1/executions/1/complete

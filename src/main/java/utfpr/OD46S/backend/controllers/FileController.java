@@ -23,23 +23,27 @@ public class FileController {
     @Autowired
     private MinioStorageService minioStorageService;
 
-    @GetMapping("/gps-photos/{executionId}/{filename}")
+    @GetMapping("/gps-photos/{executionId}/{gpsRecordId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'DRIVER')")
     @Operation(
             summary = "Baixar foto GPS/Evento",
-            description = "Recupera uma foto armazenada de um registro GPS/evento"
+            description = "Recupera uma foto armazenada de um registro GPS/evento pelo ID do registro. Requer autenticação."
     )
     public ResponseEntity<InputStreamResource> downloadGPSPhoto(
             @PathVariable Long executionId,
-            @PathVariable String filename) {
+            @PathVariable Long gpsRecordId) {
         
         try {
-            String objectName = String.format("gps-photos/execution_%d/%s", executionId, filename);
-            
-            InputStream inputStream = minioStorageService.getFile(objectName);
+            InputStream inputStream = minioStorageService.getGPSPhoto(executionId, gpsRecordId);
 
+            // Obter extensão do arquivo
+            String extension = minioStorageService.getGPSPhotoExtension(executionId, gpsRecordId);
+            
             // Determinar content type
-            String contentType = determineContentType(filename);
+            String contentType = determineContentType(extension);
+            
+            // Nome do arquivo para download
+            String filename = String.format("photo_%d.%s", gpsRecordId, extension);
 
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + filename + "\"")
@@ -51,9 +55,8 @@ public class FileController {
         }
     }
 
-    private String determineContentType(String filename) {
-        String extension = filename.substring(filename.lastIndexOf(".") + 1).toLowerCase();
-        return switch (extension) {
+    private String determineContentType(String extension) {
+        return switch (extension.toLowerCase()) {
             case "jpg", "jpeg" -> "image/jpeg";
             case "png" -> "image/png";
             case "webp" -> "image/webp";

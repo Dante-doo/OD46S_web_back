@@ -3,6 +3,7 @@ package utfpr.OD46S.backend.services;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import utfpr.OD46S.backend.dtos.GPSRecordDTO;
 import utfpr.OD46S.backend.entitys.GPSRecord;
 import utfpr.OD46S.backend.entitys.RouteExecution;
@@ -26,8 +27,11 @@ public class GPSTrackingService {
     @Autowired
     private RouteExecutionRepository executionRepository;
 
+    @Autowired
+    private MinioStorageService minioStorageService;
+
     @Transactional
-    public Map<String, Object> registrarPosicaoGPS(Long executionId, Map<String, Object> request) {
+    public Map<String, Object> registrarPosicaoGPS(Long executionId, Map<String, Object> request, MultipartFile photo) {
         // Verificar se execution existe e está em progresso
         RouteExecution execution = executionRepository.findById(executionId)
                 .orElseThrow(() -> new RuntimeException("Execution not found"));
@@ -56,10 +60,6 @@ public class GPSTrackingService {
         GPSRecord gpsRecord = new GPSRecord(execution, latitude, longitude);
 
         // Campos opcionais
-        if (request.containsKey("gps_timestamp") && request.get("gps_timestamp") != null) {
-            gpsRecord.setGpsTimestamp(LocalDateTime.parse((String) request.get("gps_timestamp")));
-        }
-
         if (request.containsKey("speed_kmh")) {
             gpsRecord.setSpeedKmh(getBigDecimalFromMap(request, "speed_kmh"));
         }
@@ -76,6 +76,46 @@ public class GPSTrackingService {
             String eventType = (String) request.get("event_type");
             if (eventType != null && !eventType.isEmpty()) {
                 gpsRecord.setEventType(eventType);
+                // Se não for NORMAL/START/END, provavelmente é manual
+                if (!"NORMAL".equals(eventType) && !"START".equals(eventType) && !"END".equals(eventType)) {
+                    gpsRecord.setIsAutomatic(false);
+                }
+            }
+        }
+        
+        // Permite sobrescrever is_automatic se fornecido
+        if (request.containsKey("is_automatic")) {
+            Object isAutoObj = request.get("is_automatic");
+            if (isAutoObj != null) {
+                gpsRecord.setIsAutomatic(isAutoObj instanceof Boolean ? (Boolean) isAutoObj : Boolean.parseBoolean(isAutoObj.toString()));
+            }
+        }
+        
+        // Processa is_offline (indica sincronização offline)
+        if (request.containsKey("is_offline")) {
+            Object isOfflineObj = request.get("is_offline");
+            if (isOfflineObj != null) {
+                gpsRecord.setIsOffline(isOfflineObj instanceof Boolean ? (Boolean) isOfflineObj : Boolean.parseBoolean(isOfflineObj.toString()));
+            }
+        }
+        
+        // Processa gps_timestamp customizado (para registros offline)
+        if (request.containsKey("gps_timestamp")) {
+            Object timestampObj = request.get("gps_timestamp");
+            if (timestampObj != null) {
+                if (timestampObj instanceof LocalDateTime) {
+                    gpsRecord.setGpsTimestamp((LocalDateTime) timestampObj);
+                } else if (timestampObj instanceof String) {
+                    try {
+                        gpsRecord.setGpsTimestamp(LocalDateTime.parse((String) timestampObj));
+                    } catch (Exception e) {
+                        throw new RuntimeException("Invalid gps_timestamp format. Use ISO-8601: yyyy-MM-ddTHH:mm:ss");
+                    }
+                }
+                // Se forneceu gps_timestamp customizado, provavelmente é offline
+                if (!request.containsKey("is_offline")) {
+                    gpsRecord.setIsOffline(true);
+                }
             }
         }
 
@@ -86,14 +126,51 @@ public class GPSTrackingService {
             }
         }
 
-        if (request.containsKey("photo_url")) {
-            String photoUrl = (String) request.get("photo_url");
-            if (photoUrl != null && !photoUrl.trim().isEmpty()) {
-                gpsRecord.setPhotoUrl(photoUrl);
+        // Campos de coleta (opcionais)
+        if (request.containsKey("point_id")) {
+            Object pointIdObj = request.get("point_id");
+            if (pointIdObj != null) {
+                gpsRecord.setPointId(pointIdObj instanceof Long ? (Long) pointIdObj : Long.parseLong(pointIdObj.toString()));
+            }
+        }
+        
+        if (request.containsKey("collected_weight_kg")) {
+            BigDecimal weightKg = getBigDecimalFromMap(request, "collected_weight_kg");
+            if (weightKg != null) {
+                gpsRecord.setCollectedWeightKg(weightKg);
+            }
+        }
+        
+        if (request.containsKey("point_condition")) {
+            String pointCondition = (String) request.get("point_condition");
+            if (pointCondition != null && !pointCondition.trim().isEmpty()) {
+                gpsRecord.setPointCondition(pointCondition);
             }
         }
 
+        // Salvar registro primeiro para obter o ID
         gpsRecordRepository.save(gpsRecord);
+
+        // Upload de foto após salvar o registro (para usar o ID do registro)
+        if (photo != null && !photo.isEmpty()) {
+            try {
+                String photoUrl = minioStorageService.storeGPSPhoto(executionId, gpsRecord.getId(), photo);
+                gpsRecord.setPhotoUrl(photoUrl);
+                // Atualizar registro com a photo_url
+                gpsRecordRepository.save(gpsRecord);
+            } catch (Exception e) {
+                // Se falhar o upload, continua sem a foto mas loga o erro
+                // Em produção, considere fazer rollback ou tratar de forma diferente
+                throw new RuntimeException("Failed to upload photo: " + e.getMessage(), e);
+            }
+        } else if (request.containsKey("photo_url")) {
+            // Se já veio com photo_url (caso de sincronização offline)
+            String photoUrl = (String) request.get("photo_url");
+            if (photoUrl != null && !photoUrl.trim().isEmpty()) {
+                gpsRecord.setPhotoUrl(photoUrl);
+                gpsRecordRepository.save(gpsRecord);
+            }
+        }
 
         GPSRecordDTO dto = toDTO(gpsRecord);
 
@@ -128,8 +205,18 @@ public class GPSTrackingService {
 
             GPSRecord gpsRecord = new GPSRecord(execution, latitude, longitude);
 
+            // Processa gps_timestamp (pode ser LocalDateTime ou String)
             if (request.containsKey("gps_timestamp") && request.get("gps_timestamp") != null) {
-                gpsRecord.setGpsTimestamp(LocalDateTime.parse((String) request.get("gps_timestamp")));
+                Object timestampObj = request.get("gps_timestamp");
+                if (timestampObj instanceof LocalDateTime) {
+                    gpsRecord.setGpsTimestamp((LocalDateTime) timestampObj);
+                } else if (timestampObj instanceof String) {
+                    try {
+                        gpsRecord.setGpsTimestamp(LocalDateTime.parse((String) timestampObj));
+                    } catch (Exception e) {
+                        throw new RuntimeException("Invalid gps_timestamp format. Use ISO-8601: yyyy-MM-ddTHH:mm:ss");
+                    }
+                }
             }
 
             if (request.containsKey("speed_kmh")) {
@@ -229,8 +316,14 @@ public class GPSTrackingService {
         dto.setHeadingDegrees(record.getHeadingDegrees());
         dto.setAccuracyMeters(record.getAccuracyMeters());
         dto.setEventType(record.getEventType());
+        dto.setIsAutomatic(record.getIsAutomatic());
+        dto.setIsOffline(record.getIsOffline());
+        dto.setSyncDelaySeconds(record.getSyncDelaySeconds());
         dto.setDescription(record.getDescription());
         dto.setPhotoUrl(record.getPhotoUrl());
+        dto.setPointId(record.getPointId());
+        dto.setCollectedWeightKg(record.getCollectedWeightKg());
+        dto.setPointCondition(record.getPointCondition());
         dto.setCreatedAt(record.getCreatedAt());
         return dto;
     }
@@ -266,6 +359,52 @@ public class GPSTrackingService {
         return null;
     }
 
+    /**
+     * Registra múltiplos pontos GPS de uma vez (batch/lote)
+     * Usado para sincronização offline
+     */
+    public Map<String, Object> registrarGPSBatch(Long executionId, List<Map<String, Object>> records) {
+        int successCount = 0;
+        int errorCount = 0;
+        List<Map<String, Object>> errors = new java.util.ArrayList<>();
+        List<GPSRecordDTO> savedRecords = new java.util.ArrayList<>();
+        
+        for (int i = 0; i < records.size(); i++) {
+            try {
+                Map<String, Object> record = records.get(i);
+                // Batch não suporta upload de fotos (fotos devem ser enviadas individualmente)
+                Map<String, Object> result = registrarPosicaoGPS(executionId, record, null);
+                
+                if (result.get("success") == Boolean.TRUE && result.containsKey("data")) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> data = (Map<String, Object>) result.get("data");
+                    if (data.containsKey("gps_record")) {
+                        savedRecords.add((GPSRecordDTO) data.get("gps_record"));
+                    }
+                }
+                
+                successCount++;
+            } catch (Exception e) {
+                errorCount++;
+                errors.add(Map.of(
+                    "index", i,
+                    "error", e.getMessage()
+                ));
+            }
+        }
+        
+        return Map.of(
+            "success", errorCount == 0,
+            "data", Map.of(
+                "total_records", records.size(),
+                "success_count", successCount,
+                "error_count", errorCount,
+                "errors", errors,
+                "saved_records", savedRecords
+            )
+        );
+    }
+    
     // Cálculo de distância usando fórmula de Haversine (aproximada)
     private double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
         final int R = 6371; // Raio da Terra em km

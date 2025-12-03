@@ -14,8 +14,17 @@ public class GPSRecordDTO {
     private Integer headingDegrees;
     private BigDecimal accuracyMeters;
     private String eventType;
+    private Boolean isAutomatic;  // true = GPS automático, false = evento manual
+    private Boolean isOffline;    // true = registrado offline e sincronizado, false = tempo real
     private String description;
     private String photoUrl;
+    private Long syncDelaySeconds; // Atraso de sincronização em segundos (calculado)
+    
+    // Campos opcionais para eventos de coleta
+    private Long pointId;
+    private BigDecimal collectedWeightKg;
+    private String pointCondition;
+    
     private LocalDateTime createdAt;
 
     // Constructors
@@ -95,6 +104,30 @@ public class GPSRecordDTO {
         this.eventType = eventType;
     }
 
+    public Boolean getIsAutomatic() {
+        return isAutomatic;
+    }
+
+    public void setIsAutomatic(Boolean isAutomatic) {
+        this.isAutomatic = isAutomatic;
+    }
+
+    public Boolean getIsOffline() {
+        return isOffline;
+    }
+
+    public void setIsOffline(Boolean isOffline) {
+        this.isOffline = isOffline;
+    }
+
+    public Long getSyncDelaySeconds() {
+        return syncDelaySeconds;
+    }
+
+    public void setSyncDelaySeconds(Long syncDelaySeconds) {
+        this.syncDelaySeconds = syncDelaySeconds;
+    }
+
     public String getDescription() {
         return description;
     }
@@ -109,6 +142,30 @@ public class GPSRecordDTO {
 
     public void setPhotoUrl(String photoUrl) {
         this.photoUrl = photoUrl;
+    }
+
+    public Long getPointId() {
+        return pointId;
+    }
+
+    public void setPointId(Long pointId) {
+        this.pointId = pointId;
+    }
+
+    public BigDecimal getCollectedWeightKg() {
+        return collectedWeightKg;
+    }
+
+    public void setCollectedWeightKg(BigDecimal collectedWeightKg) {
+        this.collectedWeightKg = collectedWeightKg;
+    }
+
+    public String getPointCondition() {
+        return pointCondition;
+    }
+
+    public void setPointCondition(String pointCondition) {
+        this.pointCondition = pointCondition;
     }
 
     public LocalDateTime getCreatedAt() {

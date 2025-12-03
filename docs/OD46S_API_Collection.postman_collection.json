@@ -1803,8 +1803,8 @@
       ]
     },
     {
-      "name": "GPS Tracking & Eventos",
-      "description": "Rastreamento GPS + registro de eventos/ocorrências com fotos durante execuções",
+      "name": "GPS Tracking & Eventos (Sistema Unificado)",
+      "description": "Sistema unificado: Rastreamento GPS + eventos + coletas em pontos com fotos. Um único endpoint para tudo!",
       "item": [
         {
           "name": "Registrar GPS Normal",
@@ -1849,6 +1849,12 @@
                   "key": "event_type",
                   "value": "NORMAL",
                   "type": "text"
+                },
+                {
+                  "key": "is_automatic",
+                  "value": "true",
+                  "type": "text",
+                  "description": "GPS automático do celular (a cada 30s)"
                 }
               ]
             },
@@ -1863,7 +1869,7 @@
                 }
               ]
             },
-            "description": "Registra posição GPS normal durante percurso.\n\nTipos de evento: START, NORMAL, STOP, BREAK, FUEL, LUNCH, PROBLEM, OBSERVATION, PHOTO, END"
+            "description": "Registra posição GPS normal durante percurso (AUTOMÁTICO - celular envia a cada 30s).\n\nTipos de evento:\n- Percurso: START, NORMAL, STOP, BREAK, FUEL, LUNCH\n- Coleta: POINT_ARRIVAL, POINT_COLLECTED, POINT_SKIPPED, POINT_PROBLEM\n- Gerais: PROBLEM, OBSERVATION, PHOTO, END"
           },
           "response": []
         },
@@ -1897,6 +1903,12 @@
                   "type": "text"
                 },
                 {
+                  "key": "is_automatic",
+                  "value": "false",
+                  "type": "text",
+                  "description": "Evento MANUAL - motorista clicou no botão"
+                },
+                {
                   "key": "description",
                   "value": "Parada para almoço - 12h30",
                   "type": "text"
@@ -1914,7 +1926,7 @@
                 }
               ]
             },
-            "description": "Exemplo de registro de parada para almoço com descrição."
+            "description": "Exemplo de registro de parada para almoço (MANUAL - motorista clica no botão)."
           },
           "response": []
         },
@@ -1948,6 +1960,12 @@
                   "type": "text"
                 },
                 {
+                  "key": "is_automatic",
+                  "value": "false",
+                  "type": "text",
+                  "description": "Evento MANUAL - motorista registrou o problema"
+                },
+                {
                   "key": "description",
                   "value": "Lixeira transbordando, lixo espalhado na calçada",
                   "type": "text"
@@ -1971,7 +1989,7 @@
                 }
               ]
             },
-            "description": "Exemplo de registro de problema com foto.\n\nA foto é enviada via multipart/form-data e armazenada no MinIO.\nRetorna a URL da foto no campo photo_url."
+            "description": "Exemplo de registro de problema com foto (MANUAL).\n\nA foto é enviada via multipart/form-data e armazenada no MinIO.\nRetorna a URL da foto no campo photo_url."
           },
           "response": []
         },
@@ -2005,6 +2023,12 @@
                   "type": "text"
                 },
                 {
+                  "key": "is_automatic",
+                  "value": "false",
+                  "type": "text",
+                  "description": "Evento MANUAL - motorista registrou abastecimento"
+                },
+                {
                   "key": "description",
                   "value": "Abastecimento - Posto Ipiranga",
                   "type": "text"
@@ -2022,7 +2046,358 @@
                 }
               ]
             },
-            "description": "Exemplo de registro de parada para abastecimento."
+            "description": "Exemplo de registro de parada para abastecimento (MANUAL)."
+          },
+          "response": []
+        },
+        {
+          "name": "Registrar Coleta em Ponto (Sucesso)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "latitude",
+                  "value": "-25.4284",
+                  "type": "text"
+                },
+                {
+                  "key": "longitude",
+                  "value": "-49.2733",
+                  "type": "text"
+                },
+                {
+                  "key": "event_type",
+                  "value": "POINT_COLLECTED",
+                  "type": "text"
+                },
+                {
+                  "key": "is_automatic",
+                  "value": "false",
+                  "type": "text",
+                  "description": "Evento MANUAL - motorista confirmou a coleta"
+                },
+                {
+                  "key": "point_id",
+                  "value": "1",
+                  "type": "text",
+                  "description": "ID do ponto de coleta da rota"
+                },
+                {
+                  "key": "collected_weight_kg",
+                  "value": "45.5",
+                  "type": "text",
+                  "description": "Peso coletado em kg"
+                },
+                {
+                  "key": "point_condition",
+                  "value": "NORMAL",
+                  "type": "text",
+                  "description": "NORMAL, SATURATED, DAMAGED, INACCESSIBLE"
+                },
+                {
+                  "key": "description",
+                  "value": "Lixeira em bom estado, coleta realizada com sucesso",
+                  "type": "text"
+                },
+                {
+                  "key": "photo",
+                  "type": "file",
+                  "src": [],
+                  "description": "Foto da lixeira coletada (opcional)"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/executions/:executionId/gps",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "executions", ":executionId", "gps"],
+              "variable": [
+                {
+                  "key": "executionId",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Registra coleta bem-sucedida em um ponto da rota.\n\nCampos de coleta:\n- point_id: ID do ponto visitado\n- collected_weight_kg: Peso coletado\n- point_condition: Condição da lixeira\n- photo: Evidência da coleta"
+          },
+          "response": []
+        },
+        {
+          "name": "Registrar Ponto Não Coletado (Pulado)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "latitude",
+                  "value": "-25.4290",
+                  "type": "text"
+                },
+                {
+                  "key": "longitude",
+                  "value": "-49.2740",
+                  "type": "text"
+                },
+                {
+                  "key": "event_type",
+                  "value": "POINT_SKIPPED",
+                  "type": "text"
+                },
+                {
+                  "key": "is_automatic",
+                  "value": "false",
+                  "type": "text",
+                  "description": "Evento MANUAL - motorista marcou como não coletado"
+                },
+                {
+                  "key": "point_id",
+                  "value": "2",
+                  "type": "text"
+                },
+                {
+                  "key": "point_condition",
+                  "value": "INACCESSIBLE",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Portão trancado, sem acesso ao local",
+                  "type": "text"
+                },
+                {
+                  "key": "photo",
+                  "type": "file",
+                  "src": [],
+                  "description": "Foto do local inacessível"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/executions/:executionId/gps",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "executions", ":executionId", "gps"],
+              "variable": [
+                {
+                  "key": "executionId",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Registra ponto que não foi coletado (pulado).\n\nMotivos comuns:\n- INACCESSIBLE: Sem acesso\n- DAMAGED: Lixeira quebrada\n- Outros: Especificar em description"
+          },
+          "response": []
+        },
+        {
+          "name": "Registrar Problema no Ponto",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "latitude",
+                  "value": "-25.4302",
+                  "type": "text"
+                },
+                {
+                  "key": "longitude",
+                  "value": "-49.2751",
+                  "type": "text"
+                },
+                {
+                  "key": "event_type",
+                  "value": "POINT_PROBLEM",
+                  "type": "text"
+                },
+                {
+                  "key": "is_automatic",
+                  "value": "false",
+                  "type": "text",
+                  "description": "Evento MANUAL - motorista reportou problema no ponto"
+                },
+                {
+                  "key": "point_id",
+                  "value": "3",
+                  "type": "text"
+                },
+                {
+                  "key": "collected_weight_kg",
+                  "value": "80.0",
+                  "type": "text",
+                  "description": "Coletou mesmo com problema"
+                },
+                {
+                  "key": "point_condition",
+                  "value": "SATURATED",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Lixeira transbordando, lixo espalhado na calçada. Coletado tudo.",
+                  "type": "text"
+                },
+                {
+                  "key": "photo",
+                  "type": "file",
+                  "src": [],
+                  "description": "Foto do problema (lixeira transbordando)"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/executions/:executionId/gps",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "executions", ":executionId", "gps"],
+              "variable": [
+                {
+                  "key": "executionId",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Registra problema em ponto de coleta.\n\nCondições do ponto:\n- NORMAL: Tudo ok\n- SATURATED: Transbordando\n- DAMAGED: Lixeira quebrada\n- INACCESSIBLE: Sem acesso"
+          },
+          "response": []
+        },
+        {
+          "name": "Registrar GPS Offline (Sync Individual)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "latitude",
+                  "value": "-25.4284",
+                  "type": "text"
+                },
+                {
+                  "key": "longitude",
+                  "value": "-49.2733",
+                  "type": "text"
+                },
+                {
+                  "key": "event_type",
+                  "value": "POINT_COLLECTED",
+                  "type": "text"
+                },
+                {
+                  "key": "is_automatic",
+                  "value": "false",
+                  "type": "text"
+                },
+                {
+                  "key": "is_offline",
+                  "value": "true",
+                  "type": "text",
+                  "description": "Marca como offline/sincronizado"
+                },
+                {
+                  "key": "gps_timestamp",
+                  "value": "2025-12-01T14:23:45",
+                  "type": "text",
+                  "description": "Hora real da coleta (ISO-8601)"
+                },
+                {
+                  "key": "point_id",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "collected_weight_kg",
+                  "value": "45.5",
+                  "type": "text"
+                },
+                {
+                  "key": "point_condition",
+                  "value": "NORMAL",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Registrado offline, sincronizando agora",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/executions/:executionId/gps",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "executions", ":executionId", "gps"],
+              "variable": [
+                {
+                  "key": "executionId",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Registro individual offline: motorista coletou dados sem internet e está sincronizando agora.\n\nDiferença do tempo real:\n- is_offline=true\n- gps_timestamp = hora da coleta real\n- Sistema calcula sync_delay automaticamente"
+          },
+          "response": []
+        },
+        {
+          "name": "Registrar GPS em Lote (Batch Sync)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"latitude\": -25.4284,\n    \"longitude\": -49.2733,\n    \"event_type\": \"NORMAL\",\n    \"is_automatic\": true,\n    \"is_offline\": true,\n    \"gps_timestamp\": \"2025-12-01T14:20:00\"\n  },\n  {\n    \"latitude\": -25.4290,\n    \"longitude\": -49.2740,\n    \"event_type\": \"POINT_COLLECTED\",\n    \"is_automatic\": false,\n    \"is_offline\": true,\n    \"gps_timestamp\": \"2025-12-01T14:45:12\",\n    \"point_id\": 1,\n    \"collected_weight_kg\": 45.5,\n    \"point_condition\": \"NORMAL\",\n    \"description\": \"Coleta realizada\"\n  },\n  {\n    \"latitude\": -25.4302,\n    \"longitude\": -49.2751,\n    \"event_type\": \"PROBLEM\",\n    \"is_automatic\": false,\n    \"is_offline\": true,\n    \"gps_timestamp\": \"2025-12-01T15:10:30\",\n    \"description\": \"Lixeira transbordando\"\n  }\n]"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/executions/:executionId/gps/batch",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "executions", ":executionId", "gps", "batch"],
+              "variable": [
+                {
+                  "key": "executionId",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Sincronização em lote (batch): envia múltiplos registros offline de uma vez.\n\nUso:\n- Motorista trabalhou sem internet\n- Dados armazenados localmente no app\n- Internet retornou, envia tudo de uma vez\n\nLimites:\n- Máximo 500 registros por batch\n- Retorna sucesso/erro por registro"
           },
           "response": []
         },
@@ -2102,9 +2477,9 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/files/gps-photos/:executionId/:filename",
+              "raw": "{{baseUrl}}/api/v1/files/gps-photos/:executionId/:gpsRecordId",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "files", "gps-photos", ":executionId", ":filename"],
+              "path": ["api", "v1", "files", "gps-photos", ":executionId", ":gpsRecordId"],
               "variable": [
                 {
                   "key": "executionId",
@@ -2112,13 +2487,13 @@
                   "description": "ID da execução"
                 },
                 {
-                  "key": "filename",
-                  "value": "photo_20250115_083045_a1b2c3d4.jpg",
-                  "description": "Nome do arquivo (obtido do campo photo_url)"
+                  "key": "gpsRecordId",
+                  "value": "456",
+                  "description": "ID do registro GPS (obtido do campo id do registro GPS ou do photo_url)"
                 }
               ]
             },
-            "description": "Baixa uma foto armazenada no MinIO.\n\nO filename deve ser obtido do campo photo_url retornado ao registrar GPS com foto.\n\nRetorna:\n- Content-Type: image/jpeg, image/png ou image/webp\n- Binary image data"
+            "description": "Baixa uma foto armazenada no MinIO.\n\nO gpsRecordId é o ID do registro GPS (campo 'id' retornado nos endpoints de GPS).\nA URL completa pode ser obtida do campo photo_url retornado ao registrar GPS com foto.\n\nFormato da URL: /api/v1/files/gps-photos/{executionId}/{gpsRecordId}\n\nRetorna:\n- Content-Type: image/jpeg, image/png ou image/webp\n- Binary image data\n- A extensão do arquivo é detectada automaticamente"
           },
           "response": []
         }

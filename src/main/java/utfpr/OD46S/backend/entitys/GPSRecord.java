@@ -3,6 +3,7 @@ package utfpr.OD46S.backend.entitys;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 
 @Entity
 @Table(name = "gps_records")
@@ -36,6 +37,14 @@ public class GPSRecord {
 
     @Column(name = "event_type", length = 20)
     private String eventType = "NORMAL";
+    
+    // Indica se é GPS automático (true) ou evento manual do motorista (false)
+    @Column(name = "is_automatic")
+    private Boolean isAutomatic = true;  // Default: GPS automático
+    
+    // Indica se foi registrado offline e sincronizado depois (true) ou em tempo real (false)
+    @Column(name = "is_offline")
+    private Boolean isOffline = false;  // Default: online/tempo real
 
     // Descrição adicional para eventos especiais (paradas, problemas, etc)
     @Column(name = "description", columnDefinition = "TEXT")
@@ -44,6 +53,16 @@ public class GPSRecord {
     // URL da foto (opcional) - armazenada no MinIO
     @Column(name = "photo_url", length = 500)
     private String photoUrl;
+    
+    // Campos opcionais para eventos de COLETA em pontos
+    @Column(name = "point_id")
+    private Long pointId;  // ID do ponto de coleta visitado (se aplicável)
+    
+    @Column(name = "collected_weight_kg", precision = 8, scale = 2)
+    private BigDecimal collectedWeightKg;  // Peso coletado (se aplicável)
+    
+    @Column(name = "point_condition", length = 30)
+    private String pointCondition;  // NORMAL, SATURATED, DAMAGED, INACCESSIBLE
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -143,6 +162,22 @@ public class GPSRecord {
         this.eventType = eventType;
     }
 
+    public Boolean getIsAutomatic() {
+        return isAutomatic;
+    }
+
+    public void setIsAutomatic(Boolean isAutomatic) {
+        this.isAutomatic = isAutomatic;
+    }
+
+    public Boolean getIsOffline() {
+        return isOffline;
+    }
+
+    public void setIsOffline(Boolean isOffline) {
+        this.isOffline = isOffline;
+    }
+
     public String getDescription() {
         return description;
     }
@@ -159,12 +194,44 @@ public class GPSRecord {
         this.photoUrl = photoUrl;
     }
 
+    public Long getPointId() {
+        return pointId;
+    }
+
+    public void setPointId(Long pointId) {
+        this.pointId = pointId;
+    }
+
+    public BigDecimal getCollectedWeightKg() {
+        return collectedWeightKg;
+    }
+
+    public void setCollectedWeightKg(BigDecimal collectedWeightKg) {
+        this.collectedWeightKg = collectedWeightKg;
+    }
+
+    public String getPointCondition() {
+        return pointCondition;
+    }
+
+    public void setPointCondition(String pointCondition) {
+        this.pointCondition = pointCondition;
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+    
+    // Método auxiliar: calcula atraso de sincronização em segundos
+    public Long getSyncDelaySeconds() {
+        if (gpsTimestamp == null || createdAt == null) {
+            return 0L;
+        }
+        return ChronoUnit.SECONDS.between(gpsTimestamp, createdAt);
     }
 }
 

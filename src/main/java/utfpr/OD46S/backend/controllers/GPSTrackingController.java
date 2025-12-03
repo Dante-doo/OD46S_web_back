@@ -11,7 +11,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import utfpr.OD46S.backend.services.GPSTrackingService;
-import utfpr.OD46S.backend.services.MinioStorageService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,14 +25,11 @@ public class GPSTrackingController {
     @Autowired
     private GPSTrackingService gpsTrackingService;
 
-    @Autowired
-    private MinioStorageService minioStorageService;
-
     @PostMapping("/{executionId}/gps")
     @PreAuthorize("hasRole('DRIVER')")
     @Operation(
-            summary = "Registrar posição GPS / Evento",
-            description = "Registra posição GPS, eventos (paradas, problemas, etc) e foto opcional durante a execução. Apenas DRIVER."
+            summary = "Registrar GPS / Evento / Coleta",
+            description = "Registra posição GPS, eventos (paradas, problemas) e coletas em pontos com foto opcional. Apenas DRIVER."
     )
     public ResponseEntity<?> registrarPosicaoGPS(
             @PathVariable Long executionId,
@@ -43,8 +39,15 @@ public class GPSTrackingController {
             @RequestParam(value = "heading_degrees", required = false) String headingDegrees,
             @RequestParam(value = "accuracy_meters", required = false) String accuracyMeters,
             @RequestParam(value = "event_type", defaultValue = "NORMAL") String eventType,
+            @RequestParam(value = "is_automatic", required = false) Boolean isAutomatic,
+            @RequestParam(value = "is_offline", required = false) Boolean isOffline,
+            @RequestParam(value = "gps_timestamp", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime gpsTimestamp,
             @RequestParam(value = "description", required = false) String description,
-            @RequestParam(value = "photo", required = false) MultipartFile photo) {
+            @RequestParam(value = "photo", required = false) MultipartFile photo,
+            // Campos opcionais para eventos de COLETA
+            @RequestParam(value = "point_id", required = false) Long pointId,
+            @RequestParam(value = "collected_weight_kg", required = false) String collectedWeightKg,
+            @RequestParam(value = "point_condition", required = false) String pointCondition) {
         try {
             // Construir mapa de request
             Map<String, Object> request = new java.util.HashMap<>();
@@ -54,15 +57,18 @@ public class GPSTrackingController {
             if (headingDegrees != null) request.put("heading_degrees", headingDegrees);
             if (accuracyMeters != null) request.put("accuracy_meters", accuracyMeters);
             request.put("event_type", eventType);
+            if (isAutomatic != null) request.put("is_automatic", isAutomatic);
+            if (isOffline != null) request.put("is_offline", isOffline);
+            if (gpsTimestamp != null) request.put("gps_timestamp", gpsTimestamp);
             if (description != null) request.put("description", description);
+            
+            // Campos de coleta (opcionais)
+            if (pointId != null) request.put("point_id", pointId);
+            if (collectedWeightKg != null) request.put("collected_weight_kg", collectedWeightKg);
+            if (pointCondition != null) request.put("point_condition", pointCondition);
 
-            // Upload de foto se fornecida
-            if (photo != null && !photo.isEmpty()) {
-                String photoUrl = minioStorageService.storeGPSPhoto(executionId, photo);
-                request.put("photo_url", photoUrl);
-            }
-
-            Map<String, Object> response = gpsTrackingService.registrarPosicaoGPS(executionId, request);
+            // Passar a foto para o service (será processada após salvar o registro)
+            Map<String, Object> response = gpsTrackingService.registrarPosicaoGPS(executionId, request, photo);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (RuntimeException e) {
             HttpStatus status = HttpStatus.BAD_REQUEST;
@@ -111,6 +117,52 @@ public class GPSTrackingController {
                             "success", false,
                             "error", Map.of(
                                     "code", errorCode,
+                                    "message", e.getMessage()
+                            )
+                    ));
+        }
+    }
+    
+    @PostMapping("/{executionId}/gps/batch")
+    @PreAuthorize("hasRole('DRIVER')")
+    @Operation(
+            summary = "Registrar GPS em lote (batch)",
+            description = "Registra múltiplos pontos GPS/eventos/coletas de uma vez. Usado para sincronização offline. Apenas DRIVER."
+    )
+    public ResponseEntity<?> registrarGPSBatch(
+            @PathVariable Long executionId,
+            @RequestBody List<Map<String, Object>> records) {
+        try {
+            if (records == null || records.isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of(
+                                "success", false,
+                                "error", Map.of(
+                                        "code", "VALIDATION_ERROR",
+                                        "message", "Records list cannot be empty"
+                                )
+                        ));
+            }
+            
+            if (records.size() > 500) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of(
+                                "success", false,
+                                "error", Map.of(
+                                        "code", "BATCH_TOO_LARGE",
+                                        "message", "Maximum batch size is 500 records"
+                                )
+                        ));
+            }
+            
+            Map<String, Object> response = gpsTrackingService.registrarGPSBatch(executionId, records);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of(
+                            "success", false,
+                            "error", Map.of(
+                                    "code", "BATCH_ERROR",
                                     "message", e.getMessage()
                             )
                     ));
