@@ -195,24 +195,16 @@ delete loginData.password;
 - Original password **never stored**, immediately discarded after hashing
 - Failed login attempts should be **logged and rate-limited**
 
-### Response 200
+### Response 200 (formato atual em produção)
 ```json
 {
-  "success": true,
-  "data": {
-    "token": "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBvZDQ2cy5jb20iLCJpYXQiOjE2NDA5OTUyMDAsImV4cCI6MTY0MTA4MTYwMH0.signature_part",
-    "type": "Bearer",
-    "expires_in": 86400,
-    "user": {
-      "id": 1,
-      "name": "System Administrator",
-      "email": "admin@od46s.com",
-      "type": "ADMIN",
-      "active": true
-      // 🔒 NOTE: password field is NEVER returned
-    }
-  },
-  "message": "Login successful"
+  "token": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJhZG1pbkBvZDQ2cy5jb20iLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NjQ3MzAwNDQsImV4cCI6MTc2NDgxNjQ0NH0.XewzJYjPhH8sqgtN8_csl8LicmiPKVdO2iYjl8sKGJH78hRpMPPxXerVBU-iwPO7JKLqOFCVx-X3KlZlCs4PIg",
+  "email": "admin@od46s.com",
+  "name": "System Administrator",
+  "type": "ADMIN",
+  "userId": 1,
+  "driverId": null,
+  "adminId": 1
 }
 ```
 
