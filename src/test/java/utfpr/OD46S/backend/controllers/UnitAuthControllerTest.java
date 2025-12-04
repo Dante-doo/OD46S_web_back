@@ -58,7 +58,10 @@ class UnitAuthControllerTest {
             "eyJhbGciOiJIUzUxMiJ9.test.token",
             "test@od46s.com",
             "Test User",
-            "ADMIN"
+            "ADMIN",
+            1L,  // userId
+            null, // driverId
+            1L   // adminId
         );
 
         when(authService.login(any(LoginRequest.class))).thenReturn(mockResponse);
@@ -103,7 +106,10 @@ class UnitAuthControllerTest {
             "eyJhbGciOiJIUzUxMiJ9.new.token",
             "test@od46s.com",
             "Test User",
-            "ADMIN"
+            "ADMIN",
+            1L,  // userId
+            null, // driverId
+            1L   // adminId
         );
 
         when(authService.refreshToken(any(String.class))).thenReturn(mockResponse);

@@ -288,3 +288,23 @@ databaseChangeLog:
             columns:
               - column:
                   name: event_type
+
+  # ==========================================
+  # CHANGESET 10: Create indexes for route_areas table
+  # ==========================================
+  - changeSet:
+      id: 010-create-route-areas-indexes
+      author: od46s-team
+      changes:
+        - createIndex:
+            indexName: idx_route_areas_route_id
+            tableName: route_areas
+            columns:
+              - column:
+                  name: route_id
+        - createIndex:
+            indexName: idx_route_areas_waste_type
+            tableName: route_areas
+            columns:
+              - column:
+                  name: waste_type
