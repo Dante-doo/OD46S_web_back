@@ -30,25 +30,41 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
+        // Ignorar endpoints públicos (login, refresh, health)
+        String path = request.getRequestURI();
+        if (path.startsWith("/api/v1/auth/login") || 
+            path.startsWith("/api/v1/auth/refresh") ||
+            path.startsWith("/api/v1/auth/health") ||
+            path.startsWith("/health") ||
+            path.startsWith("/actuator")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
-            if (jwtUtils.validateToken(token)) {
-                String email = jwtUtils.getEmailFromToken(token);
-                String role = jwtUtils.getRoleFromToken(token);
-                
-                List<SimpleGrantedAuthority> authorities = role != null 
-                    ? Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role))
-                    : Collections.emptyList();
-                
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        new User(email, "", authorities),
-                        null,
-                        authorities
-                );
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+            try {
+                String token = authHeader.substring(7);
+                if (jwtUtils.validateToken(token)) {
+                    String email = jwtUtils.getEmailFromToken(token);
+                    String role = jwtUtils.getRoleFromToken(token);
+                    
+                    List<SimpleGrantedAuthority> authorities = role != null 
+                        ? Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role))
+                        : Collections.emptyList();
+                    
+                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                            new User(email, "", authorities),
+                            null,
+                            authorities
+                    );
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                }
+            } catch (Exception e) {
+                // Se houver erro ao processar token, apenas continua sem autenticação
+                // O Spring Security vai retornar 401 se a rota exigir autenticação
             }
         }
 

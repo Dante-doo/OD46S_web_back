@@ -720,6 +720,247 @@ Authorization: Bearer {jwt_token}  # Only ADMIN
 
 ---
 
+# 🗺️ 4.5 ROUTE MAPS (Mapas de Rotas - GeoJSON)
+
+> **💡 Conceito**: Gestão de áreas geográficas (polígonos) para visualização de rotas em mapas.  
+> Permite importar, visualizar e gerenciar áreas de coleta representadas como polígonos GeoJSON.
+
+## 4.5.1 Importar Áreas de Rotas via GeoJSON
+**POST** `/api/v1/routes/map/import-geojson`
+
+> **🔒 ADMIN ONLY**: Este endpoint requer autenticação de administrador.
+
+### Headers
+```
+Authorization: Bearer {jwt_token}
+Content-Type: application/json
+```
+
+### Request Body
+```json
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Planalto 1",
+        "waste_type": "RECYCLABLE",
+        "route_id": 1,
+        "periodicity": "0 8 * * 1",
+        "stroke_color": "#0066CC",
+        "fill_color": "#0066CC",
+        "fill_opacity": 0.40
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-52.6988268, -26.2438868],
+          [-52.6990629, -26.2426551],
+          [-52.6994706, -26.2363807],
+          [-52.6988268, -26.2438868]
+        ]]
+      }
+    }
+  ]
+}
+```
+
+**Campos Obrigatórios:**
+- `features[].properties.name` - Nome da área/região (string, required)
+- `features[].properties.waste_type` - Tipo de resíduo (string, required): `RECYCLABLE`, `RESIDENTIAL`, `COMMERCIAL`, etc.
+- `features[].geometry` - Geometria GeoJSON (Polygon, required)
+
+**Campos Opcionais:**
+- `features[].properties.route_id` - ID da rota existente (integer, optional). Se não fornecido, tenta encontrar por nome ou cria nova rota.
+- `features[].properties.periodicity` - Expressão cron para periodicidade (string, optional, default: "0 8 * * *")
+- `features[].properties.stroke_color` - Cor da borda do polígono (string, optional, default: "#000000")
+- `features[].properties.fill_color` - Cor de preenchimento (string, optional, default: "#000000")
+- `features[].properties.fill_opacity` - Opacidade do preenchimento (decimal, optional, default: 0.40)
+
+### Response 200
+```json
+{
+  "success": true,
+  "data": {
+    "total_features": 5,
+    "routes_created": 2,
+    "routes_linked": 3,
+    "areas_created": 3,
+    "areas_updated": 2,
+    "errors": []
+  },
+  "message": "Map imported successfully"
+}
+```
+
+### Response 400 (Validation Error)
+```json
+{
+  "success": false,
+  "error": {
+    "code": "IMPORT_ERROR",
+    "message": "Feature missing 'name' in properties"
+  }
+}
+```
+
+**Comportamento:**
+- Se `route_id` for fornecido e existir, vincula a área à rota existente
+- Se `route_id` não for fornecido, tenta encontrar rota pelo nome (`properties.name`)
+- Se nenhuma rota for encontrada, cria uma nova rota automaticamente
+- Se já existir uma área com o mesmo `route_id` e `external_name`, atualiza a geometria
+
+## 4.5.2 Obter Todas as Áreas de Rotas em GeoJSON
+**GET** `/api/v1/routes/map/geo`
+
+> **🔒 ADMIN or DRIVER**: Administradores e motoristas podem visualizar áreas de rotas.
+
+### Headers
+```
+Authorization: Bearer {jwt_token}
+```
+
+### Query Parameters
+```
+?waste_type=RECYCLABLE    // string, optional - Filtrar por tipo de resíduo
+&route_id=1              // integer, optional - Filtrar por rota específica
+&active=true             // boolean, optional - Filtrar apenas áreas ativas
+```
+
+### Response 200
+```json
+{
+  "success": true,
+  "data": {
+    "geojson": {
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "type": "Feature",
+          "properties": {
+            "id": 1,
+            "route_id": 1,
+            "external_name": "Planalto 1",
+            "waste_type": "RECYCLABLE",
+            "stroke_color": "#0066CC",
+            "fill_color": "#0066CC",
+            "fill_opacity": 0.40,
+            "active": true
+          },
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [[
+              [-52.6988268, -26.2438868],
+              [-52.6990629, -26.2426551],
+              [-52.6994706, -26.2363807],
+              [-52.6988268, -26.2438868]
+            ]]
+          }
+        }
+      ]
+    }
+  }
+}
+```
+
+**Uso:**
+- Retorna um FeatureCollection GeoJSON padrão, pronto para ser renderizado em mapas
+- Pode ser usado diretamente com bibliotecas como Leaflet, Mapbox, Google Maps, etc.
+- Filtros opcionais permitem buscar áreas específicas
+
+## 4.5.3 Obter Áreas de uma Rota Específica
+**GET** `/api/v1/routes/{id}/map`
+
+> **🔒 ADMIN or DRIVER**: Administradores e motoristas podem visualizar áreas de rotas.
+
+### Headers
+```
+Authorization: Bearer {jwt_token}
+```
+
+### Path Parameters
+```
+id: integer  // ID da rota
+```
+
+### Response 200
+```json
+{
+  "success": true,
+  "data": {
+    "route": {
+      "id": 1,
+      "name": "Reciclável – Planalto 1",
+      "description": "Rota de coleta reciclável",
+      "collection_type": "RECYCLABLE"
+    },
+    "areas": [
+      {
+        "id": 1,
+        "external_name": "Planalto 1",
+        "waste_type": "RECYCLABLE",
+        "stroke_color": "#0066CC",
+        "fill_color": "#0066CC",
+        "fill_opacity": 0.40,
+        "active": true
+      }
+    ],
+    "geojson": {
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "type": "Feature",
+          "properties": {
+            "id": 1,
+            "route_id": 1,
+            "external_name": "Planalto 1",
+            "waste_type": "RECYCLABLE",
+            "stroke_color": "#0066CC",
+            "fill_color": "#0066CC",
+            "fill_opacity": 0.40,
+            "active": true
+          },
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [[
+              [-52.6988268, -26.2438868],
+              [-52.6990629, -26.2426551],
+              [-52.6994706, -26.2363807],
+              [-52.6988268, -26.2438868]
+            ]]
+          }
+        }
+      ]
+    }
+  }
+}
+```
+
+### Response 404 (Route Not Found)
+```json
+{
+  "success": false,
+  "error": {
+    "code": "ROUTE_NOT_FOUND",
+    "message": "Route with ID 999 not found"
+  }
+}
+```
+
+**Uso:**
+- Retorna informações da rota junto com suas áreas geográficas
+- Útil para visualizar todas as áreas de coleta de uma rota específica no mapa
+- O campo `geojson` contém o FeatureCollection pronto para renderização
+
+**Notas sobre GeoJSON:**
+- Formato padrão GeoJSON (RFC 7946)
+- Suporta apenas polígonos (Polygon) no momento
+- Coordenadas seguem formato `[longitude, latitude]` (WGS84)
+- Polígonos devem ser fechados (primeiro e último ponto iguais)
+
+---
+
 # 🔗 5. ROUTE ASSIGNMENTS (Escalas/Atribuições)
 
 > **💡 Conceito**: Uma ATRIBUIÇÃO é o vínculo DURADOURO entre uma rota, um motorista e um caminhão.  

@@ -187,6 +187,15 @@ docker-compose --profile admin up -d
 | POST | `/api/v1/routes/{id}/points` | Adicionar ponto à rota | ✅ Implementado |
 | PUT | `/api/v1/routes/{id}/points/reorder` | Reordenar pontos | ✅ Implementado |
 
+### Mapas de Rotas (GeoJSON)
+> **💡 Conceito**: Gestão de áreas geográficas (polígonos) para visualização de rotas em mapas
+
+| Método | Endpoint | Descrição | Status |
+|--------|----------|-----------|--------|
+| POST | `/api/v1/routes/map/import-geojson` | Importar áreas de rotas via GeoJSON | ✅ Implementado |
+| GET | `/api/v1/routes/map/geo` | Obter todas as áreas em formato GeoJSON | ✅ Implementado |
+| GET | `/api/v1/routes/{id}/map` | Obter áreas de uma rota específica | ✅ Implementado |
+
 ### Escalas (Assignments) - Cadastro Interligado
 > **💡 Conceito**: Vínculo duradouro entre rota, motorista e caminhão
 
@@ -395,6 +404,7 @@ OD46S_web_back/
 **Módulo de Rotas**
 - `routes` - Rotas de coleta (com periodicidade)
 - `route_collection_points` - Pontos de coleta em cada rota
+- `route_areas` - Áreas geográficas (polígonos GeoJSON) para visualização em mapas ✅
 
 **Módulo de Escalas**
 - `route_assignments` - Vínculo rota + motorista + caminhão (duradouro) ✅
@@ -417,7 +427,8 @@ users (base)
   └─→ drivers (herança)
 
 routes
-  └─→ route_collection_points (1:N)
+  ├─→ route_collection_points (1:N)
+  └─→ route_areas (1:N) ✅
 
 route_assignments (escala permanente) ✅ IMPLEMENTADO
   ├─→ routes (N:1)

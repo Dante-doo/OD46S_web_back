@@ -3,6 +3,7 @@ package utfpr.OD46S.backend.controllers;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -10,8 +11,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import utfpr.OD46S.backend.dtos.RouteCollectionPointDTO;
 import utfpr.OD46S.backend.dtos.RouteDTO;
+import utfpr.OD46S.backend.services.RouteAreaService;
 import utfpr.OD46S.backend.services.RouteService;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -23,6 +26,9 @@ public class RouteController {
 
     @Autowired
     private RouteService routeService;
+
+    @Autowired
+    private RouteAreaService routeAreaService;
 
     @Operation(summary = "Listar rotas")
     @GetMapping
@@ -81,6 +87,30 @@ public class RouteController {
     ) {
         Map<String, Object> response = routeService.reordenarPontos(id, reorderList);
         return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Obter áreas de uma rota específica",
+               description = "Retorna as áreas (GeoJSON) associadas a uma rota específica")
+    @GetMapping("/{id}/map")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('DRIVER')")
+    public ResponseEntity<Map<String, Object>> getRouteMap(@PathVariable Long id) {
+        try {
+            Map<String, Object> result = routeAreaService.getRouteMap(id);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("data", result);
+            
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("error", Map.of(
+                "code", "ROUTE_NOT_FOUND",
+                "message", e.getMessage()
+            ));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+        }
     }
 
     private Long getCurrentUserId() {

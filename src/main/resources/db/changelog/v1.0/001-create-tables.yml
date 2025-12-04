@@ -629,3 +629,76 @@ databaseChangeLog:
                   constraints:
                     nullable: false
 
+  # ==========================================
+  # CHANGESET 12: Create route_areas table
+  # Stores polygon geometries (GeoJSON) for route areas on maps
+  # ==========================================
+  - changeSet:
+      id: 012-create-route-areas-table
+      author: od46s-team
+      changes:
+        - createTable:
+            tableName: route_areas
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: route_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_route_areas_route
+                    references: routes(id)
+              - column:
+                  name: external_name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: waste_type
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: geometry_geojson
+                  type: JSONB
+                  constraints:
+                    nullable: false
+              - column:
+                  name: stroke_color
+                  type: VARCHAR(9)
+                  defaultValue: '#000000'
+              - column:
+                  name: fill_color
+                  type: VARCHAR(9)
+                  defaultValue: '#000000'
+              - column:
+                  name: fill_opacity
+                  type: DECIMAL(3,2)
+                  defaultValueNumeric: 0.40
+                  constraints:
+                    nullable: false
+              - column:
+                  name: active
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+

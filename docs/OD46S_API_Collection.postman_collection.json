@@ -1354,6 +1354,208 @@
               "variable": []
             }
           }
+        },
+        {
+          "name": "Importar Áreas de Rotas via GeoJSON",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code é 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Mapa foi importado com sucesso', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.have.property('total_features');",
+                  "    pm.expect(jsonData.data).to.have.property('routes_created');",
+                  "    pm.expect(jsonData.data).to.have.property('areas_created');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "default"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Importar áreas de rotas em formato GeoJSON (apenas ADMIN). Cria rotas automaticamente se não existirem.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/routes/map/import-geojson",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "routes",
+                "map",
+                "import-geojson"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"FeatureCollection\",\n  \"features\": [\n    {\n      \"type\": \"Feature\",\n      \"properties\": {\n        \"name\": \"Planalto 1\",\n        \"waste_type\": \"RECYCLABLE\",\n        \"route_id\": 1,\n        \"periodicity\": \"0 8 * * 1\",\n        \"stroke_color\": \"#0066CC\",\n        \"fill_color\": \"#0066CC\",\n        \"fill_opacity\": 0.40\n      },\n      \"geometry\": {\n        \"type\": \"Polygon\",\n        \"coordinates\": [[\n          [-52.6988268, -26.2438868],\n          [-52.6990629, -26.2426551],\n          [-52.6994706, -26.2363807],\n          [-52.6996288, -26.2335153],\n          [-52.7039069, -26.2336139],\n          [-52.7033866, -26.2416543],\n          [-52.7030862, -26.243935],\n          [-52.7030755, -26.2463502],\n          [-52.7012301, -26.2454746],\n          [-52.7004898, -26.2448299],\n          [-52.6991165, -26.2441948],\n          [-52.6988268, -26.2438868]\n        ]]\n      }\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Obter Todas as Áreas em GeoJSON",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code é 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Resposta contém GeoJSON', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.have.property('geojson');",
+                  "    pm.expect(jsonData.data.geojson).to.have.property('type', 'FeatureCollection');",
+                  "    pm.expect(jsonData.data.geojson).to.have.property('features');",
+                  "    pm.expect(jsonData.data.geojson.features).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Obter todas as áreas de rotas em formato GeoJSON, opcionalmente filtradas por tipo de resíduo, rota ou status ativo",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/routes/map/geo?waste_type=&route_id=&active=",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "routes",
+                "map",
+                "geo"
+              ],
+              "query": [
+                {
+                  "key": "waste_type",
+                  "value": "",
+                  "description": "Filtrar por tipo de resíduo (RECYCLABLE, RESIDENTIAL, COMMERCIAL, etc.)",
+                  "disabled": true
+                },
+                {
+                  "key": "route_id",
+                  "value": "",
+                  "description": "Filtrar por ID da rota",
+                  "disabled": true
+                },
+                {
+                  "key": "active",
+                  "value": "",
+                  "description": "Filtrar apenas áreas ativas (true|false)",
+                  "disabled": true
+                }
+              ],
+              "variable": []
+            }
+          }
+        },
+        {
+          "name": "Obter Áreas de uma Rota Específica",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code é 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Resposta contém dados da rota e áreas', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.have.property('route');",
+                  "    pm.expect(jsonData.data).to.have.property('areas');",
+                  "    pm.expect(jsonData.data).to.have.property('geojson');",
+                  "    pm.expect(jsonData.data.geojson).to.have.property('type', 'FeatureCollection');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Obter áreas geográficas (GeoJSON) de uma rota específica",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/routes/:routeId/map",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "routes",
+                ":routeId",
+                "map"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "routeId",
+                  "value": "1"
+                }
+              ]
+            }
+          }
         }
       ]
     },
