@@ -220,6 +220,56 @@ public class RouteService {
         return response;
     }
 
+    public Map<String, Object> atualizar(Long id, RouteDTO dto) {
+        Route route = routeRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Route not found"));
+
+        // Atualiza apenas os campos fornecidos (não nulos)
+        if (dto.getName() != null) {
+            route.setName(dto.getName());
+        }
+        if (dto.getDescription() != null) {
+            route.setDescription(dto.getDescription());
+        }
+        if (dto.getCollectionType() != null) {
+            route.setCollectionType(dto.getCollectionType());
+        }
+        if (dto.getPeriodicity() != null) {
+            route.setPeriodicity(dto.getPeriodicity());
+        }
+        if (dto.getPriority() != null) {
+            route.setPriority(dto.getPriority());
+        }
+        if (dto.getEstimatedTimeMinutes() != null) {
+            route.setEstimatedTimeMinutes(dto.getEstimatedTimeMinutes());
+        }
+        if (dto.getDistanceKm() != null) {
+            route.setDistanceKm(dto.getDistanceKm());
+        }
+        if (dto.getActive() != null) {
+            route.setActive(dto.getActive());
+        }
+        if (dto.getNotes() != null) {
+            route.setNotes(dto.getNotes());
+        }
+
+        // Salva a rota atualizada (o @PreUpdate atualizará o updatedAt automaticamente)
+        Route savedRoute = routeRepository.save(route);
+
+        // Retorna a rota atualizada
+        RouteDTO resultDTO = toDTOWithPoints(savedRoute);
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("route", resultDTO);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("data", data);
+        response.put("message", "Route updated successfully");
+
+        return response;
+    }
+
     public Map<String, Object> reordenarPontos(Long routeId, List<Map<String, Integer>> reorderList) {
         Route route = routeRepository.findById(routeId)
             .orElseThrow(() -> new RuntimeException("Route not found"));

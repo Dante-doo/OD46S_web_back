@@ -1169,6 +1169,78 @@
           }
         },
         {
+          "name": "Atualizar Rota",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code é 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Rota foi atualizada', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data).to.have.property('route');",
+                  "    pm.expect(jsonData.data.route).to.have.property('id');",
+                  "    pm.expect(jsonData.message).to.equal('Route updated successfully');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "default"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwtToken}}",
+                "type": "default"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "description": "Atualizar uma rota existente (apenas ADMIN). Você pode enviar apenas os campos que deseja atualizar.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/routes/:routeId",
+              "protocol": "",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "routes",
+                ":routeId"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "key": "routeId",
+                  "value": "1"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Rota Centro - Atualizada\",\n  \"description\": \"Nova descrição da rota\",\n  \"collection_type\": \"COMMERCIAL\",\n  \"periodicity\": \"0 8 * * 1,3,5\",\n  \"priority\": \"HIGH\",\n  \"estimated_time_minutes\": 120,\n  \"distance_km\": 15.5,\n  \"active\": true,\n  \"notes\": \"Notas atualizadas sobre a rota\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
           "name": "Adicionar Ponto à Rota",
           "event": [
             {

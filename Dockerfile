@@ -1,5 +1,5 @@
 # DOCKERFILE
-FROM openjdk:21-jdk-slim AS build
+FROM eclipse-temurin:21-jdk-jammy AS build
 
 # Metadados
 LABEL stage=builder
@@ -25,7 +25,7 @@ RUN ./mvnw clean package -DskipTests -B --no-transfer-progress -q
 # ==========================================
 # STAGE 2: Imagem final (PRODUÇÃO)
 # ==========================================
-FROM openjdk:21-jdk-slim
+FROM eclipse-temurin:21-jre-jammy
 
 # Metadados da aplicação
 LABEL maintainer="OD46S Team"
