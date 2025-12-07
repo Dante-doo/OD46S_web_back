@@ -272,16 +272,41 @@ public class GPSTrackingService {
     }
 
     @Transactional(readOnly = true)
-    public Map<String, Object> obterRastroGPS(Long executionId, LocalDateTime startTime, LocalDateTime endTime) {
+    public Map<String, Object> obterRastroGPS(Long executionId, LocalDateTime startTime, LocalDateTime endTime, String eventType) {
         // Verificar se execution existe
-        RouteExecution execution = executionRepository.findById(executionId)
+        executionRepository.findById(executionId)
                 .orElseThrow(() -> new RuntimeException("Execution not found"));
 
+        // Validar eventType se fornecido
+        if (eventType != null && !eventType.trim().isEmpty()) {
+            try {
+                GPSEventType.fromString(eventType);
+            } catch (IllegalArgumentException e) {
+                throw new RuntimeException("Invalid event_type: " + eventType + 
+                    ". Valid values: " + java.util.Arrays.toString(GPSEventType.values()));
+            }
+        }
+
         List<GPSRecord> records;
-        if (startTime != null && endTime != null) {
-            records = gpsRecordRepository.findByExecutionIdAndTimestampBetween(executionId, startTime, endTime);
+        
+        // Aplicar filtros combinados
+        if (eventType != null && !eventType.trim().isEmpty()) {
+            if (startTime != null && endTime != null) {
+                // Filtro por eventType e intervalo de tempo
+                records = gpsRecordRepository.findByExecutionIdAndEventTypeAndTimestampBetween(
+                    executionId, eventType, startTime, endTime);
+            } else {
+                // Filtro apenas por eventType
+                records = gpsRecordRepository.findByExecutionIdAndEventType(executionId, eventType);
+            }
         } else {
-            records = gpsRecordRepository.findByExecutionIdOrderByTimestamp(executionId);
+            if (startTime != null && endTime != null) {
+                // Filtro apenas por intervalo de tempo
+                records = gpsRecordRepository.findByExecutionIdAndTimestampBetween(executionId, startTime, endTime);
+            } else {
+                // Sem filtros, retorna todos
+                records = gpsRecordRepository.findByExecutionIdOrderByTimestamp(executionId);
+            }
         }
 
         List<GPSRecordDTO> dtos = records.stream()
@@ -307,6 +332,16 @@ public class GPSTrackingService {
                 );
             }
             statistics.put("total_distance_km", Math.round(totalDistance * 100.0) / 100.0);
+        }
+        
+        // Adicionar filtros aplicados nas estatísticas
+        if (eventType != null && !eventType.trim().isEmpty()) {
+            statistics.put("filtered_by_event_type", eventType);
+        }
+        if (startTime != null && endTime != null) {
+            statistics.put("filtered_by_time_range", true);
+            statistics.put("start_time", startTime);
+            statistics.put("end_time", endTime);
         }
 
         Map<String, Object> data = new HashMap<>();

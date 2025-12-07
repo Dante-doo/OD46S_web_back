@@ -11,6 +11,7 @@ import utfpr.OD46S.backend.dtos.RouteExecutionDTO;
 import utfpr.OD46S.backend.entitys.*;
 import utfpr.OD46S.backend.enums.ExecutionStatus;
 import utfpr.OD46S.backend.repositorys.*;
+import utfpr.OD46S.backend.utils.PeriodicityUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -137,6 +138,18 @@ public class ExecutionService {
         // Check if execution already exists for today
         if (executionRepository.existsByAssignmentIdAndDate(assignmentId, executionDate)) {
             throw new RuntimeException("Execution already exists for this assignment today");
+        }
+
+        // Validate periodicity: check if today is an allowed day for this route
+        String routePeriodicity = assignment.getRoute().getPeriodicity();
+        if (routePeriodicity != null && !routePeriodicity.trim().isEmpty()) {
+            boolean isTodayAllowed = PeriodicityUtils.isDateAllowed(routePeriodicity, executionDate);
+            if (!isTodayAllowed) {
+                // Get allowed days to show in error message
+                java.util.Set<java.time.DayOfWeek> allowedDays = PeriodicityUtils.getAllowedDaysOfWeek(routePeriodicity);
+                String allowedDaysStr = PeriodicityUtils.formatDaysOfWeek(allowedDays);
+                throw new RuntimeException("Esta rota só pode ser iniciada nos seguintes dias: " + allowedDaysStr + ". Hoje não é um dia permitido para esta rota.");
+            }
         }
 
         Integer initialKm = getIntegerFromMap(request, "initial_km");

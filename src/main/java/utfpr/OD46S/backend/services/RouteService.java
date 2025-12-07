@@ -145,24 +145,32 @@ public class RouteService {
         // Save route
         Route savedRoute = routeRepository.save(route);
 
-        // Save collection points if provided
-        if (dto.getCollectionPoints() != null && !dto.getCollectionPoints().isEmpty()) {
-            for (RouteCollectionPointDTO pointDTO : dto.getCollectionPoints()) {
-                RouteCollectionPoint point = new RouteCollectionPoint();
-                point.setRoute(savedRoute);
-                point.setSequenceOrder(pointDTO.getSequenceOrder());
-                point.setAddress(pointDTO.getAddress());
-                point.setLatitude(pointDTO.getLatitude());
-                point.setLongitude(pointDTO.getLongitude());
-                point.setWasteType(pointDTO.getWasteType());
-                point.setEstimatedCapacityKg(pointDTO.getEstimatedCapacityKg());
-                point.setCollectionFrequency(pointDTO.getCollectionFrequency());
-                point.setNotes(pointDTO.getNotes());
-                point.setActive(pointDTO.getActive() != null ? pointDTO.getActive() : true);
-                
-                savedRoute.addCollectionPoint(point);
+        // Save collection points if provided - apenas para rotas do tipo CONTAINER
+        if (dto.getCollectionType() == CollectionType.CONTAINER) {
+            if (dto.getCollectionPoints() != null && !dto.getCollectionPoints().isEmpty()) {
+                for (RouteCollectionPointDTO pointDTO : dto.getCollectionPoints()) {
+                    RouteCollectionPoint point = new RouteCollectionPoint();
+                    point.setRoute(savedRoute);
+                    point.setSequenceOrder(pointDTO.getSequenceOrder());
+                    point.setAddress(pointDTO.getAddress());
+                    point.setLatitude(pointDTO.getLatitude());
+                    point.setLongitude(pointDTO.getLongitude());
+                    point.setWasteType(pointDTO.getWasteType());
+                    point.setEstimatedCapacityKg(pointDTO.getEstimatedCapacityKg());
+                    point.setCollectionFrequency(pointDTO.getCollectionFrequency());
+                    point.setNotes(pointDTO.getNotes());
+                    point.setActive(pointDTO.getActive() != null ? pointDTO.getActive() : true);
+                    
+                    savedRoute.addCollectionPoint(point);
+                }
+                savedRoute = routeRepository.save(savedRoute);
             }
-            savedRoute = routeRepository.save(savedRoute);
+        } else {
+            // Para rotas que não são CONTAINER, não devem ter pontos de coleta
+            // O motorista deve passar em todas as ruas do bairro
+            if (dto.getCollectionPoints() != null && !dto.getCollectionPoints().isEmpty()) {
+                // Ignora pontos fornecidos para rotas não-CONTAINER
+            }
         }
 
         RouteDTO resultDTO = toDTOWithPoints(savedRoute);
@@ -181,6 +189,11 @@ public class RouteService {
     public Map<String, Object> adicionarPonto(Long routeId, RouteCollectionPointDTO pointDTO) {
         Route route = routeRepository.findById(routeId)
             .orElseThrow(() -> new RuntimeException("Route not found"));
+
+        // Verifica se a rota é do tipo CONTAINER
+        if (route.getCollectionType() != CollectionType.CONTAINER) {
+            throw new RuntimeException("Collection points can only be added to CONTAINER type routes");
+        }
 
         // Get next sequence order if not provided
         Integer sequenceOrder = pointDTO.getSequenceOrder();
@@ -216,6 +229,34 @@ public class RouteService {
         response.put("success", true);
         response.put("data", data);
         response.put("message", "Collection point added successfully");
+
+        return response;
+    }
+
+    public Map<String, Object> desabilitarPonto(Long routeId, Long pointId, Boolean active) {
+        Route route = routeRepository.findById(routeId)
+            .orElseThrow(() -> new RuntimeException("Route not found"));
+
+        RouteCollectionPoint point = pointRepository.findById(pointId)
+            .orElseThrow(() -> new RuntimeException("Collection point not found"));
+
+        // Verifica se o ponto pertence à rota
+        if (!point.getRoute().getId().equals(routeId)) {
+            throw new RuntimeException("Collection point does not belong to this route");
+        }
+
+        // Atualiza o status ativo/inativo
+        point.setActive(active != null ? active : false);
+        RouteCollectionPoint savedPoint = pointRepository.save(point);
+        RouteCollectionPointDTO resultDTO = toPointDTO(savedPoint);
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("point", resultDTO);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("data", data);
+        response.put("message", active ? "Collection point enabled successfully" : "Collection point disabled successfully");
 
         return response;
     }

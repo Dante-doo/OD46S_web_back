@@ -99,14 +99,16 @@ public class GPSTrackingController {
     @PreAuthorize("hasAnyRole('ADMIN', 'DRIVER')")
     @Operation(
             summary = "Obter rastro GPS",
-            description = "Retorna o rastro completo de GPS de uma execução, com estatísticas de distância e pontos"
+            description = "Retorna o rastro completo de GPS de uma execução, com estatísticas de distância e pontos. " +
+                         "Pode filtrar por eventType (ex: NORMAL, POINT_COLLECTED, START, END, etc.) e por intervalo de tempo."
     )
     public ResponseEntity<?> obterRastroGPS(
             @PathVariable Long executionId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start_time,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end_time) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end_time,
+            @RequestParam(required = false) String event_type) {
         try {
-            Map<String, Object> response = gpsTrackingService.obterRastroGPS(executionId, start_time, end_time);
+            Map<String, Object> response = gpsTrackingService.obterRastroGPS(executionId, start_time, end_time, event_type);
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             HttpStatus status = HttpStatus.NOT_FOUND;

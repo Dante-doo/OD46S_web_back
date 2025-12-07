@@ -5,6 +5,7 @@ public enum CollectionType {
     COMMERCIAL,
     HOSPITAL,
     SELECTIVE,
-    RECYCLABLE
+    RECYCLABLE,
+    CONTAINER
 }
 
