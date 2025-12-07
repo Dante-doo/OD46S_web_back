@@ -84,32 +84,53 @@ public class ExecutionService {
     }
 
     @Transactional
-    public Map<String, Object> iniciarExecution(Map<String, Object> request, String driverEmail) {
-        // Get authenticated driver
-        Usuario user = usuarioRepository.findByEmail(driverEmail)
+    public Map<String, Object> iniciarExecution(Map<String, Object> request, String userEmail, String userRole) {
+        // Get authenticated user
+        Usuario user = usuarioRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        Motorista driver = motoristaRepository.findById(user.getId())
-                .orElseThrow(() -> new RuntimeException("Driver not found"));
+        // Determine if user is ADMIN or DRIVER
+        boolean isAdmin = "ADMIN".equals(userRole);
+        boolean isDriver = "DRIVER".equals(userRole);
 
-        // Check if driver has an active execution already
-        executionRepository.findCurrentExecutionByDriverId(driver.getId())
-                .ifPresent(e -> {
-                    throw new RuntimeException("Driver already has an active execution");
-                });
+        if (!isAdmin && !isDriver) {
+            throw new RuntimeException("Only ADMIN or DRIVER can start executions");
+        }
+
+        // If DRIVER, verify it's a valid driver
+        if (isDriver) {
+            Motorista driver = motoristaRepository.findById(user.getId())
+                    .orElseThrow(() -> new RuntimeException("Driver not found"));
+
+            // Check if driver has an active execution already
+            executionRepository.findCurrentExecutionByDriverId(driver.getId())
+                    .ifPresent(e -> {
+                        throw new RuntimeException("Driver already has an active execution");
+                    });
+        } else {
+            // If ADMIN, check if admin has an active execution already
+            executionRepository.findCurrentExecutionByUserId(user.getId())
+                    .ifPresent(e -> {
+                        throw new RuntimeException("User already has an active execution");
+                    });
+        }
 
         Long assignmentId = getLongFromMap(request, "assignment_id");
         if (assignmentId == null) {
             throw new RuntimeException("assignment_id is required");
         }
 
-        // Verify assignment exists and belongs to driver
+        // Verify assignment exists
         RouteAssignment assignment = assignmentRepository.findByIdWithDetails(assignmentId)
                 .orElseThrow(() -> new RuntimeException("Assignment not found"));
 
-        if (!assignment.getDriver().getId().equals(driver.getId())) {
-            throw new RuntimeException("Assignment does not belong to this driver");
+        // If DRIVER, verify assignment belongs to driver
+        if (isDriver) {
+            if (!assignment.getDriver().getId().equals(user.getId())) {
+                throw new RuntimeException("Assignment does not belong to this driver");
+            }
         }
+        // If ADMIN, allow any assignment (no validation needed)
 
         LocalDate executionDate = LocalDate.now();
 
@@ -127,6 +148,10 @@ public class ExecutionService {
         execution.setInitialKm(initialKm);
         execution.setInitialNotes(initialNotes);
         execution.setStatus(ExecutionStatus.IN_PROGRESS);
+        
+        // Set executor information (who is actually executing)
+        execution.setExecutorId(user.getId());
+        execution.setExecutorType(userRole);
 
         executionRepository.save(execution);
 
@@ -243,14 +268,12 @@ public class ExecutionService {
     }
 
     @Transactional(readOnly = true)
-    public Map<String, Object> obterExecutionAtualDoMotorista(String driverEmail) {
-        Usuario user = usuarioRepository.findByEmail(driverEmail)
+    public Map<String, Object> obterExecutionAtualDoUsuario(String userEmail) {
+        Usuario user = usuarioRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        Motorista driver = motoristaRepository.findById(user.getId())
-                .orElseThrow(() -> new RuntimeException("Driver not found"));
-
-        RouteExecution execution = executionRepository.findCurrentExecutionByDriverId(driver.getId())
+        // Busca execução atual por executor_id (funciona para ADMIN e DRIVER)
+        RouteExecution execution = executionRepository.findCurrentExecutionByUserId(user.getId())
                 .orElse(null);
 
         if (execution == null) {
@@ -258,7 +281,7 @@ public class ExecutionService {
             response.put("success", false);
             response.put("error", Map.of(
                     "code", "NO_ACTIVE_EXECUTION",
-                    "message", "No active execution found for this driver"
+                    "message", "No active execution found for this user"
             ));
             return response;
         }
@@ -294,6 +317,8 @@ public class ExecutionService {
         dto.setProblemsFound(execution.getProblemsFound());
         dto.setCancellationReason(execution.getCancellationReason());
         dto.setDriverRating(execution.getDriverRating());
+        dto.setExecutorId(execution.getExecutorId());
+        dto.setExecutorType(execution.getExecutorType());
         dto.setCreatedAt(execution.getCreatedAt());
 
         // Assignment details

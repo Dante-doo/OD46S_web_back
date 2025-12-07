@@ -8,6 +8,7 @@ import utfpr.OD46S.backend.dtos.GPSRecordDTO;
 import utfpr.OD46S.backend.entitys.GPSRecord;
 import utfpr.OD46S.backend.entitys.RouteExecution;
 import utfpr.OD46S.backend.enums.ExecutionStatus;
+import utfpr.OD46S.backend.enums.GPSEventType;
 import utfpr.OD46S.backend.repositorys.GPSRecordRepository;
 import utfpr.OD46S.backend.repositorys.RouteExecutionRepository;
 
@@ -73,11 +74,21 @@ public class GPSTrackingService {
         }
 
         if (request.containsKey("event_type")) {
-            String eventType = (String) request.get("event_type");
-            if (eventType != null && !eventType.isEmpty()) {
-                gpsRecord.setEventType(eventType);
+            String eventTypeStr = (String) request.get("event_type");
+            if (eventTypeStr != null && !eventTypeStr.trim().isEmpty()) {
+                // Valida se é um valor válido do enum
+                GPSEventType eventType = GPSEventType.fromString(eventTypeStr);
+                if (eventType == null) {
+                    throw new RuntimeException("Invalid event_type: " + eventTypeStr + 
+                        ". Valid values: " + java.util.Arrays.toString(GPSEventType.values()));
+                }
+                
+                gpsRecord.setEventType(eventType.getApiValue());
+                
                 // Se não for NORMAL/START/END, provavelmente é manual
-                if (!"NORMAL".equals(eventType) && !"START".equals(eventType) && !"END".equals(eventType)) {
+                if (eventType != GPSEventType.NORMAL && 
+                    eventType != GPSEventType.START && 
+                    eventType != GPSEventType.END) {
                     gpsRecord.setIsAutomatic(false);
                 }
             }
@@ -232,9 +243,15 @@ public class GPSTrackingService {
             }
 
             if (request.containsKey("event_type")) {
-                String eventType = (String) request.get("event_type");
-                if (eventType != null && !eventType.isEmpty()) {
-                    gpsRecord.setEventType(eventType);
+                String eventTypeStr = (String) request.get("event_type");
+                if (eventTypeStr != null && !eventTypeStr.trim().isEmpty()) {
+                    // Valida se é um valor válido do enum
+                    GPSEventType eventType = GPSEventType.fromString(eventTypeStr);
+                    if (eventType == null) {
+                        throw new RuntimeException("Invalid event_type: " + eventTypeStr + 
+                            ". Valid values: " + java.util.Arrays.toString(GPSEventType.values()));
+                    }
+                    gpsRecord.setEventType(eventType.getApiValue());
                 }
             }
 

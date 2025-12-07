@@ -1,0 +1,44 @@
+databaseChangeLog:
+  
+  # ==========================================
+  # CHANGESET: Add executor fields to route_executions
+  # ==========================================
+  # Adiciona campos para rastrear quem executou a rota (ADMIN ou DRIVER)
+  # Isso permite que ADMIN execute rotas de outros motoristas
+  - changeSet:
+      id: 004-add-executor-fields-to-route-executions
+      author: od46s-team
+      changes:
+        - addColumn:
+            tableName: route_executions
+            columns:
+              - column:
+                  name: executor_id
+                  type: BIGINT
+                  constraints:
+                    nullable: true
+                    # Permite NULL temporariamente para dados existentes
+              - column:
+                  name: executor_type
+                  type: VARCHAR(10)
+                  constraints:
+                    nullable: true
+                    # Permite NULL temporariamente para dados existentes
+        # Preenche executor_id e executor_type para execuções existentes
+        # Assumindo que o executor é o driver do assignment
+        - sql:
+            sql: |
+              UPDATE route_executions re
+              SET executor_id = (
+                SELECT ra.driver_id 
+                FROM route_assignments ra
+                WHERE ra.id = re.assignment_id
+              ),
+              executor_type = 'DRIVER'
+              WHERE executor_id IS NULL
+        # Agora torna executor_id obrigatório
+        - addNotNullConstraint:
+            tableName: route_executions
+            columnName: executor_id
+            columnDataType: BIGINT
+

@@ -51,6 +51,16 @@ public interface RouteExecutionRepository extends JpaRepository<RouteExecution, 
             "ORDER BY re.executionDate DESC, re.startTime DESC")
     Optional<RouteExecution> findCurrentExecutionByDriverId(@Param("driverId") Long driverId);
 
+    @Query("SELECT re FROM RouteExecution re " +
+            "JOIN FETCH re.assignment a " +
+            "JOIN FETCH a.route r " +
+            "JOIN FETCH a.driver d " +
+            "JOIN FETCH a.vehicle v " +
+            "WHERE re.executorId = :userId " +
+            "AND re.status = 'IN_PROGRESS' " +
+            "ORDER BY re.executionDate DESC, re.startTime DESC")
+    Optional<RouteExecution> findCurrentExecutionByUserId(@Param("userId") Long userId);
+
     Optional<RouteExecution> findByAssignmentIdAndExecutionDate(Long assignmentId, LocalDate executionDate);
 
     List<RouteExecution> findByAssignmentId(Long assignmentId);

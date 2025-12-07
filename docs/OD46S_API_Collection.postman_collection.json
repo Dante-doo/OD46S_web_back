@@ -1979,7 +1979,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "executions", "start"]
             },
-            "description": "Motorista inicia uma nova execução de coleta. Apenas DRIVER.\n\nValidações:\n- Motorista só pode ter uma execução ativa por vez\n- Assignment deve pertencer ao motorista\n- Não pode haver outra execução no mesmo dia para o mesmo assignment"
+            "description": "Inicia uma nova execução de coleta. ADMIN ou DRIVER.\n\nValidações:\n- Usuário só pode ter uma execução ativa por vez\n- Se DRIVER: Assignment deve pertencer ao motorista\n- Se ADMIN: Pode iniciar qualquer assignment\n- Não pode haver outra execução no mesmo dia para o mesmo assignment\n\nO sistema registra executor_id e executor_type para rastrear quem executou a rota."
           },
           "response": []
         },
@@ -2070,7 +2070,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["api", "v1", "executions", "my-current"]
             },
-            "description": "Retorna a execução de coleta em andamento do motorista autenticado. Apenas DRIVER.\n\nUso: O motorista verifica se tem uma coleta em andamento ao abrir o app."
+            "description": "Retorna a execução de coleta em andamento do usuário autenticado (ADMIN ou DRIVER).\n\nRetorna a execução que o usuário iniciou como executor (executor_id).\n\nUso: O usuário verifica se tem uma coleta em andamento ao abrir o app."
           },
           "response": []
         }
