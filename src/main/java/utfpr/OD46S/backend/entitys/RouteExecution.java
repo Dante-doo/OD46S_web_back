@@ -8,9 +8,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "route_executions", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"assignment_id", "execution_date"})
-})
+@Table(name = "route_executions")
+// Removida constraint única para permitir múltiplas execuções na mesma data
+// (ex: uma cancelada e uma nova, preservando o histórico)
 public class RouteExecution {
 
     @Id

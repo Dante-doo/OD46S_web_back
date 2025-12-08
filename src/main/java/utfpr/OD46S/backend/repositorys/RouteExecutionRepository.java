@@ -68,6 +68,20 @@ public interface RouteExecutionRepository extends JpaRepository<RouteExecution, 
     @Query("SELECT COUNT(re) > 0 FROM RouteExecution re WHERE re.assignment.id = :assignmentId AND re.executionDate = :date")
     boolean existsByAssignmentIdAndDate(@Param("assignmentId") Long assignmentId, @Param("date") LocalDate date);
 
+    /**
+     * Verifica se existe uma execução não-cancelada para uma atribuição em uma data específica.
+     * Permite iniciar novamente se a execução anterior foi cancelada.
+     * 
+     * @param assignmentId ID da atribuição
+     * @param date Data da execução
+     * @return true se existe uma execução com status IN_PROGRESS ou COMPLETED, false caso contrário
+     */
+    @Query("SELECT COUNT(re) > 0 FROM RouteExecution re " +
+            "WHERE re.assignment.id = :assignmentId " +
+            "AND re.executionDate = :date " +
+            "AND re.status IN ('IN_PROGRESS', 'COMPLETED')")
+    boolean existsNonCancelledByAssignmentIdAndDate(@Param("assignmentId") Long assignmentId, @Param("date") LocalDate date);
+
     @Query("SELECT COUNT(re) > 0 FROM RouteExecution re JOIN re.assignment a WHERE a.driver.id = :driverId")
     boolean existsByDriverId(@Param("driverId") Long driverId);
 }

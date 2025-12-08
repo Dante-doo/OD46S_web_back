@@ -96,13 +96,18 @@ public class AuthService {
             if (administratorRepository.findById(user.getId()).isPresent()) {
                 role = "ADMIN";
                 adminId = user.getId();
+                System.out.println("[AuthService.refreshToken] Usuário identificado como ADMIN - userId: " + user.getId() + ", email: " + user.getEmail());
             } else if (motoristaRepository.findById(user.getId()).isPresent()) {
                 role = "DRIVER";
                 driverId = user.getId();
+                System.out.println("[AuthService.refreshToken] Usuário identificado como DRIVER - userId: " + user.getId() + ", email: " + user.getEmail());
+            } else {
+                System.out.println("[AuthService.refreshToken] Usuário identificado como USER - userId: " + user.getId() + ", email: " + user.getEmail());
             }
 
             // Gerar novo token
             String newToken = jwtUtil.generateToken(user.getEmail(), role);
+            System.out.println("[AuthService.refreshToken] Novo token gerado com role: " + role);
             return new AuthResponse(newToken, user.getEmail(), user.getName(), role, user.getId(), driverId, adminId);
 
         } catch (Exception e) {

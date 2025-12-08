@@ -16,6 +16,7 @@ import utfpr.OD46S.backend.utils.PeriodicityUtils;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -95,7 +96,7 @@ public class ExecutionService {
         boolean isDriver = "DRIVER".equals(userRole);
 
         if (!isAdmin && !isDriver) {
-            throw new RuntimeException("Only ADMIN or DRIVER can start executions");
+            throw new RuntimeException("Apenas ADMIN ou MOTORISTA podem iniciar execuções");
         }
 
         // If DRIVER, verify it's a valid driver
@@ -106,41 +107,46 @@ public class ExecutionService {
             // Check if driver has an active execution already
             executionRepository.findCurrentExecutionByDriverId(driver.getId())
                     .ifPresent(e -> {
-                        throw new RuntimeException("Driver already has an active execution");
+                        throw new RuntimeException("O motorista já possui uma execução em andamento");
                     });
         } else {
             // If ADMIN, check if admin has an active execution already
             executionRepository.findCurrentExecutionByUserId(user.getId())
                     .ifPresent(e -> {
-                        throw new RuntimeException("User already has an active execution");
+                        throw new RuntimeException("Você já possui uma execução em andamento");
                     });
         }
 
         Long assignmentId = getLongFromMap(request, "assignment_id");
         if (assignmentId == null) {
-            throw new RuntimeException("assignment_id is required");
+            throw new RuntimeException("O ID da atribuição é obrigatório");
         }
 
         // Verify assignment exists
         RouteAssignment assignment = assignmentRepository.findByIdWithDetails(assignmentId)
-                .orElseThrow(() -> new RuntimeException("Assignment not found"));
+                .orElseThrow(() -> new RuntimeException("Atribuição não encontrada"));
 
         // If DRIVER, verify assignment belongs to driver
         if (isDriver) {
             if (!assignment.getDriver().getId().equals(user.getId())) {
-                throw new RuntimeException("Assignment does not belong to this driver");
+                throw new RuntimeException("Esta rota não pertence a este motorista");
             }
         }
         // If ADMIN, allow any assignment (no validation needed)
 
-        LocalDate executionDate = LocalDate.now();
+        // Usa UTC para garantir consistência independente do timezone do servidor
+        // Isso evita que rotas sejam iniciadas em dias errados devido a diferenças de timezone
+        LocalDate executionDate = LocalDate.now(ZoneOffset.UTC);
 
-        // Check if execution already exists for today
-        if (executionRepository.existsByAssignmentIdAndDate(assignmentId, executionDate)) {
-            throw new RuntimeException("Execution already exists for this assignment today");
+        // Check if a non-cancelled execution already exists for today
+        // Permite iniciar novamente se a execução anterior foi cancelada (mantém o histórico)
+        if (executionRepository.existsNonCancelledByAssignmentIdAndDate(assignmentId, executionDate)) {
+            throw new RuntimeException("Esta rota já foi executada hoje. Não é possível iniciar uma nova execução no mesmo dia.");
         }
 
         // Validate periodicity: check if today is an allowed day for this route
+        // IMPORTANTE: A validação usa UTC para garantir que a data seja consistente
+        // independente do timezone do servidor ou do cliente
         String routePeriodicity = assignment.getRoute().getPeriodicity();
         if (routePeriodicity != null && !routePeriodicity.trim().isEmpty()) {
             boolean isTodayAllowed = PeriodicityUtils.isDateAllowed(routePeriodicity, executionDate);

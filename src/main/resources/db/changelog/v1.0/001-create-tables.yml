@@ -702,3 +702,15 @@ databaseChangeLog:
                   constraints:
                     nullable: false
 
+
+  # ==========================================
+  # CHANGESET 13: Remove unique constraint from route_executions to allow multiple executions per day
+  # (e.g., one cancelled and one new, preserving history)
+  # ==========================================
+  - changeSet:
+      id: 013-remove-unique-constraint-route-executions
+      author: od46s-team
+      changes:
+        - dropUniqueConstraint:
+            tableName: route_executions
+            constraintName: uk_assignment_execution_date
