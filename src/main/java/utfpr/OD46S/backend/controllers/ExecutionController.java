@@ -78,17 +78,21 @@ public class ExecutionController {
     }
 
     @PostMapping("/start")
-    @PreAuthorize("hasRole('DRIVER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DRIVER')")
     @Operation(
             summary = "Iniciar coleta",
-            description = "Motorista inicia uma nova execução de coleta. Apenas DRIVER."
+            description = "Inicia uma nova execução de coleta. ADMIN pode iniciar qualquer assignment, DRIVER apenas seus próprios."
     )
     public ResponseEntity<Map<String, Object>> iniciarExecution(
             @RequestBody Map<String, Object> request,
             Authentication authentication) {
         try {
-            String driverEmail = authentication.getName();
-            Map<String, Object> response = executionService.iniciarExecution(request, driverEmail);
+            String userEmail = authentication.getName();
+            String userRole = authentication.getAuthorities().stream()
+                    .findFirst()
+                    .map(a -> a.getAuthority().replace("ROLE_", ""))
+                    .orElse("USER");
+            Map<String, Object> response = executionService.iniciarExecution(request, userEmail, userRole);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (RuntimeException e) {
             HttpStatus status = HttpStatus.BAD_REQUEST;
@@ -184,14 +188,14 @@ public class ExecutionController {
     }
 
     @GetMapping("/my-current")
-    @PreAuthorize("hasRole('DRIVER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DRIVER')")
     @Operation(
             summary = "Obter coleta em andamento",
-            description = "Retorna a execução de coleta em andamento do motorista autenticado. Apenas DRIVER."
+            description = "Retorna a execução de coleta em andamento do usuário autenticado (ADMIN ou DRIVER). Retorna a execução que o usuário iniciou como executor."
     )
     public ResponseEntity<Map<String, Object>> obterMinhaColetaAtual(Authentication authentication) {
-        String driverEmail = authentication.getName();
-        Map<String, Object> response = executionService.obterExecutionAtualDoMotorista(driverEmail);
+        String userEmail = authentication.getName();
+        Map<String, Object> response = executionService.obterExecutionAtualDoUsuario(userEmail);
 
         if (Boolean.FALSE.equals(response.get("success"))) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);

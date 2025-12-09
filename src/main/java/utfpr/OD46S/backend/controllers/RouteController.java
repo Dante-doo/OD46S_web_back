@@ -67,6 +67,37 @@ public class RouteController {
         return ResponseEntity.status(201).body(response);
     }
 
+    @Operation(summary = "Atualizar rota")
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Object>> atualizar(
+        @PathVariable Long id,
+        @RequestBody RouteDTO dto
+    ) {
+        try {
+            Map<String, Object> response = routeService.atualizar(id, dto);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            
+            HttpStatus status = HttpStatus.BAD_REQUEST;
+            String errorCode = "UPDATE_ERROR";
+            
+            if (e.getMessage().contains("not found") || e.getMessage().contains("não encontrado")) {
+                status = HttpStatus.NOT_FOUND;
+                errorCode = "ROUTE_NOT_FOUND";
+            }
+            
+            errorResponse.put("error", Map.of(
+                "code", errorCode,
+                "message", e.getMessage()
+            ));
+            
+            return ResponseEntity.status(status).body(errorResponse);
+        }
+    }
+
     @Operation(summary = "Adicionar ponto à rota")
     @PostMapping("/{id}/points")
     @PreAuthorize("hasRole('ADMIN')")
@@ -87,6 +118,28 @@ public class RouteController {
     ) {
         Map<String, Object> response = routeService.reordenarPontos(id, reorderList);
         return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "Desabilitar/Habilitar ponto de coleta")
+    @PutMapping("/{id}/points/{pointId}/toggle")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Object>> desabilitarPonto(
+        @PathVariable Long id,
+        @PathVariable Long pointId,
+        @RequestParam(required = false, defaultValue = "false") Boolean active
+    ) {
+        try {
+            Map<String, Object> response = routeService.desabilitarPonto(id, pointId, active);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("error", Map.of(
+                "code", "UPDATE_ERROR",
+                "message", e.getMessage()
+            ));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        }
     }
 
     @Operation(summary = "Obter áreas de uma rota específica",

@@ -56,13 +56,16 @@ class VeiculoControllerTest {
         when(veiculoService.listarTodos()).thenReturn(veiculos);
 
         // When
-        ResponseEntity<List<VeiculoDTO>> response = veiculoController.listar();
+        ResponseEntity<?> response = veiculoController.listar(null, null, null, null, null, null, null);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals(1, response.getBody().size());
-        assertEquals("ABC1234", response.getBody().get(0).getLicensePlate());
+        assertTrue(response.getBody() instanceof List);
+        @SuppressWarnings("unchecked")
+        List<VeiculoDTO> body = (List<VeiculoDTO>) response.getBody();
+        assertEquals(1, body.size());
+        assertEquals("ABC1234", body.get(0).getLicensePlate());
         
         verify(veiculoService, times(1)).listarTodos();
     }
@@ -73,12 +76,15 @@ class VeiculoControllerTest {
         when(veiculoService.listarTodos()).thenReturn(Arrays.asList());
 
         // When
-        ResponseEntity<List<VeiculoDTO>> response = veiculoController.listar();
+        ResponseEntity<?> response = veiculoController.listar(null, null, null, null, null, null, null);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertTrue(response.getBody().isEmpty());
+        assertTrue(response.getBody() instanceof List);
+        @SuppressWarnings("unchecked")
+        List<VeiculoDTO> body = (List<VeiculoDTO>) response.getBody();
+        assertTrue(body.isEmpty());
         
         verify(veiculoService, times(1)).listarTodos();
     }

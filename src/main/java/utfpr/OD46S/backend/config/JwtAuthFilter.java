@@ -50,9 +50,15 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     String email = jwtUtils.getEmailFromToken(token);
                     String role = jwtUtils.getRoleFromToken(token);
                     
+                    // Log para debug
+                    System.out.println("[JwtAuthFilter] Token válido - Email: " + email + ", Role: " + role);
+                    
                     List<SimpleGrantedAuthority> authorities = role != null 
                         ? Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role))
                         : Collections.emptyList();
+                    
+                    System.out.println("[JwtAuthFilter] Authorities: " + authorities);
+                    System.out.println("[JwtAuthFilter] Path: " + path);
                     
                     UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                             new User(email, "", authorities),
@@ -61,11 +67,19 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     );
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authentication);
+                    
+                    System.out.println("[JwtAuthFilter] Autenticação configurada no SecurityContext");
+                } else {
+                    System.out.println("[JwtAuthFilter] Token inválido ou expirado");
                 }
             } catch (Exception e) {
                 // Se houver erro ao processar token, apenas continua sem autenticação
                 // O Spring Security vai retornar 401 se a rota exigir autenticação
+                System.out.println("[JwtAuthFilter] Erro ao processar token: " + e.getMessage());
+                e.printStackTrace();
             }
+        } else {
+            System.out.println("[JwtAuthFilter] Sem header Authorization ou não começa com 'Bearer '");
         }
 
         filterChain.doFilter(request, response);

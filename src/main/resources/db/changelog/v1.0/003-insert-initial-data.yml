@@ -1470,1131 +1470,17 @@ databaseChangeLog:
                   value: 1
 
   # ==========================================
-  # CHANGESET 15: Insert collection points for all routes
+  # CHANGESET 15: Insert collection points ONLY for CONTAINER routes
+  # Apenas rotas do tipo CONTAINER têm pontos de coleta
+  # As demais rotas (bairro todo) o motorista deve passar em todas as ruas
   # ==========================================
   - changeSet:
-      id: 015-insert-collection-points
+      id: 015-insert-collection-points-container-only
       author: od46s-team
       changes:
-        - insert:
-            tableName: route_collection_points
-            columns:
-              - column:
-                  name: id
-                  value: 1
-              - column:
-                  name: route_id
-                  value: 1
-              - column:
-                  name: sequence_order
-                  value: 1
-              - column:
-                  name: address
-                  value: "Planalto 1"
-              - column:
-                  name: latitude
-                  value: -26.2438868
-              - column:
-                  name: longitude
-                  value: -52.6988268
-              - column:
-                  name: waste_type
-                  value: "RECYCLABLE"
-              - column:
-                  name: active
-                  valueBoolean: true
-        - insert:
-            tableName: route_collection_points
-            columns:
-              - column:
-                  name: id
-                  value: 2
-              - column:
-                  name: route_id
-                  value: 2
-              - column:
-                  name: sequence_order
-                  value: 1
-              - column:
-                  name: address
-                  value: "Planalto 2"
-              - column:
-                  name: latitude
-                  value: -26.243935
-              - column:
-                  name: longitude
-                  value: -52.7030862
-              - column:
-                  name: waste_type
-                  value: "RECYCLABLE"
-              - column:
-                  name: active
-                  valueBoolean: true
-        - insert:
-            tableName: route_collection_points
-            columns:
-              - column:
-                  name: id
-                  value: 3
-              - column:
-                  name: route_id
-                  value: 3
-              - column:
-                  name: sequence_order
-                  value: 1
-              - column:
-                  name: address
-                  value: "Bela Vista"
-              - column:
-                  name: latitude
-                  value: -26.2376422
-              - column:
-                  name: longitude
-                  value: -52.6921782
-              - column:
-                  name: waste_type
-                  value: "RECYCLABLE"
-              - column:
-                  name: active
-                  valueBoolean: true
-        - insert:
-            tableName: route_collection_points
-            columns:
-              - column:
-                  name: id
-                  value: 4
-              - column:
-                  name: route_id
-                  value: 4
-              - column:
-                  name: sequence_order
-                  value: 1
-              - column:
-                  name: address
-                  value: "Dal' Ross"
-              - column:
-                  name: latitude
-                  value: -26.2469584
-              - column:
-                  name: longitude
-                  value: -52.703785
-              - column:
-                  name: waste_type
-                  value: "RECYCLABLE"
-              - column:
-                  name: active
-                  valueBoolean: true
-        - insert:
-            tableName: route_collection_points
-            columns:
-              - column:
-                  name: id
-                  value: 5
-              - column:
-                  name: route_id
-                  value: 5
-              - column:
-                  name: sequence_order
-                  value: 1
-              - column:
-                  name: address
-                  value: "Menino Deus"
-              - column:
-                  name: latitude
-                  value: -26.2366498
-              - column:
-                  name: longitude
-                  value: -52.6812636
-              - column:
-                  name: waste_type
-                  value: "RECYCLABLE"
-              - column:
-                  name: active
-                  valueBoolean: true
-        - insert:
-            tableName: route_collection_points
-            columns:
-              - column:
-                  name: id
-                  value: 6
-              - column:
-                  name: route_id
-                  value: 6
-              - column:
-                  name: sequence_order
-                  value: 1
-              - column:
-                  name: address
-                  value: "Amadori"
-              - column:
-                  name: latitude
-                  value: -26.2310568
-              - column:
-                  name: longitude
-                  value: -52.68116
-              - column:
-                  name: waste_type
-                  value: "RECYCLABLE"
-              - column:
-                  name: active
-                  valueBoolean: true
-        - insert:
-            tableName: route_collection_points
-            columns:
-              - column:
-                  name: id
-                  value: 7
-              - column:
-                  name: route_id
-                  value: 7
-              - column:
-                  name: sequence_order
-                  value: 1
-              - column:
-                  name: address
-                  value: "Jardim Primavera"
-              - column:
-                  name: latitude
-                  value: -26.2324347
-              - column:
-                  name: longitude
-                  value: -52.6837741
-              - column:
-                  name: waste_type
-                  value: "RECYCLABLE"
-              - column:
-                  name: active
-                  valueBoolean: true
-        - insert:
-            tableName: route_collection_points
-            columns:
-              - column:
-                  name: id
-                  value: 8
-              - column:
-                  name: route_id
-                  value: 8
-              - column:
-                  name: sequence_order
-                  value: 1
-              - column:
-                  name: address
-                  value: "Jardim das Américas"
-              - column:
-                  name: latitude
-                  value: -26.2274671
-              - column:
-                  name: longitude
-                  value: -52.6791682
-              - column:
-                  name: waste_type
-                  value: "RECYCLABLE"
-              - column:
-                  name: active
-                  valueBoolean: true
-        - insert:
-            tableName: route_collection_points
-            columns:
-              - column:
-                  name: id
-                  value: 9
-              - column:
-                  name: route_id
-                  value: 9
-              - column:
-                  name: sequence_order
-                  value: 1
-              - column:
-                  name: address
-                  value: "Sambugaro"
-              - column:
-                  name: latitude
-                  value: -26.2290163
-              - column:
-                  name: longitude
-                  value: -52.6823143
-              - column:
-                  name: waste_type
-                  value: "RECYCLABLE"
-              - column:
-                  name: active
-                  valueBoolean: true
-        - insert:
-            tableName: route_collection_points
-            columns:
-              - column:
-                  name: id
-                  value: 10
-              - column:
-                  name: route_id
-                  value: 10
-              - column:
-                  name: sequence_order
-                  value: 1
-              - column:
-                  name: address
-                  value: "Anchieta"
-              - column:
-                  name: latitude
-                  value: -26.2241061
-              - column:
-                  name: longitude
-                  value: -52.6829249
-              - column:
-                  name: waste_type
-                  value: "RECYCLABLE"
-              - column:
-                  name: active
-                  valueBoolean: true
-        - insert:
-            tableName: route_collection_points
-            columns:
-              - column:
-                  name: id
-                  value: 11
-              - column:
-                  name: route_id
-                  value: 11
-              - column:
-                  name: sequence_order
-                  value: 1
-              - column:
-                  name: address
-                  value: "Trevo da Guarani"
-              - column:
-                  name: latitude
-                  value: -26.2195248
-              - column:
-                  name: longitude
-                  value: -52.6765198
-              - column:
-                  name: waste_type
-                  value: "RECYCLABLE"
-              - column:
-                  name: active
-                  valueBoolean: true
-        - insert:
-            tableName: route_collection_points
-            columns:
-              - column:
-                  name: id
-                  value: 12
-              - column:
-                  name: route_id
-                  value: 12
-              - column:
-                  name: sequence_order
-                  value: 1
-              - column:
-                  name: address
-                  value: "Parzianello"
-              - column:
-                  name: latitude
-                  value: -26.2322968
-              - column:
-                  name: longitude
-                  value: -52.6535721
-              - column:
-                  name: waste_type
-                  value: "RECYCLABLE"
-              - column:
-                  name: active
-                  valueBoolean: true
-        - insert:
-            tableName: route_collection_points
-            columns:
-              - column:
-                  name: id
-                  value: 13
-              - column:
-                  name: route_id
-                  value: 13
-              - column:
-                  name: sequence_order
-                  value: 1
-              - column:
-                  name: address
-                  value: "Bancários"
-              - column:
-                  name: latitude
-                  value: -26.2241785
-              - column:
-                  name: longitude
-                  value: -52.6677852
-              - column:
-                  name: waste_type
-                  value: "RECYCLABLE"
-              - column:
-                  name: active
-                  valueBoolean: true
-        - insert:
-            tableName: route_collection_points
-            columns:
-              - column:
-                  name: id
-                  value: 14
-              - column:
-                  name: route_id
-                  value: 14
-              - column:
-                  name: sequence_order
-                  value: 1
-              - column:
-                  name: address
-                  value: "Industrial"
-              - column:
-                  name: latitude
-                  value: -26.2395826
-              - column:
-                  name: longitude
-                  value: -52.6710698
-              - column:
-                  name: waste_type
-                  value: "RECYCLABLE"
-              - column:
-                  name: active
-                  valueBoolean: true
-        - insert:
-            tableName: route_collection_points
-            columns:
-              - column:
-                  name: id
-                  value: 15
-              - column:
-                  name: route_id
-                  value: 15
-              - column:
-                  name: sequence_order
-                  value: 1
-              - column:
-                  name: address
-                  value: "São Vicente"
-              - column:
-                  name: latitude
-                  value: -26.2395572
-              - column:
-                  name: longitude
-                  value: -52.6722304
-              - column:
-                  name: waste_type
-                  value: "RECYCLABLE"
-              - column:
-                  name: active
-                  valueBoolean: true
-        - insert:
-            tableName: route_collection_points
-            columns:
-              - column:
-                  name: id
-                  value: 16
-              - column:
-                  name: route_id
-                  value: 16
-              - column:
-                  name: sequence_order
-                  value: 1
-              - column:
-                  name: address
-                  value: "Santo Antônio"
-              - column:
-                  name: latitude
-                  value: -26.2578116
-              - column:
-                  name: longitude
-                  value: -52.6745754
-              - column:
-                  name: waste_type
-                  value: "RECYCLABLE"
-              - column:
-                  name: active
-                  valueBoolean: true
-        - insert:
-            tableName: route_collection_points
-            columns:
-              - column:
-                  name: id
-                  value: 17
-              - column:
-                  name: route_id
-                  value: 17
-              - column:
-                  name: sequence_order
-                  value: 1
-              - column:
-                  name: address
-                  value: "Bonatto"
-              - column:
-                  name: latitude
-                  value: -26.2476453
-              - column:
-                  name: longitude
-                  value: -52.6675956
-              - column:
-                  name: waste_type
-                  value: "RECYCLABLE"
-              - column:
-                  name: active
-                  valueBoolean: true
-        - insert:
-            tableName: route_collection_points
-            columns:
-              - column:
-                  name: id
-                  value: 18
-              - column:
-                  name: route_id
-                  value: 18
-              - column:
-                  name: sequence_order
-                  value: 1
-              - column:
-                  name: address
-                  value: "Sudoeste"
-              - column:
-                  name: latitude
-                  value: -26.254398
-              - column:
-                  name: longitude
-                  value: -52.6717021
-              - column:
-                  name: waste_type
-                  value: "RECYCLABLE"
-              - column:
-                  name: active
-                  valueBoolean: true
-        - insert:
-            tableName: route_collection_points
-            columns:
-              - column:
-                  name: id
-                  value: 19
-              - column:
-                  name: route_id
-                  value: 19
-              - column:
-                  name: sequence_order
-                  value: 1
-              - column:
-                  name: address
-                  value: "Veneza"
-              - column:
-                  name: latitude
-                  value: -26.254398
-              - column:
-                  name: longitude
-                  value: -52.6717021
-              - column:
-                  name: waste_type
-                  value: "RECYCLABLE"
-              - column:
-                  name: active
-                  valueBoolean: true
-        - insert:
-            tableName: route_collection_points
-            columns:
-              - column:
-                  name: id
-                  value: 20
-              - column:
-                  name: route_id
-                  value: 20
-              - column:
-                  name: sequence_order
-                  value: 1
-              - column:
-                  name: address
-                  value: "Gralha Azul"
-              - column:
-                  name: latitude
-                  value: -26.2752901
-              - column:
-                  name: longitude
-                  value: -52.6799575
-              - column:
-                  name: waste_type
-                  value: "RECYCLABLE"
-              - column:
-                  name: active
-                  valueBoolean: true
-        - insert:
-            tableName: route_collection_points
-            columns:
-              - column:
-                  name: id
-                  value: 21
-              - column:
-                  name: route_id
-                  value: 21
-              - column:
-                  name: sequence_order
-                  value: 1
-              - column:
-                  name: address
-                  value: "São Cristóvão"
-              - column:
-                  name: latitude
-                  value: -26.2713698
-              - column:
-                  name: longitude
-                  value: -52.684646
-              - column:
-                  name: waste_type
-                  value: "RECYCLABLE"
-              - column:
-                  name: active
-                  valueBoolean: true
-        - insert:
-            tableName: route_collection_points
-            columns:
-              - column:
-                  name: id
-                  value: 22
-              - column:
-                  name: route_id
-                  value: 22
-              - column:
-                  name: sequence_order
-                  value: 1
-              - column:
-                  name: address
-                  value: "Pinheirinho"
-              - column:
-                  name: latitude
-                  value: -26.2431197
-              - column:
-                  name: longitude
-                  value: -52.6773611
-              - column:
-                  name: waste_type
-                  value: "RECYCLABLE"
-              - column:
-                  name: active
-                  valueBoolean: true
-        - insert:
-            tableName: route_collection_points
-            columns:
-              - column:
-                  name: id
-                  value: 23
-              - column:
-                  name: route_id
-                  value: 23
-              - column:
-                  name: sequence_order
-                  value: 1
-              - column:
-                  name: address
-                  value: "Alvorada"
-              - column:
-                  name: latitude
-                  value: -26.2620697
-              - column:
-                  name: longitude
-                  value: -52.6853962
-              - column:
-                  name: waste_type
-                  value: "RECYCLABLE"
-              - column:
-                  name: active
-                  valueBoolean: true
-        - insert:
-            tableName: route_collection_points
-            columns:
-              - column:
-                  name: id
-                  value: 24
-              - column:
-                  name: route_id
-                  value: 24
-              - column:
-                  name: sequence_order
-                  value: 1
-              - column:
-                  name: address
-                  value: "Parque do Som"
-              - column:
-                  name: latitude
-                  value: -26.232138
-              - column:
-                  name: longitude
-                  value: -52.6538698
-              - column:
-                  name: waste_type
-                  value: "RECYCLABLE"
-              - column:
-                  name: active
-                  valueBoolean: true
-        - insert:
-            tableName: route_collection_points
-            columns:
-              - column:
-                  name: id
-                  value: 25
-              - column:
-                  name: route_id
-                  value: 25
-              - column:
-                  name: sequence_order
-                  value: 1
-              - column:
-                  name: address
-                  value: "La Salle"
-              - column:
-                  name: latitude
-                  value: -26.2349777
-              - column:
-                  name: longitude
-                  value: -52.6682428
-              - column:
-                  name: waste_type
-                  value: "RECYCLABLE"
-              - column:
-                  name: active
-                  valueBoolean: true
-        - insert:
-            tableName: route_collection_points
-            columns:
-              - column:
-                  name: id
-                  value: 26
-              - column:
-                  name: route_id
-                  value: 26
-              - column:
-                  name: sequence_order
-                  value: 1
-              - column:
-                  name: address
-                  value: "Brasília"
-              - column:
-                  name: latitude
-                  value: -26.222693
-              - column:
-                  name: longitude
-                  value: -52.67155
-              - column:
-                  name: waste_type
-                  value: "RECYCLABLE"
-              - column:
-                  name: active
-                  valueBoolean: true
-        - insert:
-            tableName: route_collection_points
-            columns:
-              - column:
-                  name: id
-                  value: 27
-              - column:
-                  name: route_id
-                  value: 27
-              - column:
-                  name: sequence_order
-                  value: 1
-              - column:
-                  name: address
-                  value: "Novo Horizonte"
-              - column:
-                  name: latitude
-                  value: -26.2531655
-              - column:
-                  name: longitude
-                  value: -52.6740007
-              - column:
-                  name: waste_type
-                  value: "RECYCLABLE"
-              - column:
-                  name: active
-                  valueBoolean: true
-        - insert:
-            tableName: route_collection_points
-            columns:
-              - column:
-                  name: id
-                  value: 28
-              - column:
-                  name: route_id
-                  value: 28
-              - column:
-                  name: sequence_order
-                  value: 1
-              - column:
-                  name: address
-                  value: "Cristo Rei"
-              - column:
-                  name: latitude
-                  value: -26.2421469
-              - column:
-                  name: longitude
-                  value: -52.6747395
-              - column:
-                  name: waste_type
-                  value: "RECYCLABLE"
-              - column:
-                  name: active
-                  valueBoolean: true
-        - insert:
-            tableName: route_collection_points
-            columns:
-              - column:
-                  name: id
-                  value: 29
-              - column:
-                  name: route_id
-                  value: 29
-              - column:
-                  name: sequence_order
-                  value: 1
-              - column:
-                  name: address
-                  value: "Jardim Floresta"
-              - column:
-                  name: latitude
-                  value: -26.2526741
-              - column:
-                  name: longitude
-                  value: -52.7077975
-              - column:
-                  name: waste_type
-                  value: "RECYCLABLE"
-              - column:
-                  name: active
-                  valueBoolean: true
-        - insert:
-            tableName: route_collection_points
-            columns:
-              - column:
-                  name: id
-                  value: 30
-              - column:
-                  name: route_id
-                  value: 30
-              - column:
-                  name: sequence_order
-                  value: 1
-              - column:
-                  name: address
-                  value: "Bortot"
-              - column:
-                  name: latitude
-                  value: -26.2053136
-              - column:
-                  name: longitude
-                  value: -52.6705739
-              - column:
-                  name: waste_type
-                  value: "RECYCLABLE"
-              - column:
-                  name: active
-                  valueBoolean: true
-        - insert:
-            tableName: route_collection_points
-            columns:
-              - column:
-                  name: id
-                  value: 31
-              - column:
-                  name: route_id
-                  value: 31
-              - column:
-                  name: sequence_order
-                  value: 1
-              - column:
-                  name: address
-                  value: "Fraron Novo"
-              - column:
-                  name: latitude
-                  value: -26.2025851
-              - column:
-                  name: longitude
-                  value: -52.6784495
-              - column:
-                  name: waste_type
-                  value: "RECYCLABLE"
-              - column:
-                  name: active
-                  valueBoolean: true
-        - insert:
-            tableName: route_collection_points
-            columns:
-              - column:
-                  name: id
-                  value: 32
-              - column:
-                  name: route_id
-                  value: 32
-              - column:
-                  name: sequence_order
-                  value: 1
-              - column:
-                  name: address
-                  value: "Vila Esperança"
-              - column:
-                  name: latitude
-                  value: -26.2181242
-              - column:
-                  name: longitude
-                  value: -52.6816538
-              - column:
-                  name: waste_type
-                  value: "RECYCLABLE"
-              - column:
-                  name: active
-                  valueBoolean: true
-        - insert:
-            tableName: route_collection_points
-            columns:
-              - column:
-                  name: id
-                  value: 33
-              - column:
-                  name: route_id
-                  value: 33
-              - column:
-                  name: sequence_order
-                  value: 1
-              - column:
-                  name: address
-                  value: "Aeroporto"
-              - column:
-                  name: latitude
-                  value: -26.217951
-              - column:
-                  name: longitude
-                  value: -52.7034226
-              - column:
-                  name: waste_type
-                  value: "RECYCLABLE"
-              - column:
-                  name: active
-                  valueBoolean: true
-        - insert:
-            tableName: route_collection_points
-            columns:
-              - column:
-                  name: id
-                  value: 34
-              - column:
-                  name: route_id
-                  value: 34
-              - column:
-                  name: sequence_order
-                  value: 1
-              - column:
-                  name: address
-                  value: "Pagnoncelli"
-              - column:
-                  name: latitude
-                  value: -26.2232061
-              - column:
-                  name: longitude
-                  value: -52.7046028
-              - column:
-                  name: waste_type
-                  value: "RECYCLABLE"
-              - column:
-                  name: active
-                  valueBoolean: true
-        - insert:
-            tableName: route_collection_points
-            columns:
-              - column:
-                  name: id
-                  value: 35
-              - column:
-                  name: route_id
-                  value: 35
-              - column:
-                  name: sequence_order
-                  value: 1
-              - column:
-                  name: address
-                  value: "São Francisco"
-              - column:
-                  name: latitude
-                  value: -26.1740557
-              - column:
-                  name: longitude
-                  value: -52.6633891
-              - column:
-                  name: waste_type
-                  value: "RECYCLABLE"
-              - column:
-                  name: active
-                  valueBoolean: true
-        - insert:
-            tableName: route_collection_points
-            columns:
-              - column:
-                  name: id
-                  value: 36
-              - column:
-                  name: route_id
-                  value: 36
-              - column:
-                  name: sequence_order
-                  value: 1
-              - column:
-                  name: address
-                  value: "São Luiz"
-              - column:
-                  name: latitude
-                  value: -26.2079607
-              - column:
-                  name: longitude
-                  value: -52.6665935
-              - column:
-                  name: waste_type
-                  value: "RECYCLABLE"
-              - column:
-                  name: active
-                  valueBoolean: true
-        - insert:
-            tableName: route_collection_points
-            columns:
-              - column:
-                  name: id
-                  value: 37
-              - column:
-                  name: route_id
-                  value: 37
-              - column:
-                  name: sequence_order
-                  value: 1
-              - column:
-                  name: address
-                  value: "Centro"
-              - column:
-                  name: latitude
-                  value: -26.2169837
-              - column:
-                  name: longitude
-                  value: -52.6776678
-              - column:
-                  name: waste_type
-                  value: "RECYCLABLE"
-              - column:
-                  name: active
-                  valueBoolean: true
-        - insert:
-            tableName: route_collection_points
-            columns:
-              - column:
-                  name: id
-                  value: 38
-              - column:
-                  name: route_id
-                  value: 38
-              - column:
-                  name: sequence_order
-                  value: 1
-              - column:
-                  name: address
-                  value: "São João"
-              - column:
-                  name: latitude
-                  value: -26.2316795
-              - column:
-                  name: longitude
-                  value: -52.7168981
-              - column:
-                  name: waste_type
-                  value: "RECYCLABLE"
-              - column:
-                  name: collection_frequency
-                  value: "ALTERNATE"
-              - column:
-                  name: active
-                  valueBoolean: true
-        - insert:
-            tableName: route_collection_points
-            columns:
-              - column:
-                  name: id
-                  value: 39
-              - column:
-                  name: route_id
-                  value: 39
-              - column:
-                  name: sequence_order
-                  value: 1
-              - column:
-                  name: address
-                  value: "Alto da Glória"
-              - column:
-                  name: latitude
-                  value: -26.2316795
-              - column:
-                  name: longitude
-                  value: -52.7168981
-              - column:
-                  name: waste_type
-                  value: "RECYCLABLE"
-              - column:
-                  name: collection_frequency
-                  value: "ALTERNATE"
-              - column:
-                  name: active
-                  valueBoolean: true
-        - insert:
-            tableName: route_collection_points
-            columns:
-              - column:
-                  name: id
-                  value: 40
-              - column:
-                  name: route_id
-                  value: 40
-              - column:
-                  name: sequence_order
-                  value: 1
-              - column:
-                  name: address
-                  value: "Vila São Pedro"
-              - column:
-                  name: latitude
-                  value: -26.231641
-              - column:
-                  name: longitude
-                  value: -52.7153424
-              - column:
-                  name: waste_type
-                  value: "RECYCLABLE"
-              - column:
-                  name: collection_frequency
-                  value: "ALTERNATE"
-              - column:
-                  name: active
-                  valueBoolean: true
-        - insert:
-            tableName: route_collection_points
-            columns:
-              - column:
-                  name: id
-                  value: 41
-              - column:
-                  name: route_id
-                  value: 41
-              - column:
-                  name: sequence_order
-                  value: 1
-              - column:
-                  name: address
-                  value: "São Roque do Chopim"
-              - column:
-                  name: latitude
-                  value: -26.0869167
-              - column:
-                  name: longitude
-                  value: -52.6491895
-              - column:
-                  name: waste_type
-                  value: "RECYCLABLE"
-              - column:
-                  name: collection_frequency
-                  value: "ALTERNATE"
-              - column:
-                  name: active
-                  valueBoolean: true
+        # Nota: Pontos de coleta serão inseridos apenas para rotas CONTAINER
+        # As rotas CONTAINER (48, 49, 54, 56, 57, 58) terão seus pontos inseridos
+        # via API ou em changesets futuros conforme necessário
 
   # ==========================================
   # CHANGESET 16: Reset route sequences
@@ -2607,7 +1493,7 @@ databaseChangeLog:
             sql: "SELECT setval('routes_id_seq', 41, true);"
             dbms: postgresql
         - sql:
-            sql: "SELECT setval('route_collection_points_id_seq', 41, true);"
+            sql: "SELECT setval('route_collection_points_id_seq', 1, false);"
             dbms: postgresql
       rollback:
         - sql:
@@ -2634,6 +1520,15 @@ databaseChangeLog:
             sql: |
               INSERT INTO route_areas (id, route_id, external_name, waste_type, geometry_geojson, stroke_color, fill_color, fill_opacity, active)
               VALUES (3, 3, 'Bela Vista', 'RECYCLABLE', '{"type": "Polygon", "coordinates": [[[-52.6921782, -26.2376422], [-52.6930151, -26.2371803], [-52.6951394, -26.2351786], [-52.6996288, -26.2335153], [-52.699388, -26.2381041], [-52.6990629, -26.2426551], [-52.6988268, -26.2438868], [-52.6982722, -26.243878], [-52.6973495, -26.2433199], [-52.6964912, -26.2422421], [-52.6961479, -26.241684], [-52.6957187, -26.2410681], [-52.6949463, -26.2403752], [-52.6943025, -26.2398363], [-52.6933369, -26.2390087], [-52.6926503, -26.2386238], [-52.6921782, -26.2376422]]]}'::jsonb, '#0066CC', '#0066CC', 0.40, true);
+
+
+  # ==========================================
+  # CHANGESET 18: Insert route areas with polygons (continuação)
+  # ==========================================
+  - changeSet:
+      id: 018-insert-route-areas-continuation
+      author: od46s-team
+      changes:
         - sql:
             sql: |
               INSERT INTO route_areas (id, route_id, external_name, waste_type, geometry_geojson, stroke_color, fill_color, fill_opacity, active)
@@ -3009,7 +1904,7 @@ databaseChangeLog:
                   value: "Rota de coleta de resíduos residential"
               - column:
                   name: collection_type
-                  value: RESIDENTIAL
+                  value: CONTAINER
               - column:
                   name: periodicity
                   value: "0 8 * * 1"
@@ -3040,7 +1935,7 @@ databaseChangeLog:
                   value: "Rota de coleta de resíduos residential"
               - column:
                   name: collection_type
-                  value: RESIDENTIAL
+                  value: CONTAINER
               - column:
                   name: periodicity
                   value: "0 8 * * 2"
@@ -3195,7 +2090,7 @@ databaseChangeLog:
                   value: "Rota de coleta de resíduos residential"
               - column:
                   name: collection_type
-                  value: RESIDENTIAL
+                  value: CONTAINER
               - column:
                   name: periodicity
                   value: "0 8 * * *"
@@ -3257,7 +2152,7 @@ databaseChangeLog:
                   value: "Rota de coleta de resíduos residential"
               - column:
                   name: collection_type
-                  value: RESIDENTIAL
+                  value: CONTAINER
               - column:
                   name: periodicity
                   value: "0 8 * * 1"
@@ -3288,7 +2183,7 @@ databaseChangeLog:
                   value: "Rota de coleta de resíduos residential"
               - column:
                   name: collection_type
-                  value: RESIDENTIAL
+                  value: CONTAINER
               - column:
                   name: periodicity
                   value: "0 8 * * 1"
@@ -3319,7 +2214,7 @@ databaseChangeLog:
                   value: "Rota de coleta de resíduos residential"
               - column:
                   name: collection_type
-                  value: RESIDENTIAL
+                  value: CONTAINER
               - column:
                   name: periodicity
                   value: "0 8 * * 2"
@@ -4023,3 +2918,68 @@ databaseChangeLog:
         - sql:
             sql: "SELECT setval('route_areas_id_seq', 79, true);"
             dbms: postgresql
+
+  # ==========================================
+  # CHANGESET 23: Configure container routes and remove collection points from non-container routes
+  # ==========================================
+  - changeSet:
+      id: 023-configure-container-routes
+      author: od46s-team
+      changes:
+        # Altera as rotas container para terem collection_type = CONTAINER
+        - sql:
+            sql: |
+              UPDATE routes 
+              SET collection_type = 'CONTAINER' 
+              WHERE id IN (48, 49, 54, 56, 57, 58);
+        # Remove pontos de coleta das rotas que NÃO são CONTAINER
+        # Apenas rotas do tipo CONTAINER devem ter pontos de coleta
+        # As demais rotas (bairro todo) o motorista deve passar em todas as ruas
+        - sql:
+            sql: |
+              DELETE FROM route_collection_points 
+              WHERE route_id NOT IN (
+                SELECT id FROM routes WHERE collection_type = 'CONTAINER'
+              );
+
+  # ==========================================
+  # CHANGESET 24: Add executor fields to route_executions
+  # ==========================================
+  # Adiciona campos para rastrear quem executou a rota (ADMIN ou DRIVER)
+  # Isso permite que ADMIN execute rotas de outros motoristas
+  - changeSet:
+      id: 024-add-executor-fields-to-route-executions
+      author: od46s-team
+      changes:
+        - addColumn:
+            tableName: route_executions
+            columns:
+              - column:
+                  name: executor_id
+                  type: BIGINT
+                  constraints:
+                    nullable: true
+                    # Permite NULL temporariamente para dados existentes
+              - column:
+                  name: executor_type
+                  type: VARCHAR(10)
+                  constraints:
+                    nullable: true
+                    # Permite NULL temporariamente para dados existentes
+        # Preenche executor_id e executor_type para execuções existentes
+        # Assumindo que o executor é o driver do assignment
+        - sql:
+            sql: |
+              UPDATE route_executions re
+              SET executor_id = (
+                SELECT ra.driver_id 
+                FROM route_assignments ra
+                WHERE ra.id = re.assignment_id
+              ),
+              executor_type = 'DRIVER'
+              WHERE executor_id IS NULL
+        # Agora torna executor_id obrigatório
+        - addNotNullConstraint:
+            tableName: route_executions
+            columnName: executor_id
+            columnDataType: BIGINT

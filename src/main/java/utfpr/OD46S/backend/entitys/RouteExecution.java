@@ -8,9 +8,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "route_executions", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"assignment_id", "execution_date"})
-})
+@Table(name = "route_executions")
+// Removida constraint única para permitir múltiplas execuções na mesma data
+// (ex: uma cancelada e uma nova, preservando o histórico)
 public class RouteExecution {
 
     @Id
@@ -63,6 +63,12 @@ public class RouteExecution {
 
     @Column(name = "driver_rating")
     private Integer driverRating;
+
+    @Column(name = "executor_id")
+    private Long executorId;
+
+    @Column(name = "executor_type", length = 10)
+    private String executorType; // "ADMIN" ou "DRIVER"
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -220,6 +226,22 @@ public class RouteExecution {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public Long getExecutorId() {
+        return executorId;
+    }
+
+    public void setExecutorId(Long executorId) {
+        this.executorId = executorId;
+    }
+
+    public String getExecutorType() {
+        return executorType;
+    }
+
+    public void setExecutorType(String executorType) {
+        this.executorType = executorType;
     }
 }
 

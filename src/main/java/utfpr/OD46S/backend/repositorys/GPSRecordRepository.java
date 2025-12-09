@@ -31,6 +31,17 @@ public interface GPSRecordRepository extends JpaRepository<GPSRecord, Long> {
             @Param("eventType") String eventType
     );
 
+    @Query("SELECT g FROM GPSRecord g WHERE g.execution.id = :executionId " +
+           "AND g.eventType = :eventType " +
+           "AND g.gpsTimestamp BETWEEN :startTime AND :endTime " +
+           "ORDER BY g.gpsTimestamp ASC")
+    List<GPSRecord> findByExecutionIdAndEventTypeAndTimestampBetween(
+            @Param("executionId") Long executionId,
+            @Param("eventType") String eventType,
+            @Param("startTime") LocalDateTime startTime,
+            @Param("endTime") LocalDateTime endTime
+    );
+
     @Query("SELECT COUNT(g) FROM GPSRecord g WHERE g.execution.id = :executionId")
     long countByExecutionId(@Param("executionId") Long executionId);
 

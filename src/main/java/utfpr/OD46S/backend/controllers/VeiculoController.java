@@ -11,7 +11,6 @@ import utfpr.OD46S.backend.dtos.VeiculoDTO;
 import utfpr.OD46S.backend.enums.StatusVeiculo;
 import utfpr.OD46S.backend.services.VeiculoService;
 
-import java.util.List;
 import java.util.Map;
 
 @Tag(name = "Veículos", description = "Gestão de veículos")
@@ -26,8 +25,25 @@ public class VeiculoController {
     @Operation(summary = "Listar veículos")
     @GetMapping
     @PreAuthorize("hasRole('ADMIN') or hasRole('DRIVER')")
-    public ResponseEntity<List<VeiculoDTO>> listar() {
-        return ResponseEntity.ok(veiculoService.listarTodos());
+    public ResponseEntity<?> listar(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer limit,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Boolean active,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String order
+    ) {
+        // Se não houver parâmetros de paginação, retornar lista simples (compatibilidade)
+        if (page == null && limit == null && search == null && status == null && active == null) {
+            return ResponseEntity.ok(veiculoService.listarTodos());
+        }
+        
+        // Caso contrário, retornar dados paginados
+        Map<String, Object> response = veiculoService.listarTodosPaginado(
+            page, limit, search, status, active, sort, order
+        );
+        return ResponseEntity.ok(response);
     }
 
     @Operation(summary = "Cadastrar veículo")

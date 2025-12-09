@@ -25,6 +25,8 @@ public class RouteExecutionDTO {
     private String problemsFound;
     private String cancellationReason;
     private Integer driverRating;
+    private Long executorId;
+    private String executorType;
     private LocalDateTime createdAt;
 
     // Constructors
@@ -166,6 +168,22 @@ public class RouteExecutionDTO {
 
     public void setDriverRating(Integer driverRating) {
         this.driverRating = driverRating;
+    }
+
+    public Long getExecutorId() {
+        return executorId;
+    }
+
+    public void setExecutorId(Long executorId) {
+        this.executorId = executorId;
+    }
+
+    public String getExecutorType() {
+        return executorType;
+    }
+
+    public void setExecutorType(String executorType) {
+        this.executorType = executorType;
     }
 
     public LocalDateTime getCreatedAt() {

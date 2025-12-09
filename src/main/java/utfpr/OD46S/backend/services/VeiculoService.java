@@ -1,6 +1,10 @@
 package utfpr.OD46S.backend.services;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import utfpr.OD46S.backend.dtos.VeiculoDTO;
@@ -8,7 +12,9 @@ import utfpr.OD46S.backend.entitys.Veiculo;
 import utfpr.OD46S.backend.enums.StatusVeiculo;
 import utfpr.OD46S.backend.repositorys.VeiculoRepository;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -20,6 +26,88 @@ public class VeiculoService {
 
     public List<VeiculoDTO> listarTodos() {
         return veiculoRepository.findAll().stream().map(this::toDTO).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> listarTodosPaginado(Integer page, Integer limit, String search, 
+                                                     String status, Boolean active, String sort, String order) {
+        // Valores padrão
+        if (page == null || page < 1) page = 1;
+        if (limit == null || limit < 1 || limit > 100) limit = 20;
+        if (sort == null || sort.isEmpty()) sort = "licensePlate";
+        // Mapear nomes de campos para nomes de propriedades da entidade
+        if ("license_plate".equals(sort)) sort = "licensePlate";
+        if (order == null || order.isEmpty()) order = "asc";
+
+        // Criar objeto de paginação
+        Sort.Direction direction = "desc".equalsIgnoreCase(order) ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Sort sortObj = Sort.by(direction, sort);
+        Pageable pageable = PageRequest.of(page - 1, limit, sortObj);
+
+        // Converter status string para enum se fornecido
+        StatusVeiculo statusEnum = null;
+        if (status != null && !status.isEmpty()) {
+            try {
+                statusEnum = StatusVeiculo.valueOf(status.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                // Status inválido, ignorar
+            }
+        }
+
+        // Buscar veículos
+        Page<Veiculo> veiculosPage;
+        if (search != null && !search.isEmpty()) {
+            // Se houver busca, filtrar por placa ou modelo
+            if (statusEnum != null && active != null) {
+                veiculosPage = veiculoRepository.findByLicensePlateContainingIgnoreCaseOrModelContainingIgnoreCaseAndStatusAndActive(
+                    search, search, statusEnum, active, pageable);
+            } else if (statusEnum != null) {
+                veiculosPage = veiculoRepository.findByLicensePlateContainingIgnoreCaseOrModelContainingIgnoreCaseAndStatus(
+                    search, search, statusEnum, pageable);
+            } else if (active != null) {
+                veiculosPage = veiculoRepository.findByLicensePlateContainingIgnoreCaseOrModelContainingIgnoreCaseAndActive(
+                    search, search, active, pageable);
+            } else {
+                veiculosPage = veiculoRepository.findByLicensePlateContainingIgnoreCaseOrModelContainingIgnoreCase(
+                    search, search, pageable);
+            }
+        } else {
+            // Sem busca
+            if (statusEnum != null && active != null) {
+                veiculosPage = veiculoRepository.findByStatusAndActive(statusEnum, active, pageable);
+            } else if (statusEnum != null) {
+                veiculosPage = veiculoRepository.findByStatus(statusEnum, pageable);
+            } else if (active != null) {
+                veiculosPage = veiculoRepository.findByActive(active, pageable);
+            } else {
+                veiculosPage = veiculoRepository.findAll(pageable);
+            }
+        }
+
+        // Converter para DTOs
+        List<VeiculoDTO> veiculoDTOs = veiculosPage.getContent().stream()
+            .map(this::toDTO)
+            .collect(Collectors.toList());
+
+        // Informações de paginação
+        Map<String, Object> pagination = new HashMap<>();
+        pagination.put("current_page", page);
+        pagination.put("per_page", limit);
+        pagination.put("total", veiculosPage.getTotalElements());
+        pagination.put("total_pages", veiculosPage.getTotalPages());
+        pagination.put("has_next", veiculosPage.hasNext());
+        pagination.put("has_prev", veiculosPage.hasPrevious());
+
+        // Resposta
+        Map<String, Object> data = new HashMap<>();
+        data.put("vehicles", veiculoDTOs);
+        data.put("pagination", pagination);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("data", data);
+
+        return response;
     }
 
     public VeiculoDTO cadastrar(VeiculoDTO dto) {

@@ -26,10 +26,10 @@ public class GPSTrackingController {
     private GPSTrackingService gpsTrackingService;
 
     @PostMapping("/{executionId}/gps")
-    @PreAuthorize("hasRole('DRIVER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DRIVER')")
     @Operation(
             summary = "Registrar GPS / Evento / Coleta",
-            description = "Registra posição GPS, eventos (paradas, problemas) e coletas em pontos com foto opcional. Apenas DRIVER."
+            description = "Registra posição GPS, eventos (paradas, problemas) e coletas em pontos com foto opcional. ADMIN pode registrar GPS para qualquer execução, DRIVER apenas para suas próprias execuções."
     )
     public ResponseEntity<?> registrarPosicaoGPS(
             @PathVariable Long executionId,
@@ -47,8 +47,17 @@ public class GPSTrackingController {
             // Campos opcionais para eventos de COLETA
             @RequestParam(value = "point_id", required = false) Long pointId,
             @RequestParam(value = "collected_weight_kg", required = false) String collectedWeightKg,
-            @RequestParam(value = "point_condition", required = false) String pointCondition) {
+            @RequestParam(value = "point_condition", required = false) String pointCondition,
+            org.springframework.security.core.Authentication authentication) {
         try {
+            // Log para debug
+            if (authentication != null) {
+                System.out.println("[GPSTrackingController] Autenticação: " + authentication.getName());
+                System.out.println("[GPSTrackingController] Authorities: " + authentication.getAuthorities());
+            } else {
+                System.out.println("[GPSTrackingController] Autenticação é null!");
+            }
+            System.out.println("[GPSTrackingController] Registrando GPS para executionId: " + executionId);
             // Construir mapa de request
             Map<String, Object> request = new java.util.HashMap<>();
             request.put("latitude", latitude);
@@ -99,14 +108,16 @@ public class GPSTrackingController {
     @PreAuthorize("hasAnyRole('ADMIN', 'DRIVER')")
     @Operation(
             summary = "Obter rastro GPS",
-            description = "Retorna o rastro completo de GPS de uma execução, com estatísticas de distância e pontos"
+            description = "Retorna o rastro completo de GPS de uma execução, com estatísticas de distância e pontos. " +
+                         "Pode filtrar por eventType (ex: NORMAL, POINT_COLLECTED, START, END, etc.) e por intervalo de tempo."
     )
     public ResponseEntity<?> obterRastroGPS(
             @PathVariable Long executionId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start_time,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end_time) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end_time,
+            @RequestParam(required = false) String event_type) {
         try {
-            Map<String, Object> response = gpsTrackingService.obterRastroGPS(executionId, start_time, end_time);
+            Map<String, Object> response = gpsTrackingService.obterRastroGPS(executionId, start_time, end_time, event_type);
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             HttpStatus status = HttpStatus.NOT_FOUND;
@@ -124,10 +135,10 @@ public class GPSTrackingController {
     }
     
     @PostMapping("/{executionId}/gps/batch")
-    @PreAuthorize("hasRole('DRIVER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DRIVER')")
     @Operation(
             summary = "Registrar GPS em lote (batch)",
-            description = "Registra múltiplos pontos GPS/eventos/coletas de uma vez. Usado para sincronização offline. Apenas DRIVER."
+            description = "Registra múltiplos pontos GPS/eventos/coletas de uma vez. Usado para sincronização offline. ADMIN pode registrar GPS para qualquer execução, DRIVER apenas para suas próprias execuções."
     )
     public ResponseEntity<?> registrarGPSBatch(
             @PathVariable Long executionId,
